@@ -7,42 +7,40 @@ Created on Sat Aug 17 21:38:46 2019
 
 import numpy as np
 from utils import stretch
+from Signal import Signal
 
-class Track:
+# TODO perhaps should be inhertied from signal
+class Track(Signal):
     """ represents an audio track onto which one can add signals,
     and which can be exported into audio wav."""
     
-    sampleRate = None
-    events = None
-    channels = None
-    audio = None
-    
     def __init__(self):
-        self.sampleRate = 11025 # default for speed
+        self.sample_rate = 11025 # default for speed
         self.events = []
-        self.channels = 1
+        self.channels = 1 # handle stereo
         self.duration = 0
     
-    def append(self, signal, time):
+    # def __iadd__(self, other)???
+    def append(self, signal:Signal, time):
         self.events.append({"signal":signal, "time":time})
         self.duration = max(self.duration, time + signal.duration)
     
     def stretch(self):
-        self.audio = stretch(self.audio, 8*self.byteWidth)
+        self.audio = stretch(self.audio, 8*self.byte_width)
     
-    def realise(self, sampleRate=11025, byteWidth=2):
-        self.sampleRate = sampleRate
-        self.byteWidth = byteWidth
+    def realise(self, sample_rate=11025, byte_width=2):
+        self.sample_rate = sample_rate
+        self.byte_width = byte_width
         # create empty audio
-        self.audio = np.zeros(self.duration * self.sampleRate) # create np array instead
+        self.audio = np.zeros(self.duration * self.sample_rate) # create np array instead
         
         for event in self.events:
             # perhaps push time into signal class TODO
-            signal_audio = event["signal"].realise(self.sampleRate)
-            
+            signal_audio = event["signal"].realise(self.sample_rate)
+            #breakpoint()
             # add into mix
-            self.audio[event["time"] * sampleRate: \
-                       (event["time"]+event["signal"].duration) * sampleRate] \
+            self.audio[event["time"] * sample_rate: \
+                       (event["time"]+event["signal"].duration) * sample_rate] \
                        += \
                        signal_audio
         
