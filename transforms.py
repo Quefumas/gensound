@@ -59,6 +59,8 @@ class AmpFreq(Transform):
         
 
 class Amplitude(Transform):
+    """ simple increase/decrease of amplitude.
+    don't use this directly; best to just use 0.34 * Signal for example. """
     def __init__(self, size):
         self.size = size
     
@@ -101,11 +103,19 @@ the desired result
 also possible to have signal+signal automatically translate to a new track
 
 
-class Mute
+class Mute # just do 0*Signal
 class Shift
 
 += 0.5 * Shift(5) * Fade(4) * AmpFreq(freq=10) * Sine(f)
    + 0.2 * Shift(10) * Sine(2*f)
+
+
+
+
+* mute according to pattern
+* apply enevlope
+* panning
+
 
 '''
 

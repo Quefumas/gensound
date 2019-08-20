@@ -55,6 +55,47 @@ class Sine(Signal):
         #self.length = self.duration * self.sample_rate
         return np.sin(self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) * 2 * np.pi)
     
+class Triangle(Signal):
+    def __init__(self, frequency=220, duration=5):
+        super().__init__()
+        self.frequency = frequency
+        self.duration = duration
+        self.total_duration = duration # put this into a superclass of sine and triangle?
+    
+    def generate(self):
+        # strange manipulation on sawtooth
+        return 2*np.abs((2*np.pi* self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) % (2*np.pi))-np.pi)-np.pi
+    
+    
+class Square(Signal):
+    def __init__(self, frequency=220, duration=5):
+        super().__init__()
+        self.frequency = frequency
+        self.duration = duration
+        self.total_duration = duration
+    
+    def generate(self):
+        return ((2*np.pi* self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) % (2*np.pi)) < np.pi).astype(np.float64)
+
+class Sawtooth(Signal):
+    def __init__(self, frequency=220, duration=5):
+        super().__init__()
+        self.frequency = frequency
+        self.duration = duration
+        self.total_duration = duration
+    
+    def generate(self):
+        return (2*np.pi* self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) % (2*np.pi))-np.pi
+
+class GreyNoise(Signal):
+    def __init__(self, duration=5):
+        super().__init__()
+        self.duration = duration
+        self.total_duration = duration
+    
+    def generate(self):
+        return 2*np.random.rand(self.duration*self.sample_rate) - 1
+    
     
     
     

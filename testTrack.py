@@ -5,15 +5,14 @@ Created on Sat Aug 17 23:28:31 2019
 @author: Dror
 """
 
-import numpy as np
 import simpleaudio as sa
 
 from Track import Track
-from Signal import Sine
-from transforms import Fade, AmpFreq, Amplitude, Shift
+from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise
+from transforms import Fade, AmpFreq, Shift
 
 
-def harmonics_test(f=220, seconds=10):
+def harmonics_test(f=220, seconds=5):
     t = Track()
     
     params = [(0.34, 1, 2, 0.45),
@@ -28,38 +27,47 @@ def harmonics_test(f=220, seconds=10):
               (1/10, 9.87, 0.65, 0.4),
               ]
     
+    #t += sum([p[0]*Triangle(frequency=f*p[1], duration=seconds)*\
+    #          Fade(is_in=True, duration=3)*\
+    #          AmpFreq(frequency=p[2], size=p[3])*\
+    #          Shift(seconds=1) for p in params])
+    #return t # impossible so far since we can't add signals
+
     for p in params:
-        #s = Sine(frequency=f*p[1], duration=seconds)
-        #s.apply(Amplitude(size = p[0]))
-        #s.apply(Fade(is_in=True, duration=3))
-        #s.apply(AmpFreq(frequency=p[2], size=p[3]))
-        #pass
         s = p[0]*Sine(frequency=f*p[1], duration=seconds)*\
             Fade(is_in=True, duration=3)*\
             AmpFreq(frequency=p[2], size=p[3])*\
-            Shift(seconds=3)
+            Shift(seconds=1)
         
-        t.append(s, time=1)
+        t += s
     
     return t
+
+def square_test():
+    t = Track()
+    s = Square(frequency=300, duration=5)*Fade(is_in=True, duration=5)*Shift(seconds=1)
+    t += s
+    return t
+
+
+def Signal_test(Signal):
+    t = Track()
+    s = Signal(duration=5)*Fade(is_in=True, duration=5)*Shift(seconds=1)
+    t += s
+    return t
+
 
 def simple_test():
     t = Track()
     #s = 0.7*Sine(frequency=220, duration=5)*Fade(is_in=True, duration=5)
-    #s.apply(Fade(is_in=True, duration=5))
-    #s *= Fade(is_in=True, duration=5)
-    #s.apply(Amplitude(size=0.1))
-    #s.apply(AmpFreq(frequency=2, size=0.3))
-    #t.append(s, time=1)
+    #s *= AmpFreq(frequency=2, size=0.3)
+    #s *= Shift(seconds=1)
+    #t += s
     
     
-    s2= Sine(frequency=400, duration=5)
-    s2.apply(Fade(is_in=True, duration=5))
-    s2.apply(Shift(seconds=1))
-    #s2 *= Fade(is_in=True, duration=5)
-    #s2.apply(Amplitude(size=0.1))
-    #s2.apply(AmpFreq(frequency=2, size=0.3))
-    t.append(s2, time=0)
+    s2= Sine(frequency=400, duration=5)*Fade(is_in=True, duration=5)*Shift(seconds=1)
+    #s2 *= AmpFreq(frequency=2, size=0.3)
+    t += s2
     return t
     
     
@@ -67,6 +75,7 @@ if __name__ == "__main__":
     
     #t = simple_test()
     t = harmonics_test()
+    #t = Signal_test(Triangle)
     audio = t.realise()
     
     #%%%%%

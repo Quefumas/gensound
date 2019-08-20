@@ -32,6 +32,7 @@ class Track(Signal):
         # to use this you need to shift the signal pre-addition
         assert(isinstance(other, Signal))
         self.append(other, time=0)
+        return self
     
     def stretch(self):
         self.audio = stretch(self.audio, 8*self.byte_width)
