@@ -22,6 +22,11 @@ class Transform:
     
     def realise(self, signal, audio):
         return audio
+    
+    def on_apply(self, signal):
+        """ when signal.apply(self) is called,
+        it also calls this to allow some changes to the signal settings"""
+        pass
 
 
 class Fade(Transform):
@@ -40,7 +45,6 @@ class Fade(Transform):
             amp = amp[::-1]
             audio[self.duration*signal.sample_rate : len(audio)-1] = \
                 amp*audio[0:self.duration*signal.sample_rate]
-        #return audio
 
 class AmpFreq(Transform):
     def __init__(self, frequency, size):
@@ -49,9 +53,8 @@ class AmpFreq(Transform):
     
     def realise(self, signal, audio):
         sin = np.sin(self.frequency * \
-                     np.linspace(0, signal.duration, signal.length, False) * 2 * np.pi)
+                     np.linspace(0, signal.duration, signal.duration*signal.sample_rate, False) * 2 * np.pi)
         audio[:] = audio * (sin * self.size + (1-self.size))
-        #return audio
         # remember [:] is necessary to retain changes
         
 
@@ -61,12 +64,43 @@ class Amplitude(Transform):
     
     def realise(self, signal, audio):
         audio[:] = self.size * audio
-        #print("realise")
-        #return self.size * audio
-        #audio[:] = 0.1
 
+class Shift(Transform):
+    """ shifts the signal forward in time.
+    it is problematic to use seconds all the time,
+    because of floating point numbers TODO
+    """
+    def __init__(self, seconds):
+        self.seconds = seconds
+    
+    def realise(self, signal, audio):
+        #signal.duration += self.seconds
+        length = self.seconds*signal.sample_rate
+        #length_old = audio.shape[0]
+        
+        
+        audio2 = np.insert(audio, 0, np.zeros(self.seconds*signal.sample_rate, dtype=np.float64), axis=0)
+        
+        audio.resize((audio.shape[0]+length,), refcheck=False)
+        audio[:] = audio2[:]
+        #audio[:] = np.insert(audio, 0, np.zeros(self.seconds*signal.sample_rate, dtype=np.float64), axis=0)
+        #audio[0:length], audio[length: length_old+length] = audio[length_old:length_old+length], audio[0:length_old]
+    
+    def on_apply(self, signal):
+        signal.total_duration += self.seconds
 
 '''
+
+perhaps have transforms multipliable by each other to create chains,
+which can then be added in bulk to a signal
+
+the purpose is that the user can employ any order of multiplications to get
+the desired result
+
+
+also possible to have signal+signal automatically translate to a new track
+
+
 class Mute
 class Shift
 

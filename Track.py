@@ -10,6 +10,9 @@ from utils import stretch
 from Signal import Signal
 
 # TODO perhaps should be inhertied from signal
+#TODO do we need this class????
+# TODO audio class to make life easier with channels
+# make it subscriptable also
 class Track(Signal):
     """ represents an audio track onto which one can add signals,
     and which can be exported into audio wav."""
@@ -20,10 +23,15 @@ class Track(Signal):
         self.channels = 1 # handle stereo
         self.duration = 0
     
-    # def __iadd__(self, other)???
+    
     def append(self, signal:Signal, time):
         self.events.append({"signal":signal, "time":time})
-        self.duration = max(self.duration, time + signal.duration)
+        self.duration = max(self.duration, time + signal.total_duration)
+    
+    def __iadd__(self, other):
+        # to use this you need to shift the signal pre-addition
+        assert(isinstance(other, Signal))
+        self.append(other, time=0)
     
     def stretch(self):
         self.audio = stretch(self.audio, 8*self.byte_width)
@@ -37,10 +45,9 @@ class Track(Signal):
         for event in self.events:
             # perhaps push time into signal class TODO
             signal_audio = event["signal"].realise(self.sample_rate)
-            #breakpoint()
             # add into mix
             self.audio[event["time"] * sample_rate: \
-                       (event["time"]+event["signal"].duration) * sample_rate] \
+                       (event["time"]+event["signal"].total_duration) * sample_rate] \
                        += \
                        signal_audio
         

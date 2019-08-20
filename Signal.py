@@ -6,8 +6,12 @@ Created on Sat Aug 17 21:41:28 2019
 """
 
 import numpy as np
+from transforms import Transform, Amplitude
 
 class Signal:
+    def __init__(self):
+        self.transforms = []
+    
     def generate(self):
         pass
     
@@ -17,25 +21,38 @@ class Signal:
         
         for transform in self.transforms:
             transform.realise(signal=self, audio=audio)
-            
+        
         return audio
     
     # TODO maybe use += instead???
     # TODO maybe use *= instead, and += to mix stuff together???
     # then we can use * also to advance stuff forward
     def apply(self, transform):
-        
         self.transforms.append(transform)
+        transform.on_apply(self)
+    
+    def __rmul__(self, other):
+        assert(type(other) is float)
+        assert(-1 <= other <= 1)
+        
+        self.apply(Amplitude(size = other))
+        return self
+    
+    def __mul__(self, other):
+        assert(isinstance(other, Transform))
+        self.apply(other)
+        return self
 
 
 class Sine(Signal):
     def __init__(self, frequency=220, duration=5):
-        self.transforms = []
+        super().__init__()
         self.frequency = frequency
         self.duration = duration
+        self.total_duration = duration # because of Shift. is there a better way?
         
     def generate(self):
-        self.length = self.duration * self.sample_rate
+        #self.length = self.duration * self.sample_rate
         return np.sin(self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) * 2 * np.pi)
     
     

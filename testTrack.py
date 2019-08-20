@@ -10,13 +10,11 @@ import simpleaudio as sa
 
 from Track import Track
 from Signal import Sine
-from transforms import Fade, AmpFreq, Amplitude
+from transforms import Fade, AmpFreq, Amplitude, Shift
 
-if __name__ == "__main__":
+
+def harmonics_test(f=220, seconds=10):
     t = Track()
-    
-    f = 220
-    seconds = 10
     
     params = [(0.34, 1, 2, 0.45),
               (0.2, 1.94, 3, 0.7),
@@ -31,26 +29,44 @@ if __name__ == "__main__":
               ]
     
     for p in params:
-        s = Sine(frequency=f*p[1], duration=seconds)
-        s.apply(Amplitude(size = p[0]))
-        s.apply(Fade(is_in=True, duration=3))
-        s.apply(AmpFreq(frequency=p[2], size=p[3]))
+        #s = Sine(frequency=f*p[1], duration=seconds)
+        #s.apply(Amplitude(size = p[0]))
+        #s.apply(Fade(is_in=True, duration=3))
+        #s.apply(AmpFreq(frequency=p[2], size=p[3]))
         #pass
+        s = p[0]*Sine(frequency=f*p[1], duration=seconds)*\
+            Fade(is_in=True, duration=3)*\
+            AmpFreq(frequency=p[2], size=p[3])*\
+            Shift(seconds=3)
+        
         t.append(s, time=1)
     
-    #s = Sine(frequency=220, duration=5)
+    return t
+
+def simple_test():
+    t = Track()
+    #s = 0.7*Sine(frequency=220, duration=5)*Fade(is_in=True, duration=5)
     #s.apply(Fade(is_in=True, duration=5))
-    #s.apply(Amplitude(size=0.3))
+    #s *= Fade(is_in=True, duration=5)
+    #s.apply(Amplitude(size=0.1))
     #s.apply(AmpFreq(frequency=2, size=0.3))
     #t.append(s, time=1)
     
     
-    #s2= Sine(frequency=400, duration=5)
-    #s2.apply(Fade(is_in=True, duration=5))
+    s2= Sine(frequency=400, duration=5)
+    s2.apply(Fade(is_in=True, duration=5))
+    s2.apply(Shift(seconds=1))
+    #s2 *= Fade(is_in=True, duration=5)
     #s2.apply(Amplitude(size=0.1))
     #s2.apply(AmpFreq(frequency=2, size=0.3))
-    #t.append(s2, time=1)
+    t.append(s2, time=0)
+    return t
     
+    
+if __name__ == "__main__":
+    
+    #t = simple_test()
+    t = harmonics_test()
     audio = t.realise()
     
     #%%%%%
