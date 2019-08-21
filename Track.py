@@ -13,7 +13,7 @@ from Signal import Signal
 #TODO do we need this class????
 # TODO audio class to make life easier with channels
 # make it subscriptable also
-class Track(Signal):
+class Track():
     """ represents an audio track onto which one can add signals,
     and which can be exported into audio wav."""
     
@@ -31,6 +31,7 @@ class Track(Signal):
     def __iadd__(self, other):
         # to use this you need to shift the signal pre-addition
         assert(isinstance(other, Signal))
+        # perhaps should support also for other which is Track TODO
         self.append(other, time=0)
         return self
     

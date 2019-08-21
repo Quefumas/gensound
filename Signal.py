@@ -6,6 +6,7 @@ Created on Sat Aug 17 21:41:28 2019
 """
 
 import numpy as np
+import Track
 from transforms import Transform, Amplitude
 
 class Signal:
@@ -42,7 +43,20 @@ class Signal:
         assert(isinstance(other, Transform))
         self.apply(other)
         return self
-
+    
+    def __radd__(self, other):
+        assert(isinstance(other, Signal) or isinstance(other, Track.Track) or other == 0)
+        # different if other is a track
+        
+        if isinstance(other, Track.Track):
+            other += self
+            return other
+        
+        t = Track.Track()
+        t += self
+        if other != 0:
+            t += other
+        return t
 
 class Sine(Signal):
     def __init__(self, frequency=220, duration=5):

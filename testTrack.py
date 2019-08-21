@@ -27,20 +27,10 @@ def harmonics_test(f=220, seconds=5):
               (1/10, 9.87, 0.65, 0.4),
               ]
     
-    #t += sum([p[0]*Triangle(frequency=f*p[1], duration=seconds)*\
-    #          Fade(is_in=True, duration=3)*\
-    #          AmpFreq(frequency=p[2], size=p[3])*\
-    #          Shift(seconds=1) for p in params])
-    #return t # impossible so far since we can't add signals
-
-    for p in params:
-        s = p[0]*Sine(frequency=f*p[1], duration=seconds)*\
-            Fade(is_in=True, duration=3)*\
-            AmpFreq(frequency=p[2], size=p[3])*\
-            Shift(seconds=1)
-        
-        t += s
-    
+    t = sum([p[0]*Triangle(frequency=f*p[1], duration=seconds)*\
+             Fade(is_in=True, duration=3)*\
+             AmpFreq(frequency=p[2], size=p[3])*\
+             Shift(seconds=1) for p in params])
     return t
 
 def square_test():
