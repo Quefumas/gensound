@@ -6,28 +6,20 @@ Created on Sat Aug 17 21:41:28 2019
 """
 
 import numpy as np
-import Track
 from transforms import Transform, Amplitude
+from utils import stretch
 
 class Signal:
     def __init__(self):
         self.transforms = []
+        self.total_duration = 0
+        self.duration = 0
+        # this is for processing purposes;
+        # total_duration is when we add silence before/after, for efficiency
     
     def generate(self):
         pass
     
-    def realise(self, sample_rate):
-        self.sample_rate = sample_rate
-        audio = self.generate()
-        
-        for transform in self.transforms:
-            transform.realise(signal=self, audio=audio)
-        
-        return audio
-    
-    # TODO maybe use += instead???
-    # TODO maybe use *= instead, and += to mix stuff together???
-    # then we can use * also to advance stuff forward
     def apply(self, transform):
         self.transforms.append(transform)
         transform.on_apply(self)
@@ -45,18 +37,59 @@ class Signal:
         return self
     
     def __radd__(self, other):
-        assert(isinstance(other, Signal) or isinstance(other, Track.Track) or other == 0)
-        # different if other is a track
+        assert(isinstance(other, Signal) or other == 0)
         
-        if isinstance(other, Track.Track):
-            other += self
-            return other
+        if other == 0:
+            return self
         
-        t = Track.Track()
-        t += self
-        if other != 0:
-            t += other
-        return t
+        if hasattr(self, "signals"):
+            if hasattr(other, "signals"):
+                self.signals.extend(other.signals)
+                self.total_duration = max(self.total_duration, other.total_duration)
+            else:
+                self.signals.append(other)
+                self.total_duration = max(self.total_duration, other.total_duration)
+            return self
+        else:
+            if hasattr(other, "signals"):
+                other.signals.append(self)
+                other.total_duration = max(self.total_duration, other.total_duration)
+                return other
+            else:
+                s = Signal()
+                s.signals = [self, other]
+                s.total_duration = max(self.total_duration, other.total_duration)
+                return s
+    
+    def __add__(self, other):
+        return other.__radd__(self)
+    
+    def realise(self, sample_rate):   
+        self.sample_rate = sample_rate
+        
+        if not hasattr(self, "signals"):
+            audio = self.generate()
+        else:
+            audio = np.zeros(self.total_duration * self.sample_rate)
+            
+            for signal in self.signals:
+                audio[0:signal.total_duration*sample_rate] += signal.realise(self.sample_rate)
+        
+        for transform in self.transforms:
+            transform.realise(signal=self, audio=audio)
+            
+        return audio
+    
+    def mixdown(self, sample_rate=11025, byte_width=2):
+        self.sample_rate = sample_rate
+        self.byte_width = byte_width
+        #self.audio = np.zeros(self.duration * self.sample_rate)
+        self.audio = self.realise(sample_rate)
+        self.audio = stretch(self.audio, 8*self.byte_width)
+
+        # TODO int16 is parameter of byteWidth
+        self.audio = self.audio.astype(np.int16)
+        return self.audio
 
 class Sine(Signal):
     def __init__(self, frequency=220, duration=5):

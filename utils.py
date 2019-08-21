@@ -6,7 +6,6 @@ Created on Sat Aug 10 09:29:04 2019
 """
 
 import numpy as np
-from params import *
 
 stretch = lambda buffer, bits: buffer * (2**(bits-1) - 1) / np.max(np.abs(buffer))
 

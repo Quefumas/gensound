@@ -7,14 +7,11 @@ Created on Sat Aug 17 23:28:31 2019
 
 import simpleaudio as sa
 
-from Track import Track
 from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise
 from transforms import Fade, AmpFreq, Shift
 
 
-def harmonics_test(f=220, seconds=5):
-    t = Track()
-    
+def only_signal_harmonics(f=220, seconds=5):
     params = [(0.34, 1, 2, 0.45),
               (0.2, 1.94, 3, 0.7),
               (0.2, 3, 2.3, 0.3),
@@ -31,49 +28,32 @@ def harmonics_test(f=220, seconds=5):
              Fade(is_in=True, duration=3)*\
              AmpFreq(frequency=p[2], size=p[3])*\
              Shift(seconds=1) for p in params])
-    return t
-
-def square_test():
-    t = Track()
-    s = Square(frequency=300, duration=5)*Fade(is_in=True, duration=5)*Shift(seconds=1)
-    t += s
-    return t
-
-
-def Signal_test(Signal):
-    t = Track()
-    s = Signal(duration=5)*Fade(is_in=True, duration=5)*Shift(seconds=1)
-    t += s
-    return t
-
-
-def simple_test():
-    t = Track()
-    #s = 0.7*Sine(frequency=220, duration=5)*Fade(is_in=True, duration=5)
-    #s *= AmpFreq(frequency=2, size=0.3)
-    #s *= Shift(seconds=1)
-    #t += s
     
-    
-    s2= Sine(frequency=400, duration=5)*Fade(is_in=True, duration=5)*Shift(seconds=1)
-    #s2 *= AmpFreq(frequency=2, size=0.3)
-    t += s2
-    return t
-    
-    
+    return t.mixdown()
+
+def simple_test(f=220, seconds=5):
+    t = Sine(frequency=230)*AmpFreq(frequency=1, size=0.2) + \
+        Square(frequency=300)*AmpFreq(frequency=0.7, size=0.6)
+    t *= Fade(is_in=True, duration=3)
+    t *= Shift(seconds=1)
+    return t.mixdown()
+
 if __name__ == "__main__":
     
-    #t = simple_test()
-    t = harmonics_test()
-    #t = Signal_test(Triangle)
-    audio = t.realise()
     
+    audio = simple_test()
     #%%%%%
     play_obj = sa.play_buffer(audio, num_channels=1, bytes_per_sample=2, sample_rate=11025)
+    play_obj.wait_done()
+    
+    #audio = audio.reshape(audio.shape[0],1).repeat(2,1)#.transpose()
+    #audio[1,:] = 0
+    #audio[:,0] = 0
+    #play_obj = sa.play_buffer(audio, num_channels=2, bytes_per_sample=2, sample_rate=11025)
     
     #c = input("Type something to quit.")
     #play_obj.stop()
-    play_obj.wait_done()
+    #play_obj.wait_done()
 
 
 
