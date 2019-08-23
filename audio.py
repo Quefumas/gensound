@@ -8,7 +8,7 @@ Created on Thu Aug 22 20:53:05 2019
 import numpy as np
 
 class Audio:
-    def __init__(self, length, num_channels, sample_rate):
+    def __init__(self, num_channels, sample_rate):
         """ create empty.
         by convention duration is (mili?)seconds, length implies #samples.
         """
@@ -17,22 +17,27 @@ class Audio:
         
         self.num_channels = num_channels
         self.sample_rate = sample_rate
-        self.length = length
-        self.audio = np.zeros((num_channels,length), dtype=np.float64)
+        self.audio = np.zeros((num_channels,1), dtype=np.float64)
+        # TODO is (..,1) good?
         return
     
     def is_mono(self):
         return self.num_channels == 1
     
+    def length(self):
+        return self.audio.shape[1]
     
-    def from_array(self, array, sample_rate):
+    def duration(self):
+        return self.length()/self.sample_rate
+    
+    def from_array(self, array):
         """
         converts np.ndarray to Audio.
         """
         if len(array.shape) == 1:
             array.resize((1, array.shape[0]))
         
-        self.__init__(array.shape[1], array.shape[0], sample_rate)
+        self.__init__(array.shape[0], self.sample_rate)
         # TODO inefficient slightly for creating an empty array first
         self.audio = array
         return
@@ -82,7 +87,7 @@ class Audio:
         """
         
         if isinstance(other, Audio):
-            return other.audio
+            other = other.audio
         
         assert isinstance(other, np.ndarray)
         
@@ -90,7 +95,7 @@ class Audio:
             other.resize((1, other.shape[0]))
             # TODO this is used also in from_array
         
-        assert other.shape[0] in (1, self.num_channels)
+        assert other.shape[0] in (1, self.num_channels) or self.num_channels==1
         
         if other.shape[0] == 1:
             Audio.multiply_channels(other, self.num_channels)
@@ -100,16 +105,25 @@ class Audio:
             # TODO do we need this method?
             # kinda repeats multiply_channelss
         
-        self.extend(other.shape[1] - self.length)
+        self.extend(other.shape[1] - self.length())
         
         return other
         
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return other.__add__(self)
     
     def __add__(self, other):
-        self.audio[:,0:other.length] += self.conform(other)
+        self.conform(other)
+        self.audio[:,0:other.length()] += other.audio
         # TODO delete the other Audio??? for safety and memory
         return self
     
+    
+    def __rmul__(self, other):
+        return self.__mul__(other)
     
     def __mul__(self, other):
         if type(other) == float: # TODO accept np.float too???
@@ -144,7 +158,7 @@ class Audio:
         self.byte_width = byte_width
         self.stretch()
         self.integrate()
-        return self.audio
+        return self
     
     
     ###################
@@ -182,7 +196,7 @@ class Audio:
         """ adds new empty channels, putting the original signal in channel """
         assert 0 <= channel < num_channels
         # TODO assert num channels is valid
-        self.audio.resize((num_channels, self.length), refcheck=False)
+        self.audio.resize((num_channels, self.length()), refcheck=False)
         self.num_channels = num_channels
         
         if channel != 0:

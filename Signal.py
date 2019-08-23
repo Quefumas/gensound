@@ -7,16 +7,11 @@ Created on Sat Aug 17 21:41:28 2019
 
 import numpy as np
 from transforms import Transform, Amplitude
-from utils import stretch
 from audio import Audio
 
 class Signal:
     def __init__(self):
         self.transforms = []
-        self.total_duration = 0
-        self.duration = 0
-        # this is for processing purposes;
-        # total_duration is when we add silence before/after, for efficiency
     
     #@abstractmethod ???
     def generate(self):
@@ -31,7 +26,6 @@ class Signal:
     
     def apply(self, transform):
         self.transforms.append(transform)
-        transform.on_apply(self)
     
     def __rmul__(self, other):
         assert(type(other) is float)
@@ -54,20 +48,16 @@ class Signal:
         if hasattr(self, "signals"):
             if hasattr(other, "signals"):
                 self.signals.extend(other.signals)
-                self.total_duration = max(self.total_duration, other.total_duration)
             else:
                 self.signals.append(other)
-                self.total_duration = max(self.total_duration, other.total_duration)
             return self
         else:
             if hasattr(other, "signals"):
                 other.signals.append(self)
-                other.total_duration = max(self.total_duration, other.total_duration)
                 return other
             else:
                 s = Signal()
                 s.signals = [self, other]
-                s.total_duration = max(self.total_duration, other.total_duration)
                 return s
     
     def __add__(self, other):
@@ -84,10 +74,10 @@ class Signal:
             if len(signal.shape) == 1:
                 signal.resize((1, signal.shape[0]))
                 # TODO is this the place?
-            audio = Audio(signal.shape[1], signal.shape[0], sample_rate)
-            audio.from_array(signal, self.sample_rate)
+            audio = Audio(signal.shape[0], sample_rate)
+            audio.from_array(signal)
         else:
-            audio = Audio(self.total_duration * self.sample_rate, 1, sample_rate)
+            audio = Audio(1, sample_rate)
             
             for signal in self.signals:
                 audio += signal.realise(self.sample_rate)
@@ -107,7 +97,6 @@ class Sine(Signal):
         super().__init__()
         self.frequency = frequency
         self.duration = duration
-        self.total_duration = duration # because of Shift. is there a better way?
         
     def generate(self):
         return np.sin(self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) * 2 * np.pi)
@@ -117,7 +106,6 @@ class Triangle(Signal):
         super().__init__()
         self.frequency = frequency
         self.duration = duration
-        self.total_duration = duration # put this into a superclass of sine and triangle?
     
     def generate(self):
         # strange manipulation on sawtooth
@@ -129,7 +117,6 @@ class Square(Signal):
         super().__init__()
         self.frequency = frequency
         self.duration = duration
-        self.total_duration = duration
     
     def generate(self):
         return (((2*np.pi* self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) % (2*np.pi)) < np.pi) - np.pi).astype(np.float64)
@@ -139,7 +126,6 @@ class Sawtooth(Signal):
         super().__init__()
         self.frequency = frequency
         self.duration = duration
-        self.total_duration = duration
     
     def generate(self):
         return (2*np.pi* self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) % (2*np.pi))-np.pi
@@ -148,11 +134,18 @@ class GreyNoise(Signal):
     def __init__(self, duration=5):
         super().__init__()
         self.duration = duration
-        self.total_duration = duration
     
     def generate(self):
         return 2*np.random.rand(self.duration*self.sample_rate) - 1
     
+class WAV(Signal):
+    def __init__(self, audio, sample_rate):
+        super().__init__()
+        self.audio = audio
+    
+    def generate(self):
+        # TODO consider bit rate and is this even a good idea?
+        return self.audio.audio/2**16
     
     
     

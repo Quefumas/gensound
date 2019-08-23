@@ -22,11 +22,8 @@ class Transform:
         pass
     
     def realise(self, signal, audio):
-        return audio
-    
-    def on_apply(self, signal):
-        """ when signal.apply(self) is called,
-        it also calls this to allow some changes to the signal settings"""
+        """ here we apply the transformation on the Audio object.
+        this should change the object directly, don't return anything."""
         pass
 
 
@@ -59,7 +56,7 @@ class AmpFreq(Transform):
         assert isinstance(audio, Audio) # TODO remove this after debug hopefully
         
         sin = np.sin(self.frequency * \
-                     np.linspace(0, signal.duration, signal.duration*signal.sample_rate, False) * 2 * np.pi)
+                     np.linspace(0, audio.duration(), audio.length(), False) * 2 * np.pi)
         audio *= (sin * self.size + (1-self.size))
         # remember [:] is necessary to retain changes
         
@@ -82,35 +79,25 @@ class Shift(Transform):
         self.seconds = seconds
     
     def realise(self, signal, audio):
-        #signal.duration += self.seconds
-        #length = self.seconds*signal.sample_rate
-        #length_old = audio.shape[0]
         audio.push_forward(self.seconds * signal.sample_rate)
-        
-        #audio2 = np.pad(audio, ((self.seconds*signal.sample_rate,0),), mode="constant", constant_values=0.0)
-        #audio.resize((audio.shape[0]+length,), refcheck=False)
-        #audio[:] = audio2[:]
-        #return
-        
-        
-        #audio2 = np.insert(audio, 0, np.zeros(self.seconds*signal.sample_rate, dtype=np.float64), axis=0)
-        
-        #audio.resize((audio.shape[0]+length,), refcheck=False)
-        #audio[:] = audio2[:]
-        
-        ##-------------
-        #audio[:] = np.insert(audio, 0, np.zeros(self.seconds*signal.sample_rate, dtype=np.float64), axis=0)
-        #audio[0:length], audio[length: length_old+length] = audio[length_old:length_old+length], audio[0:length_old]
-    
-    def on_apply(self, signal):
-        signal.total_duration += self.seconds
 
 class Extend(Transform):
     """ adds silence after the signal. needed?
     """
     
 
-
+class Channels(Transform):
+    """ transforms mono to channels with the appropriate amps
+    """
+    def __init__(self, amps):
+        """ amps is a tuple, [-1,1] for each of the required channels """
+        self.amps = amps
+    
+    def realise(self, signal, audio):
+        audio.from_mono(len(self.amps))
+        for (i,amp) in enumerate(self.amps):
+            audio.audio[i,:] *= amp
+    
 
 
 
