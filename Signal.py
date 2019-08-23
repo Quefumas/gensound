@@ -8,6 +8,7 @@ Created on Sat Aug 17 21:41:28 2019
 import numpy as np
 from transforms import Transform, Amplitude
 from utils import stretch
+from audio import Audio
 
 class Signal:
     def __init__(self):
@@ -17,7 +18,15 @@ class Signal:
         # this is for processing purposes;
         # total_duration is when we add silence before/after, for efficiency
     
+    #@abstractmethod ???
     def generate(self):
+        """
+        this is the part the generates the basic signal building block
+        ####should return 2d np.ndarray
+        should return 1d np.ndarray, the dims are fixed later...
+        not sure if good
+        TODO
+        """
         pass
     
     def apply(self, transform):
@@ -64,16 +73,24 @@ class Signal:
     def __add__(self, other):
         return other.__radd__(self)
     
-    def realise(self, sample_rate):   
+    def realise(self, sample_rate):
+        """ returns Audio instance.
+        parses the entire signal tree recursively
+        """
         self.sample_rate = sample_rate
         
         if not hasattr(self, "signals"):
-            audio = self.generate()
+            signal = self.generate()
+            if len(signal.shape) == 1:
+                signal.resize((1, signal.shape[0]))
+                # TODO is this the place?
+            audio = Audio(signal.shape[1], signal.shape[0], sample_rate)
+            audio.from_array(signal, self.sample_rate)
         else:
-            audio = np.zeros(self.total_duration * self.sample_rate)
+            audio = Audio(self.total_duration * self.sample_rate, 1, sample_rate)
             
             for signal in self.signals:
-                audio[0:signal.total_duration*sample_rate] += signal.realise(self.sample_rate)
+                audio += signal.realise(self.sample_rate)
         
         for transform in self.transforms:
             transform.realise(signal=self, audio=audio)
@@ -81,15 +98,9 @@ class Signal:
         return audio
     
     def mixdown(self, sample_rate=11025, byte_width=2):
-        self.sample_rate = sample_rate
-        self.byte_width = byte_width
-        #self.audio = np.zeros(self.duration * self.sample_rate)
+        self.sample_rate = sample_rate        
         self.audio = self.realise(sample_rate)
-        self.audio = stretch(self.audio, 8*self.byte_width)
-
-        # TODO int16 is parameter of byteWidth
-        self.audio = self.audio.astype(np.int16)
-        return self.audio
+        return self.audio.mixdown(byte_width)
 
 class Sine(Signal):
     def __init__(self, frequency=220, duration=5):
@@ -99,7 +110,6 @@ class Sine(Signal):
         self.total_duration = duration # because of Shift. is there a better way?
         
     def generate(self):
-        #self.length = self.duration * self.sample_rate
         return np.sin(self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) * 2 * np.pi)
     
 class Triangle(Signal):
@@ -122,7 +132,7 @@ class Square(Signal):
         self.total_duration = duration
     
     def generate(self):
-        return ((2*np.pi* self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) % (2*np.pi)) < np.pi).astype(np.float64)
+        return (((2*np.pi* self.frequency * np.linspace(0, self.duration, self.duration * self.sample_rate, False) % (2*np.pi)) < np.pi) - np.pi).astype(np.float64)
 
 class Sawtooth(Signal):
     def __init__(self, frequency=220, duration=5):

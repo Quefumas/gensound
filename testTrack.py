@@ -46,9 +46,7 @@ if __name__ == "__main__":
     play_obj = sa.play_buffer(audio, num_channels=1, bytes_per_sample=2, sample_rate=11025)
     play_obj.wait_done()
     
-    #audio = audio.reshape(audio.shape[0],1).repeat(2,1)#.transpose()
-    #audio[1,:] = 0
-    #audio[:,0] = 0
+    
     #play_obj = sa.play_buffer(audio, num_channels=2, bytes_per_sample=2, sample_rate=11025)
     
     #c = input("Type something to quit.")
