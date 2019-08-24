@@ -36,9 +36,6 @@ class Fade(Transform):
         amp = np.linspace(0, 1, self.duration * signal.sample_rate)
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
-        shape = (0, self.duration * signal.sample_rate)
-        
-        np.pad(amp, (shape,), mode="constant", constant_values=1.0)
         
         if not self.is_in:
             amp[:] = amp[::-1]

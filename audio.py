@@ -33,13 +33,14 @@ class Audio:
     def from_array(self, array):
         """
         converts np.ndarray to Audio.
+        if array is not of type np.float64, converts it implicitly!
         """
         if len(array.shape) == 1:
             array.resize((1, array.shape[0]))
         
         self.__init__(array.shape[0], self.sample_rate)
         # TODO inefficient slightly for creating an empty array first
-        self.audio = array
+        self.audio = (array/np.max(array)).copy(order="C")
         return
     
     
@@ -140,24 +141,25 @@ class Audio:
     
     ## prepare for mixdown
     
-    def stretch(self):
+    @staticmethod
+    def stretch(audio, byte_width):
         """ stretches/squashes the samples to be in the range [-1,1],
         to increase the dynamic range.
         in the future this step is to be further examined
         """
-        self.audio = self.audio * (2**(8*self.byte_width-1) - 1) / np.max(np.abs(self.audio))
-        return
+        return audio * (2**(8*byte_width-1) - 1) / np.max(np.abs(audio))
     
-    def integrate(self):
-        self.audio = self.audio.astype((np.int8, np.int16, np.int32, np.int64)[self.byte_width-1])
-        # TODO use new variable? or just return without saving?
-        # to avoid self.audio being potentially of two different types
-        return
+    @staticmethod
+    def integrate(audio, byte_width):
+        return audio.astype((np.int8, np.int16, np.int32, np.int64)[byte_width])
     
     def mixdown(self, byte_width):
         self.byte_width = byte_width
-        self.stretch()
-        self.integrate()
+        audio = Audio.integrate(Audio.stretch(self.audio, self.byte_width), self.byte_width)
+        # TODO int16?
+        self.buffer = np.zeros((self.length()*self.num_channels), dtype=np.int16, order='C')
+        self.buffer[::2] = audio[0]
+        self.buffer[1::2] = audio[1]
         return self
     
     

@@ -144,8 +144,7 @@ class WAV(Signal):
         self.audio = audio
     
     def generate(self):
-        # TODO consider bit rate and is this even a good idea?
-        return self.audio.audio/2**16
+        return self.audio.audio
     
     
     
