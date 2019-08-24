@@ -45,13 +45,14 @@ def WAV_to_Audio(filename=""):
     
     return audio
 
-def play_Audio(audio, is_wait=False):
+def play_Audio(audio, is_wait=True):
+    #audio.buffer = audio.buffer.copy(order='C')
     play_obj = sa.play_buffer(audio.buffer,
                               num_channels=audio.num_channels,
                               bytes_per_sample=audio.byte_width, # TODO should Audio store this?
                               sample_rate=audio.sample_rate)
     
-    if not is_wait:
+    if not is_wait or audio.audio.shape[1] > 3*10**5:
         input("Type something to quit.")
         play_obj.stop()
     else:

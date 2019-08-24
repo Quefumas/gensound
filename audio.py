@@ -158,8 +158,9 @@ class Audio:
         audio = Audio.integrate(Audio.stretch(self.audio, self.byte_width), self.byte_width)
         # TODO int16?
         self.buffer = np.zeros((self.length()*self.num_channels), dtype=np.int16, order='C')
-        self.buffer[::2] = audio[0]
-        self.buffer[1::2] = audio[1]
+        
+        for i in range(self.num_channels):
+            self.buffer[i::self.num_channels] = audio[i]
         return self
     
     

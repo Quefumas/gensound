@@ -12,3 +12,5 @@ octave = 2
 
 semitone = np.power(octave, 1/12)
 cent = np.power(semitone, 1/100)
+
+midC = lambda s: midA*semitone**(-9+s)

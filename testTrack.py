@@ -5,14 +5,28 @@ Created on Sat Aug 17 23:28:31 2019
 @author: Dror
 """
 
+import numpy as np
 import simpleaudio as sa
 
-from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV
-from transforms import Fade, AmpFreq, Shift, Channels
+from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
+from transforms import Fade, AmpFreq, Shift, Channels, Pan
 from audio import Audio
 from playback import play_WAV, WAV_to_Audio, play_Audio, export_WAV
 
-def only_signal_harmonics(f=220, seconds=3):
+from musicTheory import midC
+
+def melody_test():
+    step = 500
+    notes = (midC(0), midC(-3), midC(-7), midC(4), midC(7), midC(-1), midC(2))
+    t = sum([Sine(frequency=f, duration=step+100)*
+             Fade(is_in=True, duration=step*5)*
+             Fade(is_in=False, duration=step+100)*
+             Shift(seconds=(1+i)*step)
+             for (i,f) in enumerate(notes)])
+    audio = t.mixdown(sample_rate=11025, byte_width=2)
+    play_Audio(audio)
+
+def only_signal_harmonics(f=220, seconds=10):
     params = [(0.34, 1, 2, 0.45),
               (0.2, 1.94, 3, 0.7),
               (0.2, 3, 2.3, 0.3),
@@ -25,28 +39,29 @@ def only_signal_harmonics(f=220, seconds=3):
               (1/10, 9.87, 0.65, 0.4),
               ]
     
-    t = sum([p[0]*Triangle(frequency=f*p[1], duration=seconds)*\
+    t = sum([p[0]*Triangle(frequency=f*p[1], duration=seconds*1000)*\
              AmpFreq(frequency=p[2], size=p[3])*\
-             Shift(seconds=3) for p in params])
-    
-    return t.mixdown()
+             Fade(is_in=True, duration=3)*\
+             Shift(seconds=1*1000) for p in params])
+    audio = t.mixdown()
+    play_Audio(audio)
 
 def simple_test(f=220, seconds=5):
-    t = Sine(frequency=230, duration=seconds)*AmpFreq(frequency=1, size=0.2)*Channels((0.7,0.7))
-    t += Triangle(frequency=380, duration=seconds)*AmpFreq(frequency=0.4, size=0.3)*Channels((0,1))
-    t += Square(frequency=300, duration=seconds)*AmpFreq(frequency=0.7, size=0.2)*Channels((1,0))
-    t *= Fade(is_in=True, duration=3)
+    t = Sine(frequency=230, duration=seconds*1000)*AmpFreq(frequency=1, size=0.2)*Channels((0.7,0.7))
+    t += Triangle(frequency=380, duration=seconds*1000)*AmpFreq(frequency=0.4, size=0.3)*Channels((0,1))
+    t += Square(frequency=300, duration=seconds*1000)*AmpFreq(frequency=0.7, size=0.2)*Channels((1,0))
+    t *= Fade(is_in=True, duration=3*1000)
     #t *= Fade(is_in=False, duration=20)
-    t *= Shift(seconds=1)
-    return t.mixdown()
+    t *= Shift(seconds=1*1000)
+    play_Audio(t.mixdown())
 
 def WAV_test(filename=""):
     wav = WAV(WAV_to_Audio(filename), 44100)
     wav *= AmpFreq(frequency=0.06, size=0.3)
     wav *= Fade(is_in=True, duration=10)
     
-    wav += 0.03*GreyNoise(duration=20)*AmpFreq(frequency=0.03, size=0.2)
-    wav += 0.06*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3)*Channels((0.7,0.7))
+    wav += 0.03*GreyNoise(duration=20*1000)*AmpFreq(frequency=0.03, size=0.2)
+    wav += 0.06*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3*1000)*Channels((0.7,0.7))
     
     audio = wav.mixdown(sample_rate=44100)
     
@@ -55,15 +70,44 @@ def WAV_test(filename=""):
     
     
 def timing_test():
-    t = Sine(frequency=230, duration=3)*AmpFreq(frequency=1, size=0.2)*Channels((0.7,0.7))
-    t += Square(frequency=250, duration=3)*Shift(seconds=3)
+    t = Sine(frequency=230, duration=3*1000)*AmpFreq(frequency=1, size=0.2)*Channels((0.7,0.7))
+    t += Square(frequency=250, duration=3*1000)*Shift(seconds=3*1000)
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio, is_wait=True)
+
+
+def pan_test():
+    seconds = 10
+    t = Sine(frequency=230, duration=seconds*1000)#*AmpFreq(frequency=1, size=0.2)
+    t *= Channels((1,1))
     
+    top = seconds*11025
+    
+    pans = (lambda x: np.log(1+(np.e-1)*(top-x)/top),
+            lambda x: np.log(1+(np.e-1)*x/top))
+    
+    
+    t *= Pan(pans)
+    
+    audio = t.mixdown(sample_rate=11025, byte_width=2)
+    play_Audio(audio, is_wait=True)
+
+
+def step_test():
+    times = (1, 3)
+    
+    t = sum([Step(1*1000)*Shift(seconds=time*1000) for time in times])
+    #t = Step(1)
+    audio = t.mixdown(sample_rate=11025, byte_width=2)
+    play_Audio(audio)
+
 if __name__ == "__main__":
-    #timing_test()
-    
-    x = WAV_test("data/african_sketches_1.wav")
+    #pan_test()
+    #step_test() # TODO debug!
+    #only_signal_harmonics()
+    melody_test()
+    #simple_test()
+    #x = WAV_test("data/african_sketches_1.wav")
     #
     #%%%%%
 

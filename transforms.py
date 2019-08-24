@@ -28,18 +28,20 @@ class Transform:
 
 
 class Fade(Transform):
-    def __init__(self, is_in=True, duration=3):
+    def __init__(self, is_in=True, duration=3000):
         self.is_in = is_in
         self.duration = duration
     
     def realise(self, signal, audio):
-        amp = np.linspace(0, 1, self.duration * signal.sample_rate)
+        amp = np.linspace(0, 1, int(self.duration * signal.sample_rate/1000))
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
         
         if not self.is_in:
             amp[:] = amp[::-1]
-            
+        
+        # TODO in case of fade out, if amp is shorter or longer than audio,
+        # care must be taken when multiplying!
         audio *= amp
         return # TODO TEST!!!!!!!!!!!!!
 
@@ -76,7 +78,7 @@ class Shift(Transform):
         self.seconds = seconds
     
     def realise(self, signal, audio):
-        audio.push_forward(self.seconds * signal.sample_rate)
+        audio.push_forward(int(self.seconds * signal.sample_rate/1000))
 
 class Extend(Transform):
     """ adds silence after the signal. needed?
@@ -95,8 +97,40 @@ class Channels(Transform):
         for (i,amp) in enumerate(self.amps):
             audio.audio[i,:] *= amp
     
-
-
+class Pan(Transform):
+    """ applies arbitrary function to amplitudes of all channels
+    """
+    def __init__(self, pans):
+        """ pans is either a function (range) -> ndarray(float64), or a tuple of these
+        wrong, right now accepting functions R -> R
+        """
+        assert type(pans) in (type(lambda x:x), tuple), "invalid argument for Pan transform"
+        
+        if type(pans) != tuple:
+            pans = (pans,)
+        
+        # TODO find better conversion
+        self.pans = tuple([Pan.lambda_to_range(pan) for pan in pans])
+    
+    @staticmethod
+    def lambda_to_range(f):
+        """ transforms function from convenient lambda format to something usable
+        for Pan.realise() """
+        return lambda rng: np.asarray([f(x) for x in rng], dtype=np.float64)
+    
+    def realise(self, signal, audio):
+        assert len(self.pans) in (1, audio.num_channels)
+        
+        if len(self.pans) < audio.num_channels:
+            self.pans = (self.pans[0],) * audio.num_channels
+            # TODO note that this is a side effect; though *shouldn't* harm anything
+        
+        for (i,pan) in enumerate(self.pans):
+            amps = pan(range(audio.length()))
+            audio.audio[i,:] *= amps
+        
+        
+            
 
 
 
