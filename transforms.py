@@ -83,6 +83,12 @@ class Shift(Transform):
 class Extend(Transform):
     """ adds silence after the signal. needed?
     """
+    def __init__(self, duration=1000):
+        self.duration = duration
+    
+    def realise(self, signal, audio):
+        # TODO can we avoid passing signal in, for all transforms?
+        audio.extend(int(self.duration*signal.sample_rate/1000))
     
 
 class Channels(Transform):

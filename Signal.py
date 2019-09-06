@@ -92,6 +92,8 @@ class Signal:
         self.audio = self.realise(sample_rate)
         return self.audio.mixdown(byte_width)
 
+#### particular signals
+
 class Sine(Signal):
     def __init__(self, frequency=220, duration=5000):
         super().__init__()
@@ -131,7 +133,7 @@ class Sawtooth(Signal):
         return (2*np.pi* self.frequency * np.linspace(0, self.duration/1000, int(self.duration * self.sample_rate/1000), False) % (2*np.pi))-np.pi
 
 class Step(Signal):
-    def __init__(self, duration=1000):
+    def __init__(self, duration=1):
         super().__init__()
         self.duration = duration
     

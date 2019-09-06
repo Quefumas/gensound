@@ -9,7 +9,7 @@ import numpy as np
 import simpleaudio as sa
 
 from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
-from transforms import Fade, AmpFreq, Shift, Channels, Pan
+from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend
 from audio import Audio
 from playback import play_WAV, WAV_to_Audio, play_Audio, export_WAV
 
@@ -43,7 +43,7 @@ def only_signal_harmonics(f=220, seconds=10):
              AmpFreq(frequency=p[2], size=p[3])*\
              Fade(is_in=True, duration=3)*\
              Shift(seconds=1*1000) for p in params])
-    audio = t.mixdown()
+    audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio)
 
 def simple_test(f=220, seconds=5):
@@ -63,7 +63,7 @@ def WAV_test(filename=""):
     wav += 0.03*GreyNoise(duration=20*1000)*AmpFreq(frequency=0.03, size=0.2)
     wav += 0.06*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3*1000)*Channels((0.7,0.7))
     
-    audio = wav.mixdown(sample_rate=44100)
+    audio = wav.mixdown(sample_rate=44100, byte_width=2)
     
     export_WAV("data/export.wav", audio)
     #play_Audio(ad, is_wait=True)
@@ -96,16 +96,18 @@ def pan_test():
 def step_test():
     times = (1, 3)
     
-    t = sum([Step(1*1000)*Shift(seconds=time*1000) for time in times])
+    t = sum([Step()*Shift(seconds=time*1000) for time in times])*Extend(1000)
     #t = Step(1)
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio)
 
 if __name__ == "__main__":
     #pan_test()
-    #step_test() # TODO debug!
+    step_test() # TODO debug!
+    # apparently there was no bug. when the step lasts for a whole second,,
+    # one can oalso hear it stopping.
     #only_signal_harmonics()
-    melody_test()
+    #melody_test()
     #simple_test()
     #x = WAV_test("data/african_sketches_1.wav")
     #
