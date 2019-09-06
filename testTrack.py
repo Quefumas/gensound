@@ -9,7 +9,7 @@ import numpy as np
 import simpleaudio as sa
 
 from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
-from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend
+from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, Downsample_rough, Average_samples
 from audio import Audio
 from playback import play_WAV, WAV_to_Audio, play_Audio, export_WAV
 
@@ -101,15 +101,38 @@ def step_test():
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio)
 
+def downsample_test(filename):
+    wav = WAV(WAV_to_Audio(filename), 44100)
+    wav *= Downsample_rough(factor=5, phase=0)
+    audio = wav.mixdown(sample_rate=44100, byte_width=2)
+    
+    play_Audio(audio, is_wait=True)
+
+
+def averagesample_test(filename):
+    wav = WAV(WAV_to_Audio(filename), 44100)
+    #wav *= Average_samples(weights=(5,4,3,2,1,2,3,4,5))
+    #wav *= Average_samples(weights=(1,1,1,1,1,1,1,1,1))
+    #wav *= Average_samples(weights=(25,16,9,4,1,4,9,16,25))
+    #wav *= Average_samples(weights=(1,0,0,0,0,0,0,0,1))
+    #wav *= Average_samples(weights=(1,-1,1,-1,1,-1,1,-1,1))
+    wav *= Average_samples(weights=(-1,-1,-1,-1,10,-1,-1,-1,-1)) # high pass!
+    audio = wav.mixdown(sample_rate=44100, byte_width=2)
+    
+    play_Audio(audio, is_wait=True)
+
+
+
+
 if __name__ == "__main__":
     #pan_test()
-    step_test() # TODO debug!
-    # apparently there was no bug. when the step lasts for a whole second,,
-    # one can oalso hear it stopping.
+    #step_test()
     #only_signal_harmonics()
     #melody_test()
     #simple_test()
     #x = WAV_test("data/african_sketches_1.wav")
+    #downsample_test("data/african_sketches_1.wav")
+    averagesample_test("data/african_sketches_1.wav")
     #
     #%%%%%
 
