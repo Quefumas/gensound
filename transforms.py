@@ -8,6 +8,13 @@ Created on Sun Aug 18 21:01:16 2019
 import numpy as np
 from audio import Audio
 
+def lambda_to_range(f):
+    """ transforms function from convenient lambda format to something usable
+    for Pan and Amplitude (i.e. shift-sensitive transforms)
+    """
+    return lambda rng: np.asarray([f(x) for x in rng], dtype=np.float64)
+    
+
 class Transform:
     """ represents post-processing on some given signal.
     use __init__ to set the transform params,
@@ -46,15 +53,21 @@ class Fade(Transform):
         return # TODO TEST!!!!!!!!!!!!!
 
 class AmpFreq(Transform):
-    def __init__(self, frequency, size):
+    """
+    have the amplitude change according to a sine function over time continuously,
+    with given width (size) and frequency
+    TODO again the factors should be perhaps logarithimic
+    """
+    def __init__(self, frequency, size, phase=0):
         self.frequency = frequency
         self.size = size
+        self.phase = phase
     
     def realise(self, signal, audio):
         """ audio is Audio instance"""
         assert isinstance(audio, Audio) # TODO remove this after debug hopefully
         
-        sin = np.sin(self.frequency * \
+        sin = np.sin(self.phase + self.frequency * \
                      np.linspace(0, audio.duration(), audio.length(), False) * 2 * np.pi)
         audio *= (sin * self.size + (1-self.size))
         # remember [:] is necessary to retain changes
@@ -62,23 +75,40 @@ class AmpFreq(Transform):
 
 class Amplitude(Transform):
     """ simple increase/decrease of amplitude.
-    don't use this directly; best to just use 0.34 * Signal for example. """
+    for constant amplitude, don't use this directly;
+    best to just use 0.34 * Signal syntax for example, which reverts to this class.
+    use this for more complex amplitude functions
+    """
     def __init__(self, size):
         self.size = size
+        
+        if type(size) == type(lambda x:x):
+            # TODO what if size is function, not lambda?
+            self.size = lambda_to_range(size)
     
     def realise(self, signal, audio):
-        audio = self.size*audio
+        # TODO shouldn't this just affect a copy of audio????
+        if type(self.size) == float:
+            audio = self.size*audio
+            return
+        
+        if type(self.size) == type(lambda x:x):
+            amps = self.size(range(audio.length()))
+            # TODO view or copy?
+            # TODO what about different channels?
+            audio.audio *= amps
 
 class Shift(Transform):
     """ shifts the signal forward in time.
     it is problematic to use seconds all the time,
     because of floating point numbers TODO
+    TODO
     """
-    def __init__(self, seconds):
-        self.seconds = seconds
+    def __init__(self, duration):
+        self.duration = duration
     
     def realise(self, signal, audio):
-        audio.push_forward(int(self.seconds * signal.sample_rate/1000))
+        audio.push_forward(int(self.duration * signal.sample_rate/1000))
 
 class Extend(Transform):
     """ adds silence after the signal. needed?
@@ -116,13 +146,7 @@ class Pan(Transform):
             pans = (pans,)
         
         # TODO find better conversion
-        self.pans = tuple([Pan.lambda_to_range(pan) for pan in pans])
-    
-    @staticmethod
-    def lambda_to_range(f):
-        """ transforms function from convenient lambda format to something usable
-        for Pan.realise() """
-        return lambda rng: np.asarray([f(x) for x in rng], dtype=np.float64)
+        self.pans = tuple([lambda_to_range(pan) for pan in pans])
     
     def realise(self, signal, audio):
         assert len(self.pans) in (1, audio.num_channels)
@@ -198,6 +222,14 @@ class Average_samples(Transform):
         audio.audio[:,:] = res[:, pos:pos+audio.audio.shape[1]]
 
 
-
+class Reverse(Transform):
+    """
+    reverses the signal
+    """
+    def __init__(self):
+        pass
+    
+    def realise(self, signal, audio):
+        audio.audio[:,:] = audio.audio[:,::-1]
 
 

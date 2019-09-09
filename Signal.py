@@ -6,8 +6,10 @@ Created on Sat Aug 17 21:41:28 2019
 """
 
 import numpy as np
+
 from transforms import Transform, Amplitude
 from audio import Audio
+from playback import WAV_to_Audio
 
 class Signal:
     def __init__(self):
@@ -29,6 +31,7 @@ class Signal:
     
     def __rmul__(self, other):
         assert(type(other) is float)
+        # TODO why this assertion? what's wrong with greater values?
         assert(-1 <= other <= 1)
         
         self.apply(Amplitude(size = other))
@@ -147,14 +150,38 @@ class GreyNoise(Signal):
     
     def generate(self):
         return 2*np.random.rand(int(self.duration*self.sample_rate/1000)) - 1
-    
-class WAV(Signal):
-    def __init__(self, audio, sample_rate):
+
+
+
+### raw audio signals
+
+class Raw(Signal):
+    """
+    Keep track of when the audio is copied;
+    we should probably use a view until we start applying transforms.
+    I.e. this object should only keep a view, and on generate it should copy.
+    """
+    def __init__(self, audio):
         super().__init__()
         self.audio = audio
     
     def generate(self):
+        #return np.copy(self.audio.audio)
         return self.audio.audio
+    """
+    TODO
+    ####think about this more. here we're copying the audio data,
+    #### but not the audio object. should we copy the audio object instead maybe?
+    we're passing the direct audio buffer.
+    since this eventually goes to audio.from_Array, in which np.copy is called,
+    this SHOULD not cause problems when using the same shell for different copies
+    of the same original signal.
+    """
+
+
+class WAV(Raw):
+    def __init__(self, filename):
+        super().__init__(WAV_to_Audio(filename))
     
     
     

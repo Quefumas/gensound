@@ -3,6 +3,14 @@
 Created on Fri Aug 23 19:03:28 2019
 
 @author: Dror
+
+This file contains the entire interface of the library with the OS.
+This includes reading and writing files, and real-time playback.
+
+All of these functionalities should be enclosed in this file,
+so as to facilitate cross-platform functionality in the future.
+
+
 """
 
 import wave

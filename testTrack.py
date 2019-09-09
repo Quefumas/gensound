@@ -6,12 +6,11 @@ Created on Sat Aug 17 23:28:31 2019
 """
 
 import numpy as np
-import simpleaudio as sa
 
 from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
-from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, Downsample_rough, Average_samples
-from audio import Audio
-from playback import play_WAV, WAV_to_Audio, play_Audio, export_WAV
+from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
+                       Downsample_rough, Average_samples, Amplitude, Reverse
+from playback import play_WAV, play_Audio, export_WAV
 
 from musicTheory import midC
 
@@ -21,7 +20,7 @@ def melody_test():
     t = sum([Sine(frequency=f, duration=step+100)*
              Fade(is_in=True, duration=step*5)*
              Fade(is_in=False, duration=step+100)*
-             Shift(seconds=(1+i)*step)
+             Shift(duration=(1+i)*step)
              for (i,f) in enumerate(notes)])
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio)
@@ -42,7 +41,7 @@ def only_signal_harmonics(f=220, seconds=10):
     t = sum([p[0]*Triangle(frequency=f*p[1], duration=seconds*1000)*\
              AmpFreq(frequency=p[2], size=p[3])*\
              Fade(is_in=True, duration=3)*\
-             Shift(seconds=1*1000) for p in params])
+             Shift(duration=1*1000) for p in params])
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio)
 
@@ -52,11 +51,11 @@ def simple_test(f=220, seconds=5):
     t += Square(frequency=300, duration=seconds*1000)*AmpFreq(frequency=0.7, size=0.2)*Channels((1,0))
     t *= Fade(is_in=True, duration=3*1000)
     #t *= Fade(is_in=False, duration=20)
-    t *= Shift(seconds=1*1000)
+    t *= Shift(duration=1*1000)
     play_Audio(t.mixdown())
 
 def WAV_test(filename=""):
-    wav = WAV(WAV_to_Audio(filename), 44100)
+    wav = WAV(filename)
     wav *= AmpFreq(frequency=0.06, size=0.3)
     wav *= Fade(is_in=True, duration=10)
     
@@ -71,7 +70,7 @@ def WAV_test(filename=""):
     
 def timing_test():
     t = Sine(frequency=230, duration=3*1000)*AmpFreq(frequency=1, size=0.2)*Channels((0.7,0.7))
-    t += Square(frequency=250, duration=3*1000)*Shift(seconds=3*1000)
+    t += Square(frequency=250, duration=3*1000)*Shift(duration=3*1000)
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio, is_wait=True)
 
@@ -96,13 +95,13 @@ def pan_test():
 def step_test():
     times = (1, 3)
     
-    t = sum([Step()*Shift(seconds=time*1000) for time in times])*Extend(1000)
+    t = sum([Step()*Shift(duration=time*1000) for time in times])*Extend(1000)
     #t = Step(1)
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio)
 
 def downsample_test(filename):
-    wav = WAV(WAV_to_Audio(filename), 44100)
+    wav = WAV(filename)
     wav *= Downsample_rough(factor=5, phase=0)
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     
@@ -110,19 +109,39 @@ def downsample_test(filename):
 
 
 def averagesample_test(filename):
-    wav = WAV(WAV_to_Audio(filename), 44100)
+    wav = WAV(filename)
     #wav *= Average_samples(weights=(5,4,3,2,1,2,3,4,5))
-    #wav *= Average_samples(weights=(1,1,1,1,1,1,1,1,1))
+    wav *= Average_samples(weights=(1,1,1,1,1,1,1,1,1))
     #wav *= Average_samples(weights=(25,16,9,4,1,4,9,16,25))
     #wav *= Average_samples(weights=(1,0,0,0,0,0,0,0,1))
     #wav *= Average_samples(weights=(1,-1,1,-1,1,-1,1,-1,1))
-    wav *= Average_samples(weights=(-1,-1,-1,-1,10,-1,-1,-1,-1)) # high pass!
+    #wav *= Average_samples(weights=(-1,-1,-1,-1,10,-1,-1,-1,-1)) # high pass!
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     
     play_Audio(audio, is_wait=True)
 
+def dummy_reverb_test():
+    filename = "data/african_sketches_1.wav"
+    
+    #amp = lambda x: 
+    #wav = WAV(filename) + WAV(filename)*Amplitude(amp)*Shift(duration=500)
+    #wav = WAV(filename)*AmpFreq(frequency=0.12, size=0.25)
+    #wav += WAV(filename)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*Average_samples(weights=(1,1,1,1,1,1,1,1,1))
+    
+    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(weights=2*x+1) for x in range(5)])
+    wav += 0.6*WAV(filename)*Downsample_rough(factor=5)*Average_samples(weights=5)
+    
+    audio = wav.mixdown(sample_rate=44100, byte_width=2)
+    play_Audio(audio, is_wait=True)
+    #export_WAV(filename="data/african_plus_reverb_with_added_lowpass_downsample.wav", audio=audio)
 
-
+def reverse_test():
+    wav = WAV("data/african_sketches_1.wav")*Reverse()*Downsample_rough(factor=5)*Average_samples(weights=5)
+    wav += WAV("data/african_sketches_1.wav")*Shift(duration=150)*Average_samples(weights=(1,1,1,1,1,1,1,1,1))
+    
+    audio = wav.mixdown(sample_rate=44100, byte_width=2)
+    play_Audio(audio, is_wait=True)
+    
 
 if __name__ == "__main__":
     #pan_test()
@@ -132,7 +151,9 @@ if __name__ == "__main__":
     #simple_test()
     #x = WAV_test("data/african_sketches_1.wav")
     #downsample_test("data/african_sketches_1.wav")
-    averagesample_test("data/african_sketches_1.wav")
+    #averagesample_test("data/african_sketches_1.wav")
+    #dummy_reverb_test()
+    reverse_test()
     #
     #%%%%%
 

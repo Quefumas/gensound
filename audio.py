@@ -128,6 +128,7 @@ class Audio:
     
     def __mul__(self, other):
         if type(other) == float: # TODO accept np.float too???
+            # TODO shouldnt this affect the copy of self.audio only??
             self.audio *= other
             return self
         
