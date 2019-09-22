@@ -12,8 +12,8 @@ def lambda_to_range(f):
     """ transforms function from convenient lambda format to something usable
     for Pan and Amplitude (i.e. shift-sensitive transforms)
     """
-    return lambda rng: np.asarray([f(x) for x in rng], dtype=np.float64)
-    
+    return lambda length, sample_rate: np.asarray([f(x/sample_rate) for x in range(length)], dtype=np.float64)
+    # TODO this does not take sample rate into account!
 
 class Transform:
     """ represents post-processing on some given signal.
@@ -93,7 +93,7 @@ class Amplitude(Transform):
             return
         
         if type(self.size) == type(lambda x:x):
-            amps = self.size(range(audio.length()))
+            amps = self.size(audio.length(), audio.sample_rate)
             # TODO view or copy?
             # TODO what about different channels?
             audio.audio *= amps
@@ -119,13 +119,16 @@ class Extend(Transform):
     def realise(self, signal, audio):
         # TODO can we avoid passing signal in, for all transforms?
         audio.extend(int(self.duration*signal.sample_rate/1000))
-    
+
+
+###### PANNING STUFF    
 
 class Channels(Transform):
     """ transforms mono to channels with the appropriate amps
     """
     def __init__(self, amps):
         """ amps is a tuple, [-1,1] for each of the required channels """
+        # TODO maybe better to use variable number of args instead of tuple, looks nicer
         self.amps = amps
     
     def realise(self, signal, audio):
@@ -156,10 +159,24 @@ class Pan(Transform):
             # TODO note that this is a side effect; though *shouldn't* harm anything
         
         for (i,pan) in enumerate(self.pans):
-            amps = pan(range(audio.length()))
+            amps = pan(audio.length(), audio.sample_rate)
             audio.audio[i,:] *= amps
         
-        
+
+class Repan(Transform):
+    """ Allows switching between channels
+    """
+    def __init__(self, channels):
+        """ channels is a permutation on the existing channels.
+        i.e. (1,0) switches left and right.
+        """
+        assert type(channels) == tuple
+        self.channels = channels
+    
+    def realise(self, signal, audio):
+        raise NotImplementedError
+        pass
+
 #######
 
 class Downsample_rough(Transform):

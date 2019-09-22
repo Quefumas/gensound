@@ -139,9 +139,24 @@ def reverse_test():
     wav = WAV("data/african_sketches_1.wav")*Reverse()*Downsample_rough(factor=5)*Average_samples(weights=5)
     wav += WAV("data/african_sketches_1.wav")*Shift(duration=150)*Average_samples(weights=(1,1,1,1,1,1,1,1,1))
     
-    audio = wav.mixdown(sample_rate=44100, byte_width=2)
+    audio = wav.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.09)
     play_Audio(audio, is_wait=True)
     
+def envelope_test():
+    env = lambda n: (n/1000) if n < 1000 else (0.5+np.sin(2*np.pi*2*n/1000)/2)
+    env = lambda n: (0.5+np.sin(2*np.pi*2*n)/2)
+    env = lambda n: (0 if n == 0 else np.sin(n)*(min(n, 1)))
+    env = lambda n: np.e**(-3+3*(min(n,3))/3)
+    wav = Sine(duration=5000)*Amplitude(env)
+    
+    audio = wav.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.03)
+    play_Audio(audio, is_wait=True)
+
+def reuse_WAV_test():
+    wav = WAV("data/african_sketches_1.wav")
+    signal = wav*Reverse() + wav*Shift(duration=150)
+    audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.09)
+    play_Audio(audio, is_wait=True)
 
 if __name__ == "__main__":
     #pan_test()
@@ -153,7 +168,9 @@ if __name__ == "__main__":
     #downsample_test("data/african_sketches_1.wav")
     #averagesample_test("data/african_sketches_1.wav")
     #dummy_reverb_test()
-    reverse_test()
+    #reverse_test()
+    #envelope_test()
+    reuse_WAV_test()
     #
     #%%%%%
 

@@ -28,4 +28,7 @@ def DFT_window(audio, N, start=0):
     # TODO test this
     return [(sum([window(n)*audio.audio[0, start+n]*np.cos(2*np.pi*n*m/N) for n in range(0,N)]),
     -sum([window(n)*audio.audio[0, start+n]*np.sin(2*np.pi*n*m/N) for n in range(0,N)])) for m in range(0,N)]
-    
+
+def iDFT(audio):
+    raise NotImplementedError
+    pass

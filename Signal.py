@@ -90,12 +90,21 @@ class Signal:
             
         return audio
     
-    def mixdown(self, sample_rate, byte_width):
+    def mixdown(self, sample_rate, byte_width, max_amplitude=1):
+        # TODO does this need num channels?
         self.sample_rate = sample_rate        
         self.audio = self.realise(sample_rate)
-        return self.audio.mixdown(byte_width)
+        return self.audio.mixdown(byte_width, max_amplitude)
 
 #### particular signals
+
+class Silence(Signal):
+    def __init__(self, duration=5000):
+        super().__init__()
+        self.duration = duration
+    
+    def generate(self):
+        return np.zeros(self.duration, dtype=np.float64)
 
 class Sine(Signal):
     def __init__(self, frequency=220, duration=5000):

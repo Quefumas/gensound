@@ -12,6 +12,8 @@ class Audio:
         """ create empty.
         by convention duration is (mili?)seconds, length implies #samples.
         """
+        #TODO do we really need to specify num channels?
+        #would be cooler to implicitly figure it out from the signal
         assert(type(num_channels) == int and 1 <= num_channels)
         # TODO other assertions
         
@@ -154,9 +156,9 @@ class Audio:
     def integrate(audio, byte_width):
         return audio.astype((np.int8, np.int16, np.int32, np.int64)[byte_width])
     
-    def mixdown(self, byte_width):
+    def mixdown(self, byte_width, max_amplitude=1):
         self.byte_width = byte_width
-        audio = Audio.integrate(Audio.stretch(self.audio, self.byte_width), self.byte_width)
+        audio = Audio.integrate(max_amplitude*Audio.stretch(self.audio, self.byte_width), self.byte_width)
         # TODO int16?
         self.buffer = np.zeros((self.length()*self.num_channels), dtype=np.int16, order='C')
         
