@@ -6,6 +6,8 @@ Created on Thu Aug 22 20:53:05 2019
 """
 
 import numpy as np
+import copy
+from utils import ints_by_width
 
 class Audio:
     def __init__(self, num_channels, sample_rate):
@@ -45,6 +47,11 @@ class Audio:
         self.audio = (array/np.max(array)).copy(order="C")
         return
     
+    def copy(self):
+        """
+        creates an identical Audio object.
+        """
+        return copy.deepcopy(self)
     
     
     #######################
@@ -145,22 +152,52 @@ class Audio:
     ## prepare for mixdown
     
     @staticmethod
-    def stretch(audio, byte_width):
-        """ stretches/squashes the samples to be in the range [-1,1],
-        to increase the dynamic range.
-        in the future this step is to be further examined
+    def fit(audio, max_amplitude):
         """
-        return audio * (2**(8*byte_width-1) - 1) / np.max(np.abs(audio))
+        stretches/squashes the amplitude of the samples to be [-max_amplitude, +max_amplitude]
+        given that max_amplitude <= 1.
+        
+        to disable fitting unless necessary, set max_amplitude = np.max(np.abs(audio))
+        TODO perhaps do this differently (set max_amplitude=None?)
+        """
+        if max_amplitude > 1:
+            max_amplitude = 1
+            print("Squashing amplitudes...")
+        
+        return audio * max_amplitude / np.max(np.abs(audio))
+        
+    # TODO move these to utils?
+    @staticmethod
+    def stretch(audio, byte_width):
+        """ stretches the samples to cover a range of width 2**bits,
+        so we can convert to ints later.
+        """
+        return audio * (2**(8*byte_width-1) - 1)
     
     @staticmethod
     def integrate(audio, byte_width):
-        return audio.astype((np.int8, np.int16, np.int32, np.int64)[byte_width])
+        """
+        conversion from floats to integers
+        TODO not all of these types are supported anyway
+        """
+        return audio.astype(ints_by_width[byte_width-1])
     
     def mixdown(self, byte_width, max_amplitude=1):
+        assert max_amplitude == None or 0 < max_amplitude <= 1
+        
+        if max_amplitude == None:
+            # don't touch the amplitudes unnecessarily
+            max_amplitude = np.max(np.abs(self.audio))
+        
         self.byte_width = byte_width
-        audio = Audio.integrate(max_amplitude*Audio.stretch(self.audio, self.byte_width), self.byte_width)
-        # TODO int16?
-        self.buffer = np.zeros((self.length()*self.num_channels), dtype=np.int16, order='C')
+        
+        audio = Audio.fit(self.audio, max_amplitude)
+        audio = Audio.stretch(self.audio, self.byte_width)
+        audio = Audio.integrate(audio, self.byte_width)
+        
+        self.buffer = np.zeros((self.length()*self.num_channels),
+                               dtype=ints_by_width[self.byte_width-1],
+                               order='C')
         
         for i in range(self.num_channels):
             self.buffer[i::self.num_channels] = audio[i]

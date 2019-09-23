@@ -91,6 +91,12 @@ class Signal:
         return audio
     
     def mixdown(self, sample_rate, byte_width, max_amplitude=1):
+        """
+        0 < max_amplitude <= 1 implies stretching the amplitudes
+        so they would hit absolute value of max_amplitude.
+        otherwise, max_amplitude = None implies not to touch the amplitudes
+        as given, unless they exceed 1 in which case we shrink everything proportionally.
+        """
         # TODO does this need num channels?
         self.sample_rate = sample_rate        
         self.audio = self.realise(sample_rate)
@@ -189,9 +195,37 @@ class Raw(Signal):
 
 
 class WAV(Raw):
+    cache = {}
+    
     def __init__(self, filename):
-        super().__init__(WAV_to_Audio(filename))
+        if filename in WAV.cache:
+            audio = WAV.cache[filename].copy()
+        else:
+            audio = WAV_to_Audio(filename)
+            WAV.cache[filename] = audio
+        
+        # TODO copy again? so the cache will be eternally independent?
+        super().__init__(audio)
     
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

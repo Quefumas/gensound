@@ -7,13 +7,7 @@ Created on Sun Aug 18 21:01:16 2019
 
 import numpy as np
 from audio import Audio
-
-def lambda_to_range(f):
-    """ transforms function from convenient lambda format to something usable
-    for Pan and Amplitude (i.e. shift-sensitive transforms)
-    """
-    return lambda length, sample_rate: np.asarray([f(x/sample_rate) for x in range(length)], dtype=np.float64)
-    # TODO this does not take sample rate into account!
+from utils import lambda_to_range, DB_to_Linear
 
 class Transform:
     """ represents post-processing on some given signal.
@@ -33,6 +27,7 @@ class Transform:
         this should change the object directly, don't return anything."""
         pass
 
+############################
 
 class Fade(Transform):
     def __init__(self, is_in=True, duration=3000):
@@ -73,11 +68,24 @@ class AmpFreq(Transform):
         # remember [:] is necessary to retain changes
         
 
+class Gain(Transform):
+    """
+    Adds positive/negative gain in dBs to the signal.
+    """
+    def __init__(self, dB):
+        self.dB = dB
+        pass
+    
+    def realise(self, signal, audio):
+        audio.audio[:,:] *= DB_to_Linear(self.dB)
+
 class Amplitude(Transform):
     """ simple increase/decrease of amplitude.
     for constant amplitude, don't use this directly;
     best to just use 0.34 * Signal syntax for example, which reverts to this class.
     use this for more complex amplitude functions
+    
+    use Gain() to change in dB
     """
     def __init__(self, size):
         self.size = size
@@ -164,18 +172,24 @@ class Pan(Transform):
         
 
 class Repan(Transform):
-    """ Allows switching between channels
+    """ Allows switching between channels.
     """
     def __init__(self, channels):
         """ channels is a permutation on the existing channels.
         i.e. (1,0) switches left and right.
+        None means leave channel empty.
         """
         assert type(channels) == tuple
         self.channels = channels
     
     def realise(self, signal, audio):
-        raise NotImplementedError
-        pass
+        new_audio = np.zeros(audio.audio.shape, dtype=np.float64)
+        for i, channel in enumerate(self.channels):
+            if channel == None:
+                continue
+            new_audio[i,:] = audio.audio[channel,:]
+            
+        audio.audio[:,:] = new_audio[:,:]
 
 #######
 
