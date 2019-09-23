@@ -10,7 +10,7 @@ import numpy as np
 from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
 from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
                        Downsample_rough, Average_samples, Amplitude, \
-                       Reverse, Repan, Gain
+                       Reverse, Repan, Gain, Limiter
 from playback import play_WAV, play_Audio, export_WAV
 
 from musicTheory import midC
@@ -54,10 +54,29 @@ def gain_test():
     play_Audio(audio, is_wait=True)
     #export_WAV("data/gain_test.wav", audio)
 
+def limit_test():
+    signal = WAV(african)
+    signal *= Limiter(max_amplitude=0.1)
+    #signal *= Limiter(max_ratio=0.9)
+    audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.9)
+    play_Audio(audio, is_wait=True)
+
+def cancellation_test():
+    #signal = Sine(duration=5000) - 0.999*Sine(duration=5000)
+    #signal += 0.01*Sine(frequency=130,duration=1000)
+    signal = WAV(african) - WAV(african)*Repan((1,0))
+    #signal += 0.5*WAV(african) # basically neautralized the center "channel"
+    signal += 2*WAV(african) # strengthens center
+    # TODOD why does this clip when i use 2.0??? why does this clip at all??
+    audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.1)
+    play_Audio(audio, is_wait=True)
+
 if __name__ == "__main__":
     #log_amp_test()
     #gain_test()
-    repan_test()
+    #repan_test()
+    #limit_test()
+    cancellation_test()
     #%%%%%
 
 

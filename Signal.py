@@ -30,9 +30,10 @@ class Signal:
         self.transforms.append(transform)
     
     def __rmul__(self, other):
-        assert(type(other) is float)
+        assert(type(other) in (float, int))
+        #other = float(other)
         # TODO why this assertion? what's wrong with greater values?
-        assert(-1 <= other <= 1)
+        #assert(-1 <= other <= 1)
         
         self.apply(Amplitude(size = other))
         return self
@@ -65,6 +66,12 @@ class Signal:
     
     def __add__(self, other):
         return other.__radd__(self)
+    
+    def __sub__(self, other):
+        return self.__add__(-1.0*other)
+    
+    def __neg__(self):
+        return -1.0*self
     
     def realise(self, sample_rate):
         """ returns Audio instance.

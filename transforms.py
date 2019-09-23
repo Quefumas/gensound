@@ -106,6 +106,57 @@ class Amplitude(Transform):
             # TODO what about different channels?
             audio.audio *= amps
 
+
+class Limiter(Transform):
+    """ Cuts any sample that exceed some amount.
+    Amount can be an absolute value amplitude,
+    or a ratio/percentage of the current maximum.
+    
+    minimum params are to limit from below in the range [-min,+min]
+    which is just experimental
+    """
+    def __init__(self, max_amplitude=None, max_ratio=None, max_dB=None,
+                       min_amplitude=None, min_ratio=None, min_dB=None):
+        """ at most one max can to be non-None, at most one min as well"""
+        assert (max_amplitude != None) + (max_ratio!=None) + (max_dB!=None) <= 1
+        assert (min_amplitude != None) + (min_ratio!=None) + (min_dB!=None) <= 1
+        
+        #TODO more assertions
+        
+        if max_dB != None or min_dB != None:
+            raise NotImplementedError
+            # TODO
+        
+        self.is_min = not (min_amplitude == None and min_ratio == None and min_dB == None)        
+        self.is_max = not (max_amplitude == None and max_ratio == None and max_dB == None)
+        
+        self.max_amplitude = max_amplitude
+        self.max_ratio = max_ratio
+        self.max_dB = max_dB
+        self.min_amplitude = min_amplitude
+        self.min_ratio = min_ratio
+        self.min_dB = min_dB
+    
+    def realise(self, signal, audio):
+        # convert to the amplitude case then continue normally
+        if self.is_max:
+            if self.max_ratio != None:
+                self.max_amplitude = self.max_ratio*np.max(np.abs(audio.audio))
+        
+            # TODO do the same for dBs
+            np.clip(audio.audio, -self.max_amplitude, self.max_amplitude, out=audio.audio)
+        
+        if self.is_min:
+            if self.min_ratio != None:
+                self.min_amplitude = self.min_ratio*np.max(np.abs(audio.audio))
+            #TODO same for dBs
+            
+            audio.audio[:,:] = np.sign(audio.audio) * \
+                               np.clip(np.abs(audio.audio), a_min=self.min_amplitude, a_max=None)
+        
+
+#####################
+
 class Shift(Transform):
     """ shifts the signal forward in time.
     it is problematic to use seconds all the time,
@@ -128,6 +179,15 @@ class Extend(Transform):
         # TODO can we avoid passing signal in, for all transforms?
         audio.extend(int(self.duration*signal.sample_rate/1000))
 
+class Reverse(Transform):
+    """
+    reverses the signal
+    """
+    def __init__(self):
+        pass
+    
+    def realise(self, signal, audio):
+        audio.audio[:,:] = audio.audio[:,::-1]
 
 ###### PANNING STUFF    
 
@@ -191,13 +251,15 @@ class Repan(Transform):
             
         audio.audio[:,:] = new_audio[:,:]
 
-#######
+
+####### FILTERS #########
 
 class Downsample_rough(Transform):
     """ skips samples. can hear the effects of aliasing.
     suppose factor is 3, then this copies all 3k-th samples into
     the 3k+1-th, 3k+2-th places.
     phase is supposed to let us choose 3k+1, 3k+2 as the main one for example
+    # can be interesting to put 4k on L and 4k+2 on R, see if there is stereo effect
     """
     
     def __init__(self, factor=2, phase=0):
@@ -253,14 +315,6 @@ class Average_samples(Transform):
         audio.audio[:,:] = res[:, pos:pos+audio.audio.shape[1]]
 
 
-class Reverse(Transform):
-    """
-    reverses the signal
-    """
-    def __init__(self):
-        pass
-    
-    def realise(self, signal, audio):
-        audio.audio[:,:] = audio.audio[:,::-1]
+
 
 
