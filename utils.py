@@ -8,6 +8,7 @@ utility functions
 
 """
 
+from numbers import Number
 import numpy as np
 
 
@@ -25,3 +26,5 @@ def lambda_to_range(f):
 
 DB_to_Linear = lambda x: 10**(x/20)
 Linear_to_DB = lambda x: 20*np.log(x)/np.log(10)
+
+is_number = lambda x: isinstance(x, Number)

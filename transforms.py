@@ -7,7 +7,7 @@ Created on Sun Aug 18 21:01:16 2019
 
 import numpy as np
 from audio import Audio
-from utils import lambda_to_range, DB_to_Linear
+from utils import lambda_to_range, DB_to_Linear, is_number
 
 class Transform:
     """ represents post-processing on some given signal.
@@ -96,9 +96,11 @@ class Amplitude(Transform):
     
     def realise(self, signal, audio):
         # TODO shouldn't this just affect a copy of audio????
-        if type(self.size) == float:
+        if is_number(self.size):
             audio = self.size*audio
             return
+        
+        assert type(self.size) == type(lambda x:x)
         
         if type(self.size) == type(lambda x:x):
             amps = self.size(audio.length(), audio.sample_rate)

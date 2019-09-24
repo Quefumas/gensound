@@ -10,6 +10,7 @@ import numpy as np
 from transforms import Transform, Amplitude
 from audio import Audio
 from playback import WAV_to_Audio
+from utils import is_number
 
 class Signal:
     def __init__(self):
@@ -30,11 +31,7 @@ class Signal:
         self.transforms.append(transform)
     
     def __rmul__(self, other):
-        assert(type(other) in (float, int))
-        #other = float(other)
-        # TODO why this assertion? what's wrong with greater values?
-        #assert(-1 <= other <= 1)
-        
+        assert is_number(other)        
         self.apply(Amplitude(size = other))
         return self
     
@@ -79,14 +76,14 @@ class Signal:
         """
         self.sample_rate = sample_rate
         
-        if not hasattr(self, "signals"):
+        if not hasattr(self, "signals"): # leaf of the mix tree
             signal = self.generate()
             if len(signal.shape) == 1:
                 signal.resize((1, signal.shape[0]))
                 # TODO is this the place?
             audio = Audio(signal.shape[0], sample_rate)
             audio.from_array(signal)
-        else:
+        else: # internal node
             audio = Audio(1, sample_rate)
             
             for signal in self.signals:

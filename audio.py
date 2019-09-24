@@ -7,7 +7,7 @@ Created on Thu Aug 22 20:53:05 2019
 
 import numpy as np
 import copy
-from utils import ints_by_width
+from utils import ints_by_width, is_number
 
 class Audio:
     def __init__(self, num_channels, sample_rate):
@@ -126,6 +126,7 @@ class Audio:
             return other.__add__(self)
     
     def __add__(self, other):
+        assert isinstance(other, Audio)
         self.conform(other)
         self.audio[:,0:other.length()] += other.audio
         # TODO delete the other Audio??? for safety and memory
@@ -136,11 +137,11 @@ class Audio:
         return self.__mul__(other)
     
     def __mul__(self, other):
-        if type(other) == float: # TODO accept np.float too???
+        if is_number(other):
             # TODO shouldnt this affect the copy of self.audio only??
             self.audio *= other
             return self
-        
+        assert isinstance(other, Audio)
         # TODO also does not support with Audios with differing params
         self.conform(other)
         self.audio[:,0:other.shape[1]] *= other[:,:]
@@ -192,7 +193,7 @@ class Audio:
         self.byte_width = byte_width
         
         audio = Audio.fit(self.audio, max_amplitude)
-        audio = Audio.stretch(self.audio, self.byte_width)
+        audio = Audio.stretch(audio, self.byte_width)
         audio = Audio.integrate(audio, self.byte_width)
         
         self.buffer = np.zeros((self.length()*self.num_channels),
