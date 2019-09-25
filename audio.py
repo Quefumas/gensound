@@ -199,7 +199,10 @@ class Audio:
         self.buffer = np.zeros((self.length()*self.num_channels),
                                dtype=ints_by_width[self.byte_width-1],
                                order='C')
-        
+        # TODO note that byte_width, buffer etc. are modified by this function
+        # for this class it may be fine, because this is where
+        # all the processing acctually happens on
+        # operation table
         for i in range(self.num_channels):
             self.buffer[i::self.num_channels] = audio[i]
         return self

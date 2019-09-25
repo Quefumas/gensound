@@ -17,7 +17,7 @@ class Signal:
         self.transforms = []
     
     #@abstractmethod ???
-    def generate(self):
+    def generate(self, sample_rate):
         """
         this is the part the generates the basic signal building block
         ####should return 2d np.ndarray
@@ -74,7 +74,6 @@ class Signal:
         """ returns Audio instance.
         parses the entire signal tree recursively
         """
-        self.sample_rate = sample_rate
         
         if not hasattr(self, "signals"): # leaf of the mix tree
             signal = self.generate()
@@ -87,10 +86,10 @@ class Signal:
             audio = Audio(1, sample_rate)
             
             for signal in self.signals:
-                audio += signal.realise(self.sample_rate)
+                audio += signal.realise(sample_rate)
         
         for transform in self.transforms:
-            transform.realise(signal=self, audio=audio)
+            transform.realise(audio=audio)
             
         return audio
     
@@ -102,9 +101,9 @@ class Signal:
         as given, unless they exceed 1 in which case we shrink everything proportionally.
         """
         # TODO does this need num channels?
-        self.sample_rate = sample_rate        
-        self.audio = self.realise(sample_rate)
-        return self.audio.mixdown(byte_width, max_amplitude)
+        # perhaps some signals are inherently multiple-channeled?
+        audio = self.realise(sample_rate)
+        return audio.mixdown(byte_width, max_amplitude)
 
 #### particular signals
 
@@ -112,8 +111,9 @@ class Silence(Signal):
     def __init__(self, duration=5000):
         super().__init__()
         self.duration = duration
+        # TODO appears to be wrong duration, should take into account sample rate
     
-    def generate(self):
+    def generate(self, sample_rate):
         return np.zeros(self.duration, dtype=np.float64)
 
 class Sine(Signal):
@@ -122,8 +122,8 @@ class Sine(Signal):
         self.frequency = frequency
         self.duration = duration
         
-    def generate(self):
-        return np.sin(self.frequency * np.linspace(0, self.duration/1000, int(self.duration * self.sample_rate/1000), False) * 2 * np.pi)
+    def generate(self, sample_rate):
+        return np.sin(self.frequency * np.linspace(0, self.duration/1000, int(self.duration * sample_rate/1000), False) * 2 * np.pi)
     
 class Triangle(Signal):
     def __init__(self, frequency=220, duration=5000):
@@ -131,9 +131,9 @@ class Triangle(Signal):
         self.frequency = frequency
         self.duration = duration
     
-    def generate(self):
+    def generate(self, sample_rate):
         # strange manipulation on sawtooth
-        return 2*np.abs((2*np.pi* self.frequency * np.linspace(0, self.duration/1000, int(self.duration * self.sample_rate/1000), False) % (2*np.pi))-np.pi)-np.pi
+        return 2*np.abs((2*np.pi* self.frequency * np.linspace(0, self.duration/1000, int(self.duration * sample_rate/1000), False) % (2*np.pi))-np.pi)-np.pi
     
     
 class Square(Signal):
@@ -142,8 +142,8 @@ class Square(Signal):
         self.frequency = frequency
         self.duration = duration
     
-    def generate(self):
-        return (((2*np.pi* self.frequency * np.linspace(0, self.duration/1000, int(self.duration * self.sample_rate/1000), False) % (2*np.pi)) < np.pi) - np.pi).astype(np.float64)
+    def generate(self, sample_rate):
+        return (((2*np.pi* self.frequency * np.linspace(0, self.duration/1000, int(self.duration * sample_rate/1000), False) % (2*np.pi)) < np.pi) - np.pi).astype(np.float64)
 
 class Sawtooth(Signal):
     def __init__(self, frequency=220, duration=5000):
@@ -151,24 +151,24 @@ class Sawtooth(Signal):
         self.frequency = frequency
         self.duration = duration
     
-    def generate(self):
-        return (2*np.pi* self.frequency * np.linspace(0, self.duration/1000, int(self.duration * self.sample_rate/1000), False) % (2*np.pi))-np.pi
+    def generate(self, sample_rate):
+        return (2*np.pi* self.frequency * np.linspace(0, self.duration/1000, int(self.duration * sample_rate/1000), False) % (2*np.pi))-np.pi
 
 class Step(Signal):
     def __init__(self, duration=1):
         super().__init__()
         self.duration = duration
     
-    def generate(self):
-        return np.ones((int(self.duration*self.sample_rate/1000),), dtype=np.float64)
+    def generate(self, sample_rate):
+        return np.ones((int(self.duration*sample_rate/1000),), dtype=np.float64)
 
 class GreyNoise(Signal):
     def __init__(self, duration=5000):
         super().__init__()
         self.duration = duration
     
-    def generate(self):
-        return 2*np.random.rand(int(self.duration*self.sample_rate/1000)) - 1
+    def generate(self, sample_rate):
+        return 2*np.random.rand(int(self.duration*sample_rate/1000)) - 1
 
 
 
@@ -184,7 +184,7 @@ class Raw(Signal):
         super().__init__()
         self.audio = audio
     
-    def generate(self):
+    def generate(self, sample_rate):
         #return np.copy(self.audio.audio)
         return self.audio.audio
     """
@@ -200,6 +200,17 @@ class Raw(Signal):
 
 class WAV(Raw):
     cache = {}
+    """
+    TODO perhaps make Raw.cache instead
+    (but make it easily extensible for new subclasses of Raw)
+    either way, WAV/Raw objects should not contain
+    the actual audio!
+    just a key that will only be used in generate().
+    this way the object is an empty skeleton.
+    
+    Raw.cache can be a dictionary with types as keys,
+    values are actual caches with keys defined by each subclass individually
+    """
     
     def __init__(self, filename):
         if filename in WAV.cache:

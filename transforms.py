@@ -22,7 +22,7 @@ class Transform:
     def __init__(self):
         pass
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         """ here we apply the transformation on the Audio object.
         this should change the object directly, don't return anything."""
         pass
@@ -34,8 +34,8 @@ class Fade(Transform):
         self.is_in = is_in
         self.duration = duration
     
-    def realise(self, signal, audio):
-        amp = np.linspace(0, 1, int(self.duration * signal.sample_rate/1000))
+    def realise(self, audio):
+        amp = np.linspace(0, 1, int(self.duration * audio.sample_rate/1000))
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
         
@@ -58,7 +58,7 @@ class AmpFreq(Transform):
         self.size = size
         self.phase = phase
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         """ audio is Audio instance"""
         assert isinstance(audio, Audio) # TODO remove this after debug hopefully
         
@@ -76,7 +76,7 @@ class Gain(Transform):
         self.dB = dB
         pass
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         audio.audio[:,:] *= DB_to_Linear(self.dB)
 
 class Amplitude(Transform):
@@ -94,7 +94,7 @@ class Amplitude(Transform):
             # TODO what if size is function, not lambda?
             self.size = lambda_to_range(size)
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         # TODO shouldn't this just affect a copy of audio????
         if is_number(self.size):
             audio = self.size*audio
@@ -139,7 +139,7 @@ class Limiter(Transform):
         self.min_ratio = min_ratio
         self.min_dB = min_dB
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         # convert to the amplitude case then continue normally
         if self.is_max:
             if self.max_ratio != None:
@@ -168,8 +168,8 @@ class Shift(Transform):
     def __init__(self, duration):
         self.duration = duration
     
-    def realise(self, signal, audio):
-        audio.push_forward(int(self.duration * signal.sample_rate/1000))
+    def realise(self, audio):
+        audio.push_forward(int(self.duration * audio.sample_rate/1000))
 
 class Extend(Transform):
     """ adds silence after the signal. needed?
@@ -177,9 +177,8 @@ class Extend(Transform):
     def __init__(self, duration=1000):
         self.duration = duration
     
-    def realise(self, signal, audio):
-        # TODO can we avoid passing signal in, for all transforms?
-        audio.extend(int(self.duration*signal.sample_rate/1000))
+    def realise(self, audio):
+        audio.extend(int(self.duration*audio.sample_rate/1000))
 
 class Reverse(Transform):
     """
@@ -188,7 +187,7 @@ class Reverse(Transform):
     def __init__(self):
         pass
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         audio.audio[:,:] = audio.audio[:,::-1]
 
 ###### PANNING STUFF    
@@ -201,7 +200,7 @@ class Channels(Transform):
         # TODO maybe better to use variable number of args instead of tuple, looks nicer
         self.amps = amps
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         audio.from_mono(len(self.amps))
         for (i,amp) in enumerate(self.amps):
             audio.audio[i,:] *= amp
@@ -221,7 +220,7 @@ class Pan(Transform):
         # TODO find better conversion
         self.pans = tuple([lambda_to_range(pan) for pan in pans])
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         assert len(self.pans) in (1, audio.num_channels)
         
         if len(self.pans) < audio.num_channels:
@@ -244,7 +243,7 @@ class Repan(Transform):
         assert type(channels) == tuple
         self.channels = channels
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         new_audio = np.zeros(audio.audio.shape, dtype=np.float64)
         for i, channel in enumerate(self.channels):
             if channel == None:
@@ -272,7 +271,7 @@ class Downsample_rough(Transform):
         if phase != 0:
             raise NotImplementedError # TODO
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         l = audio.audio.shape[1] #- self.phase
         
         for i in range(1, self.factor):
@@ -302,7 +301,7 @@ class Average_samples(Transform):
         
         self.weights = weights
     
-    def realise(self, signal, audio):
+    def realise(self, audio):
         res = np.zeros((audio.audio.shape[0], audio.audio.shape[1] + len(self.weights) - 1), dtype=np.float64)
         
         for i, weight in enumerate(self.weights):
@@ -315,6 +314,45 @@ class Average_samples(Transform):
         # (as it is longer due to time delays)
         
         audio.audio[:,:] = res[:, pos:pos+audio.audio.shape[1]]
+
+
+
+###### EXPERIMENTS ######
+
+class Convolution(Transform):
+    """ is this the right name?
+    squaring the signal, or multiplying by its own reverse
+    """
+    
+    def __init__(self, forward=True, add=0, is_both_ways=False):
+        self.forward = forward
+        self.add = add
+        self.is_both_ways = is_both_ways
+    
+    def realise(self, audio):
+        # TODO the add works both ways to keep the signal away from zero
+        # but we can also omit the sign thing, basically making the signal
+        # more positive in general, and sounding less strange
+        other = audio.audio[:,::(1 if self.forward else -1)]
+        if self.is_both_ways:
+            audio.audio[:,:] *= (self.add*np.sign(other) + other)
+        else:
+            audio.audio[:,:] *= (self.add + other)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
