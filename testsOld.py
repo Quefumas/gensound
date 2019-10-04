@@ -15,7 +15,7 @@ import numpy as np
 from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
 from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
                        Downsample_rough, Average_samples, Amplitude, \
-                       Reverse, Repan
+                       Reverse, Repan, Limiter, Gain
 from playback import play_WAV, play_Audio, export_WAV
 
 from musicTheory import midC
@@ -188,6 +188,7 @@ def envelope_test():
 def reuse_WAV_test():
     wav = WAV("data/african_sketches_1.wav")
     signal = wav*Reverse() + wav*Shift(duration=150)
+    print(signal)
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.09)
     play_Audio(audio, is_wait=True)
 
@@ -222,7 +223,8 @@ def limit_test():
 
 if __name__ == "__main__":
     #repan_reverb_test()
-    dummy_reverb_test()
+    #dummy_reverb_test()
+    reuse_WAV_test()
     
     
     

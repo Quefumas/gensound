@@ -22,6 +22,9 @@ class Transform:
     def __init__(self):
         pass
     
+    def __str__(self):
+        return str(type(self).__name__)
+    
     def realise(self, audio):
         """ here we apply the transformation on the Audio object.
         this should change the object directly, don't return anything."""
@@ -97,7 +100,7 @@ class Amplitude(Transform):
     def realise(self, audio):
         # TODO shouldn't this just affect a copy of audio????
         if is_number(self.size):
-            audio = self.size*audio
+            audio.audio = self.size*audio.audio
             return
         
         assert type(self.size) == type(lambda x:x)

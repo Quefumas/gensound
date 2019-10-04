@@ -89,7 +89,7 @@ class Audio:
         if self.is_mono():
             self.from_mono(other.num_channels())
         
-        self.extend(other.shape[1] - self.length())
+        self.extend(other.length() - self.length())
         
         return other
     
@@ -215,9 +215,9 @@ class Audio:
         audio = Audio.stretch(audio, self.byte_width)
         audio = Audio.integrate(audio, self.byte_width)
         
-        self.buffer = np.zeros((self.length()*self.num_channels())),
-                               dtype=ints_by_width[self.byte_width-1],
-                               order='C')
+        self.buffer = np.zeros((self.length()*self.num_channels()),
+                                dtype=ints_by_width[self.byte_width-1],
+                                order='C')
         # TODO note that byte_width, buffer etc. are modified by this function
         # for this class it may be fine, because this is where
         # all the processing acctually happens on

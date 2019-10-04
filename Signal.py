@@ -5,6 +5,8 @@ Created on Sat Aug 17 21:41:28 2019
 @author: Dror
 """
 
+import copy
+
 import numpy as np
 
 from transforms import Transform, Amplitude
@@ -27,8 +29,11 @@ class Signal:
         """
         pass
     
-    def apply(self, transform):
-        self.transforms.append(transform)
+    def copy(self):
+        """
+        creates an identical signal object.
+        """
+        return copy.deepcopy(self)
     
     def realise(self, sample_rate):
         """ returns Audio instance.
@@ -36,7 +41,7 @@ class Signal:
         """
         
         if not hasattr(self, "signals"): # leaf of the mix tree
-            signal = self.generate()
+            signal = self.generate(sample_rate)
             if len(signal.shape) == 1:
                 signal.resize((1, signal.shape[0]))
                 # TODO is this the place?
@@ -67,15 +72,23 @@ class Signal:
     
     ########################
     
+    def __str__(self):
+        if not hasattr(self, "signals"):
+            res = str(type(self).__name__)
+        else:
+            res = "({})".format(" + ".join([str(signal) for signal in self.signals]))
+        res += "" if len(self.transforms) == 0 else "*({})".format(",".join([str(transform) for transform in self.transforms]))
+        return res
+    
     def __rmul__(self, other):
         assert is_number(other)
-        self.apply(Amplitude(size = other))
-        return self
+        return self*Amplitude(size = other)
     
     def __mul__(self, other):
         assert isinstance(other, Transform)
-        self.apply(other)
-        return self
+        s = self.copy()
+        s.transforms.append(other)
+        return s
     
     def __radd__(self, other):
         if other == 0:
@@ -94,12 +107,12 @@ class Signal:
         s.signals = []
         
         if len(self.transforms) == 0 and hasattr(self, "signals"):
-            s.signals += [self.signals]
+            s.signals += self.signals
         else:
             s.signals += [self]
         
         if len(other.transforms) == 0 and hasattr(other, "signals"):
-            s.signals += [other.signals]
+            s.signals += other.signals
         else:
             s.signals += [other]
         
