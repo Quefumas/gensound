@@ -80,10 +80,10 @@ class Signal:
             if len(signal.shape) == 1:
                 signal.resize((1, signal.shape[0]))
                 # TODO is this the place?
-            audio = Audio(signal.shape[0], sample_rate)
+            audio = Audio(sample_rate)
             audio.from_array(signal)
         else: # internal node
-            audio = Audio(1, sample_rate)
+            audio = Audio(sample_rate)
             
             for signal in self.signals:
                 audio += signal.realise(sample_rate)

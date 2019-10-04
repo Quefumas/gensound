@@ -21,7 +21,7 @@ from audio import Audio
 
 def export_WAV(filename, audio):
     file = wave.open(filename, "wb")
-    file.setnchannels(audio.num_channels)
+    file.setnchannels(audio.num_channels())
     file.setsampwidth(audio.byte_width)
     file.setframerate(audio.sample_rate)
     file.setnframes(audio.length())
@@ -48,7 +48,7 @@ def WAV_to_Audio(filename=""):
                         newshape=(wav.num_channels,
                                   int(len(buffer)/wav.num_channels))[::-1]).T.copy(order='C')
     
-    audio = Audio(wav.num_channels, wav.sample_rate)
+    audio = Audio(wav.sample_rate)
     audio.from_array(buffer)
     
     return audio
@@ -56,7 +56,7 @@ def WAV_to_Audio(filename=""):
 def play_Audio(audio, is_wait=True):
     #audio.buffer = audio.buffer.copy(order='C')
     play_obj = sa.play_buffer(audio.buffer,
-                              num_channels=audio.num_channels,
+                              num_channels=audio.num_channels(),
                               bytes_per_sample=audio.byte_width, # TODO should Audio store this?
                               sample_rate=audio.sample_rate)
     

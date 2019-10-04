@@ -221,10 +221,10 @@ class Pan(Transform):
         self.pans = tuple([lambda_to_range(pan) for pan in pans])
     
     def realise(self, audio):
-        assert len(self.pans) in (1, audio.num_channels)
+        assert len(self.pans) in (1, audio.num_channels())
         
-        if len(self.pans) < audio.num_channels:
-            self.pans = (self.pans[0],) * audio.num_channels
+        if len(self.pans) < audio.num_channels():
+            self.pans = (self.pans[0],) * audio.num_channels()
             # TODO note that this is a side effect; though *shouldn't* harm anything
         
         for (i,pan) in enumerate(self.pans):
