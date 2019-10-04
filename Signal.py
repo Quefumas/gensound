@@ -30,46 +30,6 @@ class Signal:
     def apply(self, transform):
         self.transforms.append(transform)
     
-    def __rmul__(self, other):
-        assert is_number(other)        
-        self.apply(Amplitude(size = other))
-        return self
-    
-    def __mul__(self, other):
-        assert(isinstance(other, Transform))
-        self.apply(other)
-        return self
-    
-    def __radd__(self, other):
-        assert(isinstance(other, Signal) or other == 0)
-        
-        if other == 0:
-            return self
-        
-        if hasattr(self, "signals"):
-            if hasattr(other, "signals"):
-                self.signals.extend(other.signals)
-            else:
-                self.signals.append(other)
-            return self
-        else:
-            if hasattr(other, "signals"):
-                other.signals.append(self)
-                return other
-            else:
-                s = Signal()
-                s.signals = [self, other]
-                return s
-    
-    def __add__(self, other):
-        return other.__radd__(self)
-    
-    def __sub__(self, other):
-        return self.__add__(-1.0*other)
-    
-    def __neg__(self):
-        return -1.0*self
-    
     def realise(self, sample_rate):
         """ returns Audio instance.
         parses the entire signal tree recursively
@@ -104,6 +64,50 @@ class Signal:
         # perhaps some signals are inherently multiple-channeled?
         audio = self.realise(sample_rate)
         return audio.mixdown(byte_width, max_amplitude)
+    
+    ########################
+    
+    def __rmul__(self, other):
+        assert is_number(other)
+        self.apply(Amplitude(size = other))
+        return self
+    
+    def __mul__(self, other):
+        assert isinstance(other, Transform)
+        self.apply(other)
+        return self
+    
+    def __radd__(self, other):
+        assert(isinstance(other, Signal) or other == 0)
+        
+        if other == 0:
+            return self
+        
+        if hasattr(self, "signals"):
+            if hasattr(other, "signals"):
+                self.signals.extend(other.signals)
+            else:
+                self.signals.append(other)
+            return self
+        else:
+            if hasattr(other, "signals"):
+                other.signals.append(self)
+                return other
+            else:
+                s = Signal()
+                s.signals = [self, other]
+                return s
+    
+    def __add__(self, other):
+        return other.__radd__(self)
+    
+    def __sub__(self, other):
+        return self.__add__(-1.0*other)
+    
+    def __neg__(self):
+        return -1.0*self
+    
+    
 
 #### particular signals
 

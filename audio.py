@@ -161,6 +161,10 @@ class Audio:
     ###################
     
     ## prepare for mixdown
+    """
+    we have these as static since in Audio.mixdown(), we do not wish
+    to affect self.audio.
+    """
     
     @staticmethod
     def fit(audio, max_amplitude):
@@ -195,6 +199,10 @@ class Audio:
         return audio.astype(ints_by_width[byte_width-1])
     
     def mixdown(self, byte_width, max_amplitude=1):
+        """
+        side effects are only the creation of self.byte_width and self.buffer.
+        self.audio remains unaffected, and we use static methods for this end.
+        """
         assert max_amplitude == None or 0 < max_amplitude <= 1
         
         if max_amplitude == None:
