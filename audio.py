@@ -52,7 +52,7 @@ class Audio:
         # for multiplying by a float, we multiply the signal instead
         # TODO also does not support with Audios with differing params
         self.conform(other)
-        self.audio[:,0:other.shape[1]] *= other[:,:]
+        self.audio[:,0:other.length() *= other[:,:]
         return self
     
     ###################
@@ -135,7 +135,8 @@ class Audio:
         """ duplicates a mono channel into various channels.
         does not scale! """
         assert self.is_mono(), "Can't call Audio.from_mono() for non-mono Audio."
-        assert num_channels > 1
+        if num_channels == 1:
+            return
         self.audio.resize((num_channels, self.length()), refcheck=False)
         self.audio[:,:] = self.audio[0,:]
     
