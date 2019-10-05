@@ -81,11 +81,16 @@ class Signal:
         return res
     
     def __rmul__(self, other):
+        """ multiplication from the left is only legal for numbers, not for transforms"""
         assert is_number(other)
         return self*Amplitude(size = other)
     
     def __mul__(self, other):
-        assert isinstance(other, Transform)
+        """
+        signals can be multiplied on the right by both floats and transforms
+        """
+        if not isinstance(other, Transform):
+            return self.__rmul__(other)
         s = self.copy()
         s.transforms.append(other)
         return s
