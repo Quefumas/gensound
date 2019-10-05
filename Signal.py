@@ -35,12 +35,23 @@ class Signal:
         """
         return copy.deepcopy(self)
     
+    @staticmethod
+    def concat(*args):
+        s = Signal()
+        s.sequence = args
+        return s
+    
     def realise(self, sample_rate):
         """ returns Audio instance.
         parses the entire signal tree recursively
         """
+        assert not (hasattr(self, "sequence") and hasattr(self, "signals"))
         
-        if not hasattr(self, "signals"): # leaf of the mix tree
+        if hasattr(self, "sequence"):
+            audio = Audio(sample_rate)
+            for signal in self.sequence:
+                audio.append(signal.realise(sample_rate))
+        elif not hasattr(self, "signals"): # leaf of the mix tree
             signal = self.generate(sample_rate)
             if len(signal.shape) == 1:
                 signal.resize((1, signal.shape[0]))
@@ -73,7 +84,9 @@ class Signal:
     ########################
     
     def __str__(self):
-        if not hasattr(self, "signals"):
+        if hasattr(self, "sequence"):
+            res = "[{}]".format(" + ".join([str(signal) for signal in self.sequence]))
+        elif not hasattr(self, "signals"):
             res = str(type(self).__name__)
         else:
             res = "({})".format(" + ".join([str(signal) for signal in self.signals]))

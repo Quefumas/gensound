@@ -52,10 +52,16 @@ class Audio:
         # for multiplying by a float, we multiply the signal instead
         # TODO also does not support with Audios with differing params
         self.conform(other)
-        self.audio[:,0:other.length() *= other[:,:]
+        self.audio[:,0:other.length()] *= other[:,:]
         return self
     
     ###################
+    
+    def append(self, other):
+        assert isinstance(other, Audio)
+        self.conform(other, is_append=True)
+        self.audio[:,-other.length():] += other.audio
+        return self
     
     """
     
@@ -67,7 +73,7 @@ class Audio:
     
     """
     
-    def conform(self, other):
+    def conform(self, other, is_append=False):
         """
         reshapes self.audio so other.audio may be mixed into it.
         
@@ -89,9 +95,7 @@ class Audio:
         if self.is_mono():
             self.from_mono(other.num_channels())
         
-        self.extend(other.length() - self.length())
-        
-        return other
+        self.extend(other.length() - self.length() if not is_append else other.length())
     
     def from_array(self, array):
         """

@@ -7,7 +7,7 @@ Created on Sat Aug 17 23:28:31 2019
 
 import numpy as np
 
-from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
+from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
 from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
                        Downsample_rough, Average_samples, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution
@@ -39,10 +39,20 @@ def convolution_test():
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio, is_wait=True)
 
+def after_test_1():
+    signal = Sine(frequency=midC(-7), duration=6e3)
+    s2 = Signal.concat(*[Sine(frequency=midC(k-4), duration=1e3) for k in range(6)])
+    signal += s2
+    
+    print(signal)
+    audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio, is_wait=True)
+
 if __name__ == "__main__":
     #cancellation_test()
-    nonmatching_samplings()
+    #nonmatching_samplings()
     #convolution_test()
+    after_test_1()
     #%%%%%
 
 
