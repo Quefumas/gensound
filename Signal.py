@@ -93,6 +93,10 @@ class Signal:
         res += "" if len(self.transforms) == 0 else "*({})".format(",".join([str(transform) for transform in self.transforms]))
         return res
     
+    def __pow__(self, other):
+        assert type(other) == int
+        return Signal.concat(*[self]*other)
+    
     def __rmul__(self, other):
         """ multiplication from the left is only legal for numbers, not for transforms"""
         assert is_number(other)

@@ -33,12 +33,14 @@ class Transform:
 ############################
 
 class Fade(Transform):
+    min_fade = -50
+    
     def __init__(self, is_in=True, duration=3000):
         self.is_in = is_in
         self.duration = duration
     
     def realise(self, audio):
-        amp = np.linspace(0, 1, int(self.duration * audio.sample_rate/1000))
+        amp = DB_to_Linear(np.linspace(Fade.min_fade, 0, int(self.duration*audio.sample_rate/1000)))
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
         
@@ -48,28 +50,9 @@ class Fade(Transform):
         # TODO in case of fade out, if amp is shorter or longer than audio,
         # care must be taken when multiplying!
         audio *= amp
-        return # TODO TEST!!!!!!!!!!!!!
+        # TODO TEST!!!!!!!!!!!!!
+        # TODO I still hear a bump when the playback starts
 
-class AmpFreq(Transform):
-    """
-    have the amplitude change according to a sine function over time continuously,
-    with given width (size) and frequency
-    TODO again the factors should be perhaps logarithimic
-    """
-    def __init__(self, frequency, size, phase=0):
-        self.frequency = frequency
-        self.size = size
-        self.phase = phase
-    
-    def realise(self, audio):
-        """ audio is Audio instance"""
-        assert isinstance(audio, Audio) # TODO remove this after debug hopefully
-        
-        sin = np.sin(self.phase + self.frequency * \
-                     np.linspace(0, audio.duration(), audio.length(), False) * 2 * np.pi)
-        audio *= (sin * self.size + (1-self.size))
-        # remember [:] is necessary to retain changes
-        
 
 class Gain(Transform):
     """
@@ -77,7 +60,6 @@ class Gain(Transform):
     """
     def __init__(self, dB):
         self.dB = dB
-        pass
     
     def realise(self, audio):
         audio.audio[:,:] *= DB_to_Linear(self.dB)
@@ -110,6 +92,28 @@ class Amplitude(Transform):
             # TODO view or copy?
             # TODO what about different channels?
             audio.audio *= amps
+
+
+class AmpFreq(Transform):
+    """
+    have the amplitude change according to a sine function over time continuously,
+    with given width (size) and frequency
+    TODO again the factors should be perhaps logarithimic
+    """
+    def __init__(self, frequency, size, phase=0):
+        self.frequency = frequency
+        self.size = size
+        self.phase = phase
+    
+    def realise(self, audio):
+        """ audio is Audio instance"""
+        assert isinstance(audio, Audio) # TODO remove this after debug hopefully
+        
+        sin = np.sin(self.phase + self.frequency * \
+                     np.linspace(0, audio.duration(), audio.length(), False) * 2 * np.pi)
+        audio *= (sin * self.size + (1-self.size))
+        # remember [:] is necessary to retain changes
+        
 
 
 class Limiter(Transform):

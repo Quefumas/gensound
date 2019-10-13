@@ -48,6 +48,13 @@ class Audio:
         return self
     
     def __mul__(self, other):
+        if isinstance(other, np.ndarray):
+            assert len(other.shape) == 1, "can multiply Audio by np.ndarray only for one-dimensional arrays"
+            if other.shape[0] > self.length():
+                other = other[0:self.length]
+            self.audio[:,0:other.shape[0]] *= other
+            return
+            
         assert isinstance(other, Audio)
         # for multiplying by a float, we multiply the signal instead
         # TODO also does not support with Audios with differing params
