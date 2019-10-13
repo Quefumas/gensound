@@ -37,33 +37,25 @@ class Signal:
     
     @staticmethod
     def concat(*args):
-        s = Signal()
-        s.sequence = args
+        s = Sequence(*args)
         return s
     
     def realise(self, sample_rate):
         """ returns Audio instance.
         parses the entire signal tree recursively
         """
-        assert not (hasattr(self, "sequence") and hasattr(self, "signals"))
         
-        if hasattr(self, "sequence"):
-            audio = Audio(sample_rate)
-            for signal in self.sequence:
-                audio.append(signal.realise(sample_rate))
-        elif not hasattr(self, "signals"): # leaf of the mix tree
-            signal = self.generate(sample_rate)
+        signal = self.generate(sample_rate)
+        
+        if not isinstance(signal, Audio):
             if len(signal.shape) == 1:
                 signal.resize((1, signal.shape[0]))
                 # TODO is this the place?
             audio = Audio(sample_rate)
             audio.from_array(signal)
-        else: # internal node
-            audio = Audio(sample_rate)
-            
-            for signal in self.signals:
-                audio += signal.realise(sample_rate)
-        
+        else:
+            audio = signal
+    
         for transform in self.transforms:
             transform.realise(audio=audio)
             
@@ -84,12 +76,13 @@ class Signal:
     ########################
     
     def __str__(self):
-        if hasattr(self, "sequence"):
+        if isinstance(self, Sequence):
             res = "[{}]".format(" + ".join([str(signal) for signal in self.sequence]))
-        elif not hasattr(self, "signals"):
-            res = str(type(self).__name__)
-        else:
+        elif isinstance(self, Mix):
             res = "({})".format(" + ".join([str(signal) for signal in self.signals]))
+        else:
+            res = str(type(self).__name__)
+        
         res += "" if len(self.transforms) == 0 else "*({})".format(",".join([str(transform) for transform in self.transforms]))
         return res
     
@@ -125,15 +118,14 @@ class Signal:
         append it to the list.
         otherwise, it is an untransformed list, simply extend the signal list.
         """
-        s = Signal()
-        s.signals = []
+        s = Mix()
         
-        if len(self.transforms) == 0 and hasattr(self, "signals"):
+        if len(self.transforms) == 0 and isinstance(self, Mix):
             s.signals += self.signals
         else:
             s.signals += [self]
         
-        if len(other.transforms) == 0 and hasattr(other, "signals"):
+        if len(other.transforms) == 0 and isinstance(other, Mix):
             s.signals += other.signals
         else:
             s.signals += [other]
@@ -146,7 +138,40 @@ class Signal:
     def __neg__(self):
         return -1.0*self
     
+#### other "high-level" signals
+
+class Mix(Signal):
+    """
+    a list of signals to be mixed together
+    (AKA "internal node" of the mix tree)
+    """
+    def __init__(self, *signals):
+        super().__init__()
+        self.signals = list(signals)
     
+    def generate(self, sample_rate):
+        audio = Audio(sample_rate)
+        
+        for signal in self.signals:
+            audio += signal.realise(sample_rate)
+        
+        return audio
+
+class Sequence(Signal):
+    """
+    a list of signals to be placed one after the other
+    """
+    def __init__(self, *sequence):
+        super().__init__()
+        self.sequence = list(sequence)
+    
+    def generate(self, sample_rate):
+        audio = Audio(sample_rate)
+        
+        for signal in self.sequence:
+            audio.append(signal.realise(sample_rate))
+        
+        return audio
 
 #### particular signals
 
