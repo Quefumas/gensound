@@ -197,6 +197,18 @@ class Reverse(Transform):
     def realise(self, audio):
         audio.audio[:,:] = audio.audio[:,::-1]
 
+class Slice(Transform):
+    """ returns only a specified part of the signal """
+    def __init__(self, s):
+        """ s is slice """
+        # TODO filter slices (if relevant?)
+        self.slice = s
+    
+    def realise(self, audio):
+        start = None if self.slice.start == None else int(audio.sample_rate*self.slice.start/1000)
+        stop = None if self.slice.stop == None else int(audio.sample_rate*self.slice.stop/1000)
+        audio.audio = audio.audio[:,start:stop:self.slice.step]
+
 ###### PANNING STUFF    
 
 class Channels(Transform):

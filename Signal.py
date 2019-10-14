@@ -9,7 +9,7 @@ import copy
 
 import numpy as np
 
-from transforms import Transform, Amplitude
+from transforms import Transform, Amplitude, Slice
 from audio import Audio
 from playback import WAV_to_Audio
 from utils import is_number
@@ -137,6 +137,13 @@ class Signal:
     
     def __neg__(self):
         return -1.0*self
+    
+    #########
+    def __getitem__(self, *args):
+        assert len(args) == 1
+        return self.copy()*Slice(args[0])
+    
+    
     
 #### other "high-level" signals
 
