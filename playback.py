@@ -14,6 +14,8 @@ so as to facilitate cross-platform functionality in the future.
 """
 
 import wave
+import inspect
+import time
 
 import numpy as np
 import simpleaudio as sa
@@ -27,6 +29,11 @@ def export_WAV(filename, audio):
     file.setnframes(audio.length())
     
     file.writeframes(audio.buffer)
+
+def export_test(audio):
+    export_WAV("output/{.function}_{timestamp}.wav".format(inspect.stack()[1], 
+                   timestamp = time.strftime('%Y-%b-%d_%H%M', time.localtime())),
+                audio)
 
 def play_WAV(filename="", is_wait=False):
     wav = sa.WaveObject.from_wave_file(filename)

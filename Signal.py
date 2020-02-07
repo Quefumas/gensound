@@ -26,19 +26,10 @@ class Signal:
         should return 1d np.ndarray, the dims are fixed later...
         not sure if good
         TODO
+        new: can also return Audio if there is a need;
+        but generally should be np.ndarray
         """
         pass
-    
-    def copy(self):
-        """
-        creates an identical signal object.
-        """
-        return copy.deepcopy(self)
-    
-    @staticmethod
-    def concat(*args):
-        s = Sequence(*args)
-        return s
     
     def realise(self, sample_rate):
         """ returns Audio instance.
@@ -72,6 +63,18 @@ class Signal:
         # perhaps some signals are inherently multiple-channeled?
         audio = self.realise(sample_rate)
         return audio.mixdown(byte_width, max_amplitude)
+    
+    #####################
+    def copy(self):
+        """
+        creates an identical signal object.
+        """
+        return copy.deepcopy(self)
+    
+    @staticmethod
+    def concat(*args):
+        s = Sequence(*args)
+        return s
     
     ########################
     
