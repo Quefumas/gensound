@@ -32,14 +32,15 @@ def export_WAV(filename, audio):
 
 def export_test(audio, func=None):
     timestamp = time.strftime('%Y-%b-%d_%H%M', time.localtime())
-    export_WAV("output/{.function}_{timestamp}.wav".format(inspect.stack()[1], 
-                   timestamp = timestamp),
+    export_WAV("output/export_{timestamp}_{caller.function}.wav".format( 
+                   timestamp = timestamp,
+                   caller = inspect.stack()[1]),
                 audio)
     
     if func == None:
         return
     
-    with open("output/export_log.txt", "a") as file:
+    with open("output/_export_log.txt", "a") as file:
         file.write("++++++ {} ++++++\n------ {} ------\n\n{}\n\n".format(
                                                                func.__name__,
                                                                timestamp,

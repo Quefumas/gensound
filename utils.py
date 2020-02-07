@@ -29,9 +29,35 @@ Linear_to_DB = lambda x: 20*np.log(x)/np.log(10)
 
 is_number = lambda x: isinstance(x, Number)
 
+
+
 # converts seconds to samples
 # later aliased as a Signal class function
 samples = lambda duration, sample_rate: int(duration*sample_rate/sec)
 # this is both for readability as well as for
 # bottlenecking non-safe conversions from durations into samples,
 # for better control later
+
+samples_slice = lambda slc, sample_rate: slice(
+                                                None if slc.start == None
+                                                     else samples(slc.start, sample_rate),
+                                                None if slc.stop == None
+                                                     else samples(slc.stop, sample_rate),
+                                                slc.step)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

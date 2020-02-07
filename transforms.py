@@ -7,7 +7,7 @@ Created on Sun Aug 18 21:01:16 2019
 
 import numpy as np
 from audio import Audio
-from utils import lambda_to_range, DB_to_Linear, is_number, samples
+from utils import lambda_to_range, DB_to_Linear, is_number, samples, samples_slice
 
 class Transform:
     """ represents post-processing on some given signal.
@@ -210,9 +210,27 @@ class Slice(Transform):
         self.slice = s
     
     def realise(self, audio):
-        start = None if self.slice.start == None else int(audio.sample_rate*self.slice.start/1000)
-        stop = None if self.slice.stop == None else int(audio.sample_rate*self.slice.stop/1000)
-        audio.audio = audio.audio[:,start:stop:self.slice.step]
+        audio.audio = audio.audio[:,samples_slice(self.slice, audio.sample_rate)]
+
+class Combine(Transform):
+    """ given another Signal as input, realises it and pushes it back
+    into the affected signal in the relevant place.
+    if the signal to push inside is too small, it will mean a silence gap,
+    if too long, its remainder will be mixed into the continuation of the parent signal
+    """
+    def __init__(self, slice, signal):
+        self.slice = slice
+        self.signal = signal
+    
+    def realise(self, audio):
+        # TODO support channels
+        slc = samples_slice(self.slice, audio.sample_rate)
+        
+        new_audio = self.signal.realise(audio.sample_rate)
+        
+        audio.audio[:, slc] = 0
+        audio.extend(slc.start+new_audio.length() - audio.length())
+        audio.audio[:, slc.start:slc.start+new_audio.length()] += new_audio.audio
 
 ###### PANNING STUFF    
 

@@ -30,8 +30,18 @@ def slice_test():
     #play_Audio(audio)
     export_test(audio, slice_test)
 
+def slice_set_test():
+    s = WAV(african)
+    # careful with 5e3, creates float slices
+    s[5e3:6e3] += Sine(frequency=400, duration=1.5e3)*Gain(-6)
+    s[7e3:8e3] = Sine(frequency=350, duration=0.5e3)*Gain(-6)
+    s[9e3:12e3] *= Reverse()
+    audio = s.mixdown(sample_rate=32000, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, slice_set_test)
+
 if __name__ == "__main__":
-    slice_test()
+    slice_set_test()
     
     #s = WAV(african)
     #s = Signal.concat(0.1*Triangle(midC(-3), duration=1e3) + Sine(midC(-3), duration=1e3),

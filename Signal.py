@@ -9,7 +9,7 @@ import copy
 
 import numpy as np
 
-from transforms import Transform, Amplitude, Slice
+from transforms import Transform, Amplitude, Slice, Combine
 from audio import Audio
 from playback import WAV_to_Audio
 from utils import is_number, samples
@@ -146,10 +146,16 @@ class Signal:
     
     #########
     def __getitem__(self, *args):
-        assert len(args) == 1
+        # no channels yet TODO
+        assert type(args[0]) == slice
         return self.copy()*Slice(args[0])
     
-    
+    def __setitem__(self, *args):
+        # no channels yet TODO
+        assert type(args[0]) == slice        
+        assert isinstance(args[1], Signal) # TODO what are my requirements for the other stuff? to be signal?
+        
+        self.transforms.append(Combine(args[0], args[1]))
     
 #### other "high-level" signals
 
