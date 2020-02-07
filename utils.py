@@ -13,7 +13,7 @@ import numpy as np
 
 
 ints_by_width = (np.int8, np.int16, np.int32, np.int64)
-
+sec = 1000
 
 def lambda_to_range(f):
     """ transforms function from convenient lambda format to something usable
@@ -28,3 +28,10 @@ DB_to_Linear = lambda x: 10**(x/20)
 Linear_to_DB = lambda x: 20*np.log(x)/np.log(10)
 
 is_number = lambda x: isinstance(x, Number)
+
+# converts seconds to samples
+# later aliased as a Signal class function
+samples = lambda duration, sample_rate: int(duration*sample_rate/sec)
+# this is both for readability as well as for
+# bottlenecking non-safe conversions from durations into samples,
+# for better control later

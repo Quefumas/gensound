@@ -11,7 +11,7 @@ from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Ste
 from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
                        Downsample_rough, Average_samples, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice
-from playback import play_WAV, play_Audio, export_WAV, export_test
+from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 
 from musicTheory import midC
 
@@ -27,8 +27,8 @@ def slice_test():
     s = WAV(african) + part*Shift(4*1061)*Gain(-6) - hihat
     #s = hihat
     audio = s.mixdown(sample_rate=32000, byte_width=2, max_amplitude=0.2)
-    play_Audio(audio)
-
+    #play_Audio(audio)
+    export_test(audio, slice_test)
 
 if __name__ == "__main__":
     slice_test()

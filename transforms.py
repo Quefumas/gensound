@@ -7,7 +7,7 @@ Created on Sun Aug 18 21:01:16 2019
 
 import numpy as np
 from audio import Audio
-from utils import lambda_to_range, DB_to_Linear, is_number
+from utils import lambda_to_range, DB_to_Linear, is_number, samples
 
 class Transform:
     """ represents post-processing on some given signal.
@@ -25,6 +25,11 @@ class Transform:
     def __str__(self):
         return str(type(self).__name__)
     
+    def samples(self, sample_rate):
+        if not hasattr(self, "duration"):
+            raise TypeError("transform.duration must be defined to support conversion to samples")
+        return samples(self.duration, sample_rate)
+    
     def realise(self, audio):
         """ here we apply the transformation on the Audio object.
         this should change the object directly, don't return anything."""
@@ -40,7 +45,7 @@ class Fade(Transform):
         self.duration = duration
     
     def realise(self, audio):
-        amp = DB_to_Linear(np.linspace(Fade.min_fade, 0, int(self.duration*audio.sample_rate/1000)))
+        amp = DB_to_Linear(np.linspace(Fade.min_fade, 0, self.samples(audio.sample_rate)))
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
         
@@ -176,16 +181,16 @@ class Shift(Transform):
         self.duration = duration
     
     def realise(self, audio):
-        audio.push_forward(int(self.duration * audio.sample_rate/1000))
+        audio.push_forward(self.samples(audio.sample_rate))
 
 class Extend(Transform):
     """ adds silence after the signal. needed?
     """
-    def __init__(self, duration=1000):
+    def __init__(self, duration):
         self.duration = duration
     
     def realise(self, audio):
-        audio.extend(int(self.duration*audio.sample_rate/1000))
+        audio.extend(self.samples(audio.sample_rate))
 
 class Reverse(Transform):
     """

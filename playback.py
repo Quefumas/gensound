@@ -30,10 +30,20 @@ def export_WAV(filename, audio):
     
     file.writeframes(audio.buffer)
 
-def export_test(audio):
+def export_test(audio, func=None):
+    timestamp = time.strftime('%Y-%b-%d_%H%M', time.localtime())
     export_WAV("output/{.function}_{timestamp}.wav".format(inspect.stack()[1], 
-                   timestamp = time.strftime('%Y-%b-%d_%H%M', time.localtime())),
+                   timestamp = timestamp),
                 audio)
+    
+    if func == None:
+        return
+    
+    with open("output/export_log.txt", "a") as file:
+        file.write("++++++ {} ++++++\n------ {} ------\n\n{}\n\n".format(
+                                                               func.__name__,
+                                                               timestamp,
+                                                               inspect.getsource(func)))
 
 def play_WAV(filename="", is_wait=False):
     wav = sa.WaveObject.from_wave_file(filename)
