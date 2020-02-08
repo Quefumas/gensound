@@ -193,22 +193,22 @@ def reuse_WAV_test():
     play_Audio(audio, is_wait=True)
 
 def repan_test():
-    signal = WAV("data/african_sketches_1.wav")*Repan((1,0)) #switch L/R
+    signal = WAV("data/african_sketches_1.wav")*Repan(1,0) #switch L/R
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=None)
     play_Audio(audio, is_wait=True)
     pass
 
 def log_amp_test():
     # tests logarithmic scaling of amplitude factors
-    signal = WAV(african)*Repan((0,None)) #switch L/R
-    signal += 0.125*WAV("data/african_sketches_1.wav")*Repan((None,1))
+    signal = WAV(african)*Repan(0,None) #switch L/R
+    signal += 0.125*WAV("data/african_sketches_1.wav")*Repan(None,1)
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.5)
     play_Audio(audio, is_wait=True)
     pass
 
 def gain_test():
-    signal = WAV(african)*Repan((0,None))
-    signal += WAV(african)*Repan((None,1))*Gain(-9)
+    signal = WAV(african)*Repan(0,None)
+    signal += WAV(african)*Repan(None,1)*Gain(-9)
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=None)
     play_Audio(audio, is_wait=True)
     #export_WAV("data/gain_test.wav", audio)
@@ -223,7 +223,7 @@ def limit_test():
 def cancellation_test():
     #signal = Sine(duration=5000) - 0.999*Sine(duration=5000)
     #signal += 0.01*Sine(frequency=130,duration=1000)
-    signal = WAV(african) - WAV(african)*Repan((1,0))
+    signal = WAV(african) - WAV(african)*Repan(1,0)
     #signal += 0.5*WAV(african) # basically neautralized the center "channel"
     #signal += 5.0*WAV(african) # strengthens center
     
@@ -309,7 +309,8 @@ def db_fade_test():
 if __name__ == "__main__":
     #repan_reverb_test()
     #dummy_reverb_test()
-    reuse_WAV_test()
+    #reuse_WAV_test()
+    limit_test()
     
     
     

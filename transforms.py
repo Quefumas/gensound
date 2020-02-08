@@ -277,11 +277,12 @@ class Pan(Transform):
 class Repan(Transform):
     """ Allows switching between channels.
     """
-    def __init__(self, channels):
+    def __init__(self, *channels):
         """ channels is a permutation on the existing channels.
         i.e. (1,0) switches left and right.
         None means leave channel empty.
         """
+        # TODO change to *channels instead? for readability when calling
         assert type(channels) == tuple
         self.channels = channels
     

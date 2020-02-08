@@ -33,10 +33,14 @@ def slice_test():
 def slice_set_test():
     s = WAV(african)
     # careful with 5e3, creates float slices
-    s[5e3:6e3] += Sine(frequency=400, duration=1.5e3)*Gain(-6)
-    s[7e3:8e3] = Sine(frequency=350, duration=0.5e3)*Gain(-6)
-    s[9e3:12e3] *= Reverse()
-    audio = s.mixdown(sample_rate=32000, byte_width=2, max_amplitude=0.2)
+    
+    #s[5e3:18e3] = s[5e3:18e3]*Repan() + s[5e3:18e3]*Downsample_rough(5)*Gain(-3)
+    #s[5e3:18e3] *= Repan(1,0)
+    s[5e3:18e3] = s[5e3:18e3]*Repan(1 ,None) + s[5e3:18e3]*Repan(None, 0)
+    # TODO found a bug here? does it really keep both copies of the slice separate?
+    # also test s = s[0:50] & sine() & s[50:100]
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     #play_Audio(audio)
     export_test(audio, slice_set_test)
 
