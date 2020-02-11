@@ -31,6 +31,8 @@ def export_WAV(filename, audio):
     file.writeframes(audio.buffer)
 
 def export_test(audio, func=None):
+    assert inspect.stack()[1].function == func.__name__, "logging names don't match!!!"
+    
     timestamp = time.strftime('%Y-%b-%d_%H%M', time.localtime())
     export_WAV("output/export_{timestamp}_{caller.function}.wav".format( 
                    timestamp = timestamp,
@@ -41,6 +43,7 @@ def export_test(audio, func=None):
         return
     
     with open("output/_export_log.txt", "a") as file:
+        # TODO make sure not to overwrite
         file.write("++++++ {} ++++++\n------ {} ------\n\n{}\n\n".format(
                                                                func.__name__,
                                                                timestamp,

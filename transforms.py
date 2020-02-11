@@ -7,7 +7,9 @@ Created on Sun Aug 18 21:01:16 2019
 
 import numpy as np
 from audio import Audio
-from utils import lambda_to_range, DB_to_Linear, is_number, samples, samples_slice
+from utils import lambda_to_range, DB_to_Linear, \
+                  isnumber, iscallable, \
+                  samples, samples_slice
 
 class Transform:
     """ represents post-processing on some given signal.
@@ -80,23 +82,23 @@ class Amplitude(Transform):
     def __init__(self, size):
         self.size = size
         
-        if type(size) == type(lambda x: x):
+        if iscallable(size):
             # TODO what if size is function, not lambda?
             self.size = lambda_to_range(size)
     
     def realise(self, audio):
         # TODO shouldn't this just affect a copy of audio????
-        if is_number(self.size):
+        if isnumber(self.size):
             audio.audio = self.size*audio.audio
             return
         
-        assert type(self.size) == type(lambda x: x)
-        
-        if type(self.size) == type(lambda x: x):
+        if iscallable(self.size):
             amps = self.size(audio.length(), audio.sample_rate)
             # TODO view or copy?
             # TODO what about different channels?
             audio.audio *= amps
+        else:
+            raise TypeError()
 
 
 class AmpFreq(Transform):
@@ -254,9 +256,11 @@ class Pan(Transform):
         """ pans is either a function (range) -> ndarray(float64), or a tuple of these
         wrong, right now accepting functions R -> R
         """
+        # TODO better written with iscallable?
+        # or isinstance(pans, (collections.Callable, tuple))?
         assert type(pans) in (type(lambda x:x), tuple), "invalid argument for Pan transform"
         
-        if type(pans) != tuple:
+        if not isinstance(pans, tuple):
             pans = (pans,)
         
         # TODO find better conversion
@@ -336,9 +340,9 @@ class Average_samples(Transform):
         TODO: on the edges this causes a small fade in fade out of length len(weights).
         not necessarily a bug though.
         """
-        assert type(weights) in (int, tuple, list), "weights argument should be either int or list/tuple"
-        #assert type(weights) == int or sum(weights) == 1, "weights must sum to 1"
-        if type(weights) == int:
+        assert isinstance(weights, (int, tuple, list)), "weights argument should be either int or list/tuple"
+        #assert isinstance(weights, int) or sum(weights) == 1, "weights must sum to 1"
+        if isinstance(weights, int):
             weights = tuple(1 for w in range(weights))
         
         self.weights = weights

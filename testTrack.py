@@ -51,8 +51,8 @@ def concat_overload_test():
     s = s[5e3:5.5e3] | s[6e3:6.8e3] | s[11e3:13e3]*Reverse()+Sine(frequency=300, duration=2e3) | s[9e3:10.8e3]
     
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
-    #play_Audio(audio)
-    export_test(audio, slice_set_test)
+    play_Audio(audio)
+    #export_test(audio, concat_overload_test)
 
 def messy_random_concat_test():
     s = WAV(african)
@@ -66,7 +66,7 @@ def messy_random_concat_test():
         while temp < max_length:
             duration = 400 + np.random.random()*3e3
             temp += duration
-            start = 4 + (30-4)*np.random.random()*1e3
+            start = 4e3 + (30-4)*np.random.random()*1e3
             t |= s[start:start+duration]
         
         return t
@@ -81,18 +81,29 @@ def messy_random_concat_test():
     t += 0.6*s*Downsample_rough(factor=5)*Average_samples(weights=5)
     
     audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
-    #play_Audio(audio)
-    export_test(audio, slice_set_test)
+    play_Audio(audio)
+    #export_test(audio, messy_random_concat_test)
     
+def concat_scalar_test():
+    s = WAV(african)
+    
+    gap = 0.1
+    L = s[10e3:11e3] | gap | s[11e3:12e3] | gap | s[12e3:13e3] | gap | s[13e3:14e3] \
+        | gap | s[14e3:15e3] | gap | s[15e3:16e3] | gap | s[16e3:17e3]
+    R = s[10e3:17e3]
+    
+    s = L*Repan(0, None) + R*Repan(None, 1)
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, concat_scalar_test)
+    # this is a funky effect of panning by dephasing...
 
 if __name__ == "__main__":
-    messy_random_concat_test()
+    concat_scalar_test()
     
-    #s = WAV(african)
-    #s = Signal.concat(0.1*Triangle(midC(-3), duration=1e3) + Sine(midC(-3), duration=1e3),
-#                      0.1*Triangle(midC(-5), duration=1e3) + Sine(midC(-5), duration=1e3))
-    #audio = s.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
-#    play_Audio(audio)
+    
+    
     #%%%%%
 
 

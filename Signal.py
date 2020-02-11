@@ -12,7 +12,7 @@ import numpy as np
 from transforms import Transform, Amplitude, Slice, Combine
 from audio import Audio
 from playback import WAV_to_Audio
-from utils import is_number, samples
+from utils import isnumber, samples
 
 class Signal:
     def __init__(self):
@@ -87,7 +87,7 @@ class Signal:
     ####### sound operations ########
     
     def _amplitude(self, number):
-        assert is_number(number)
+        assert isnumber(number)
         return self*Amplitude(size=number)
     
     def _apply(self, transform):
@@ -99,6 +99,12 @@ class Signal:
         return s
     
     def _concat(self, other):
+        # TODO consider enabling for negative other,
+        # thus shifting a sequence forward(backward? Chinese) in time
+        # TODO possibly better way to implement than using Silence
+        if isnumber(other):
+            other = Silence(duration=other)
+            
         s = Sequence()
         
         if not self.transforms and isinstance(self, Sequence):
@@ -191,6 +197,9 @@ class Signal:
         if other == 0:
             return self
         
+        if isnumber(other):
+            return Silence(duration=other)._concat(self)
+        
         raise TypeError("Signal can only be concatted to other signals, or to 0.")
     
     #########
@@ -250,7 +259,7 @@ class Silence(Signal):
         # TODO appears to be wrong duration, should take into account sample rate
     
     def generate(self, sample_rate):
-        return np.zeros(self.duration, dtype=np.float64)
+        return np.zeros(self.samples(sample_rate), dtype=np.float64)
 
 class Sine(Signal):
     def __init__(self, frequency=220, duration=5000):

@@ -11,7 +11,7 @@ some may be instance functions, some may belong in utils.
 
 import numpy as np
 import copy
-from utils import ints_by_width, is_number
+from utils import ints_by_width
 
 class Audio:
     def __init__(self, sample_rate):
@@ -116,7 +116,10 @@ class Audio:
         
         # TODO inefficient slightly for creating an empty array first
         self.audio = np.zeros_like(array, dtype=np.float64)
-        self.audio = (array/np.max(np.abs(array))).copy(order="C")
+        # TODO should this even happen?
+        # note that this is called practically everytime we generate() a signal!!!
+        normalize = np.max(np.abs(array))
+        self.audio = (array/normalize if normalize != 0 else array).copy(order="C")
     
     def copy(self):
         """
