@@ -256,7 +256,6 @@ class Silence(Signal):
     def __init__(self, duration=5000):
         super().__init__()
         self.duration = duration
-        # TODO appears to be wrong duration, should take into account sample rate
     
     def generate(self, sample_rate):
         return np.zeros(self.samples(sample_rate), dtype=np.float64)

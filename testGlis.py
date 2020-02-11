@@ -44,8 +44,8 @@ def glisTest():
     f = lambda x: 220 if x < 1 else (330 if x > 4 else (220+110*(x-1)/3))
     f2 = lambda x: midC(6)-20 if x < 1 else (midC(1) if x > 4 else (midC(6)-20-(midC(6)-20-midC(1))*(x-1)/3))
     
-    signal = Glis(duration=5000, frequency=f)*Channels((1,0))
-    signal += Glis(duration=5000, frequency=f2)*Channels((0,1))
+    signal = Glis(duration=5000, frequency=f)*Channels(1,0)
+    signal += Glis(duration=5000, frequency=f2)*Channels(0,1)
     
     audio = signal.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.01)
     play_Audio(audio, is_wait=True)

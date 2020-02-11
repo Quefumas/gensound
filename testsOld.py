@@ -54,9 +54,9 @@ def only_signal_harmonics(f=220, seconds=10):
     play_Audio(audio)
 
 def simple_test(f=220, seconds=5):
-    t = Sine(frequency=230, duration=seconds*1000)*AmpFreq(frequency=1, size=0.2)*Channels((0.7,0.7))
-    t += Triangle(frequency=380, duration=seconds*1000)*AmpFreq(frequency=0.4, size=0.3)*Channels((0,1))
-    t += Square(frequency=300, duration=seconds*1000)*AmpFreq(frequency=0.7, size=0.2)*Channels((1,0))
+    t = Sine(frequency=230, duration=seconds*1000)*AmpFreq(frequency=1, size=0.2)*Channels(0.7,0.7)
+    t += Triangle(frequency=380, duration=seconds*1000)*AmpFreq(frequency=0.4, size=0.3)*Channels(0,1)
+    t += Square(frequency=300, duration=seconds*1000)*AmpFreq(frequency=0.7, size=0.2)*Channels(1,0)
     t *= Fade(is_in=True, duration=3*1000)
     #t *= Fade(is_in=False, duration=20)
     t *= Shift(duration=1*1000)
@@ -68,7 +68,7 @@ def WAV_test(filename=""):
     wav *= Fade(is_in=True, duration=10)
     
     wav += 0.03*GreyNoise(duration=20*1000)*AmpFreq(frequency=0.03, size=0.2)
-    wav += 0.06*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3*1000)*Channels((0.7,0.7))
+    wav += 0.06*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3*1000)*Channels(0.7,0.7)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     
@@ -77,7 +77,7 @@ def WAV_test(filename=""):
     
     
 def timing_test():
-    t = Sine(frequency=230, duration=3*1000)*AmpFreq(frequency=1, size=0.2)*Channels((0.7,0.7))
+    t = Sine(frequency=230, duration=3*1000)*AmpFreq(frequency=1, size=0.2)*Channels(0.7,0.7)
     t += Square(frequency=250, duration=3*1000)*Shift(duration=3*1000)
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio, is_wait=True)
@@ -86,7 +86,7 @@ def timing_test():
 def pan_test():
     seconds = 10
     t = Sine(frequency=230, duration=seconds*1000)#*AmpFreq(frequency=1, size=0.2)
-    t *= Channels((1,1))
+    t *= Channels(1,1)
     
     top = seconds*11025
     

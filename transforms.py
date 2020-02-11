@@ -83,7 +83,6 @@ class Amplitude(Transform):
         self.size = size
         
         if iscallable(size):
-            # TODO what if size is function, not lambda?
             self.size = lambda_to_range(size)
     
     def realise(self, audio):
@@ -174,11 +173,7 @@ class Limiter(Transform):
 #####################
 
 class Shift(Transform):
-    """ shifts the signal forward in time.
-    it is problematic to use seconds all the time,
-    because of floating point numbers TODO
-    TODO
-    """
+    """ shifts the signal forward in time."""
     def __init__(self, duration):
         self.duration = duration
     
@@ -239,7 +234,7 @@ class Combine(Transform):
 class Channels(Transform):
     """ transforms mono to channels with the appropriate amps
     """
-    def __init__(self, amps):
+    def __init__(self, *amps):
         """ amps is a tuple, [-1,1] for each of the required channels """
         # TODO maybe better to use variable number of args instead of tuple, looks nicer
         self.amps = amps
@@ -256,6 +251,7 @@ class Pan(Transform):
         """ pans is either a function (range) -> ndarray(float64), or a tuple of these
         wrong, right now accepting functions R -> R
         """
+        # TODO preferably use *pans but 1st make sure compatibiliy with paramterization
         # TODO better written with iscallable?
         # or isinstance(pans, (collections.Callable, tuple))?
         assert type(pans) in (type(lambda x:x), tuple), "invalid argument for Pan transform"
