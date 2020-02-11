@@ -37,7 +37,7 @@ def export_test(audio, func=None):
                    caller = inspect.stack()[1]),
                 audio)
     
-    if func == None:
+    if func is None:
         return
     
     with open("output/_export_log.txt", "a") as file:

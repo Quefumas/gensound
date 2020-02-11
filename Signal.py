@@ -76,12 +76,64 @@ class Signal:
     
     @staticmethod
     def concat(*args):
-        s = Sequence(*args)
+        return Sequence(*args)
+    
+    @staticmethod
+    def mix(*args):
+        # we really want to use #reduce(, args) instead
+        # but the question is what should be the 1st argument?
+        return sum(args)
+    
+    ####### sound operations ########
+    
+    def _amplitude(self, number):
+        assert is_number(number)
+        return self*Amplitude(size=number)
+    
+    def _apply(self, transform):
+        if not isinstance(transform, Transform):
+            return self._amplitude(transform)
+        
+        s = self.copy()
+        s.transforms.append(transform)
         return s
     
-    ########################
+    def _concat(self, other):
+        s = Sequence()
+        
+        if not self.transforms and isinstance(self, Sequence):
+            s.sequence += self.sequence
+        else:
+            s.sequence += [self]
+        
+        if not other.transforms and isinstance(other, Sequence):
+            s.sequence += other.sequence
+        else:
+            s.sequence += [other]
+        
+        return s
     
-    def __str__(self):
+    def _mix(self, other):
+        s = Mix()
+        
+        if not self.transforms and isinstance(self, Mix):
+            s.signals += self.signals
+        else:
+            s.signals += [self]
+        
+        if not other.transforms and isinstance(other, Mix):
+            s.signals += other.signals
+        else:
+            s.signals += [other]
+        
+        return s
+    
+    def _repeat(self, number):
+        # repeats this signal several times in a row
+        assert isinstance(number, int)
+        return Signal.concat(*[self]*number)
+    
+    def _print_nice(self):
         if isinstance(self, Sequence):
             res = "[{}]".format(" + ".join([str(signal) for signal in self.sequence]))
         elif isinstance(self, Mix):
@@ -89,27 +141,26 @@ class Signal:
         else:
             res = str(type(self).__name__)
         
-        res += "" if len(self.transforms) == 0 else "*({})".format(",".join([str(transform) for transform in self.transforms]))
+        res += "" if not self.transforms else "*({})".format(",".join([str(transform) for transform in self.transforms]))
         return res
     
+    ####### overloading operators #######
+    
+    def __str__(self):
+        return self._print_nice()
+    
     def __pow__(self, other):
-        assert type(other) == int
-        return Signal.concat(*[self]*other)
+        return self._repeat(other)
     
     def __rmul__(self, other):
         """ multiplication from the left is only legal for numbers, not for transforms"""
-        assert is_number(other)
-        return self*Amplitude(size = other)
+        return self._amplitude(other)
     
     def __mul__(self, other):
         """
         signals can be multiplied on the right by both floats and transforms
         """
-        if not isinstance(other, Transform):
-            return self.__rmul__(other)
-        s = self.copy()
-        s.transforms.append(other)
-        return s
+        return self._apply(other)
     
     def __radd__(self, other):
         if other == 0:
@@ -124,35 +175,33 @@ class Signal:
         append it to the list.
         otherwise, it is an untransformed list, simply extend the signal list.
         """
-        s = Mix()
-        
-        if len(self.transforms) == 0 and isinstance(self, Mix):
-            s.signals += self.signals
-        else:
-            s.signals += [self]
-        
-        if len(other.transforms) == 0 and isinstance(other, Mix):
-            s.signals += other.signals
-        else:
-            s.signals += [other]
-        
-        return s
+        return self._mix(other)
     
     def __sub__(self, other):
-        return self.__add__(-1.0*other)
+        return self._mix(-other)
     
     def __neg__(self):
-        return -1.0*self
+        return self._amplitude(-1.0)
+    
+    def __or__(self, other):
+        """Overloading concat."""
+        return self._concat(other)
+    
+    def __ror__(self, other):
+        if other == 0:
+            return self
+        
+        raise TypeError("Signal can only be concatted to other signals, or to 0.")
     
     #########
     def __getitem__(self, *args):
         # no channels yet TODO
-        assert type(args[0]) == slice
+        assert isinstance(args[0], slice)
         return self.copy()*Slice(args[0])
     
     def __setitem__(self, *args):
         # no channels yet TODO
-        assert type(args[0]) == slice        
+        assert isinstance(args[0], slice)
         assert isinstance(args[1], Signal) # TODO what are my requirements for the other stuff? to be signal?
         
         self.transforms.append(Combine(args[0], args[1]))

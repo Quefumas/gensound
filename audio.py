@@ -215,9 +215,9 @@ class Audio:
         side effects are only the creation of self.byte_width and self.buffer.
         self.audio remains unaffected, and we use static methods for this end.
         """
-        assert max_amplitude == None or 0 < max_amplitude <= 1
+        assert max_amplitude is None or 0 < max_amplitude <= 1
         
-        if max_amplitude == None:
+        if max_amplitude is None:
             # don't touch the amplitudes unnecessarily
             max_amplitude = np.max(np.abs(self.audio))
         

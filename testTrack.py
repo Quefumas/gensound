@@ -41,11 +41,52 @@ def slice_set_test():
     # also test s = s[0:50] & sine() & s[50:100]
     
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    #export_test(audio, slice_set_test)
+
+def concat_overload_test():
+    #s = Sine(frequency=250, duration=2e3) | Triangle(frequency=300, duration=3e3)
+    s = WAV(african)
+    
+    s = s[5e3:5.5e3] | s[6e3:6.8e3] | s[11e3:13e3]*Reverse()+Sine(frequency=300, duration=2e3) | s[9e3:10.8e3]
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     #play_Audio(audio)
     export_test(audio, slice_set_test)
 
+def messy_random_concat_test():
+    s = WAV(african)
+    
+    max_length = 20e3
+    
+    def messy_track():
+        t = 0
+        temp = 0
+        
+        while temp < max_length:
+            duration = 400 + np.random.random()*3e3
+            temp += duration
+            start = 4 + (30-4)*np.random.random()*1e3
+            t |= s[start:start+duration]
+        
+        return t
+    
+    
+    L = messy_track() + messy_track()
+    R = messy_track() + messy_track()
+    
+    s = L*Repan(0, None) + R*Repan(None, 1)
+    
+    t = sum([(1-8/10)*s*Shift(duration=100*x)*Average_samples(weights=2*x+1) for x in range(5)])
+    t += 0.6*s*Downsample_rough(factor=5)*Average_samples(weights=5)
+    
+    audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, slice_set_test)
+    
+
 if __name__ == "__main__":
-    slice_set_test()
+    messy_random_concat_test()
     
     #s = WAV(african)
     #s = Signal.concat(0.1*Triangle(midC(-3), duration=1e3) + Sine(midC(-3), duration=1e3),

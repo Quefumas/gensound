@@ -80,7 +80,7 @@ class Amplitude(Transform):
     def __init__(self, size):
         self.size = size
         
-        if type(size) == type(lambda x:x):
+        if type(size) == type(lambda x: x):
             # TODO what if size is function, not lambda?
             self.size = lambda_to_range(size)
     
@@ -90,9 +90,9 @@ class Amplitude(Transform):
             audio.audio = self.size*audio.audio
             return
         
-        assert type(self.size) == type(lambda x:x)
+        assert type(self.size) == type(lambda x: x)
         
-        if type(self.size) == type(lambda x:x):
+        if type(self.size) == type(lambda x: x):
             amps = self.size(audio.length(), audio.sample_rate)
             # TODO view or copy?
             # TODO what about different channels?
@@ -132,17 +132,17 @@ class Limiter(Transform):
     def __init__(self, max_amplitude=None, max_ratio=None, max_dB=None,
                        min_amplitude=None, min_ratio=None, min_dB=None):
         """ at most one max can to be non-None, at most one min as well"""
-        assert (max_amplitude != None) + (max_ratio!=None) + (max_dB!=None) <= 1
-        assert (min_amplitude != None) + (min_ratio!=None) + (min_dB!=None) <= 1
+        assert (max_amplitude is not None) + (max_ratio is not None) + (max_dB is not None) <= 1
+        assert (min_amplitude is not None) + (min_ratio is not None) + (min_dB is not None) <= 1
         
         #TODO more assertions
         
-        if max_dB != None or min_dB != None:
+        if max_dB is not None or min_dB is not None:
             raise NotImplementedError
             # TODO
         
-        self.is_min = not (min_amplitude == None and min_ratio == None and min_dB == None)        
-        self.is_max = not (max_amplitude == None and max_ratio == None and max_dB == None)
+        self.is_min = not (min_amplitude is None and min_ratio is None and min_dB is None)        
+        self.is_max = not (max_amplitude is None and max_ratio is None and max_dB is None)
         
         self.max_amplitude = max_amplitude
         self.max_ratio = max_ratio
@@ -154,14 +154,14 @@ class Limiter(Transform):
     def realise(self, audio):
         # convert to the amplitude case then continue normally
         if self.is_max:
-            if self.max_ratio != None:
+            if self.max_ratio is not None:
                 self.max_amplitude = self.max_ratio*np.max(np.abs(audio.audio))
         
             # TODO do the same for dBs
             np.clip(audio.audio, -self.max_amplitude, self.max_amplitude, out=audio.audio)
         
         if self.is_min:
-            if self.min_ratio != None:
+            if self.min_ratio is not None:
                 self.min_amplitude = self.min_ratio*np.max(np.abs(audio.audio))
             #TODO same for dBs
             
@@ -282,14 +282,13 @@ class Repan(Transform):
         i.e. (1,0) switches left and right.
         None means leave channel empty.
         """
-        # TODO change to *channels instead? for readability when calling
-        assert type(channels) == tuple
+        assert isinstance(channels, tuple)
         self.channels = channels
     
     def realise(self, audio):
         new_audio = np.zeros(audio.audio.shape, dtype=np.float64)
         for i, channel in enumerate(self.channels):
-            if channel == None:
+            if channel is None:
                 continue
             new_audio[i,:] = audio.audio[channel,:]
             
@@ -309,7 +308,7 @@ class Downsample_rough(Transform):
     def __init__(self, factor=2, phase=0):
         self.factor = factor
         self.phase = phase
-        assert type(phase) == int and 0 <= phase < factor
+        assert isinstance(phase, int) and 0 <= phase < factor
         #assert phase == 0, "not implemented"
         if phase != 0:
             raise NotImplementedError # TODO

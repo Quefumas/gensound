@@ -39,9 +39,9 @@ samples = lambda duration, sample_rate: int(duration*sample_rate/sec)
 # for better control later
 
 samples_slice = lambda slc, sample_rate: slice(
-                                                None if slc.start == None
+                                                None if slc.start is None
                                                      else samples(slc.start, sample_rate),
-                                                None if slc.stop == None
+                                                None if slc.stop is None
                                                      else samples(slc.stop, sample_rate),
                                                 slc.step)
 
