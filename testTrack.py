@@ -87,10 +87,11 @@ def messy_random_concat_test():
 def concat_scalar_test():
     s = WAV(african)
     
-    gap = 0.1
+    gap = 0.03
     L = s[10e3:11e3] | gap | s[11e3:12e3] | gap | s[12e3:13e3] | gap | s[13e3:14e3] \
-        | gap | s[14e3:15e3] | gap | s[15e3:16e3] | gap | s[16e3:17e3]
-    R = s[10e3:17e3]
+        | gap | s[14e3:15e3] | gap | s[15e3:16e3] | gap | s[16e3:24e3]
+    R = s[10e3:18e3] | gap | s[18e3:19e3] | gap | s[19e3:20e3] | gap | s[20e3:21e3] \
+        | gap | s[21e3:24e3]
     
     s = L*Repan(0, None) + R*Repan(None, 1)
     
@@ -98,6 +99,19 @@ def concat_scalar_test():
     #play_Audio(audio)
     export_test(audio, concat_scalar_test)
     # this is a funky effect of panning by dephasing...
+
+def reverse_phase_test():
+    s = WAV(african)
+    
+    L = s[10e3:11e3] | -s[11e3:12e3] | s[12e3:13e3] | -s[13e3:14e3] | s[14e3:15e3] \
+        | -s[15e3:16e3] | s[16e3:17e3]
+    R = s[10e3:17e3]
+    
+    s = L*Repan(0, None) + R*Repan(None, 1)
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, reverse_phase_test)
 
 if __name__ == "__main__":
     concat_scalar_test()
