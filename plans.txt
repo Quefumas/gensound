@@ -1,0 +1,545 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Aug 22 20:44:57 2019
+
+@author: Dror
+"""
+
+
+================ CORE ======================
+
+fundamental improvements to do:
+
+V find syntax for upsampling/slowing down/ etc.
+V find how to put a signal after another signal
+V and to repeat signals
+V make signals/trnasforms empty skeletons
+so that one may reuse them, or define their own to be reused
+(make sure they store no audio data! apart from RAW)
+V slice signals
+* take back to mono etc.
+- translate fadeins etc into db
+- Solve strange panning issues
+V solve thing about float vs. int (and enable ints as floats all around)
+- signal *= 3.0 this does not work
+- ensure safety when converting ms to sampling Hz.
+V signal addition code ignores transforms applied to sums?
+* keep track of all dangerous floats (when converting from time to samples)
+no doubt we still need direct After function; putting signals in arrays is not always appropriate
+perhaps we should use + as after and & as mix?
+
+next stages:
+* parametrization
+* controlled glissandos
+* tracks stuff
+* fix panning
+* ADSR
+* TODO fix streak
+
+
+crossfade for concat???
+Sine() | CF | Triangle() ???
+=============
+
+-------- Summary of operators to support nicely:
+
+& mix
++ concat
+* apply transform
+** repeat !!!
+* scalar? amplitude
+
+t = s[:,3e3:5e3]
+
+s[:, 3e3:5e3] *= Reverse()
+
+s[:, 3e3:5e3] = Reverse()
+
+s[:, 3e3:5e3] += Reverse()
+
+
+s= WAV(african)
+what about order of operations?
+do we want concat or mix first?
+
+--- how about After() transform? ---
+
+Sine(f=A) + Sine(f=C#)*After(-100)
+
+makes the 2nd signal start 100 ms before the end of the previous one
+as opposed to shift, which shifts according to time zero
+this may also be examined; what if we add a 3rd one, shift according to the beginning
+of signal to which we are added?
+this whole thing will require fictive durations
+
+perhaps every signal should live with a "time index", that would guide
+whenevr they are added somewhere.
+this can cause problems with raw signals,
+since their time is rather undefined (depends on sample rate)
+but perhaps starting time would be enough?
+
+** consider what this would do to the associativity of the addition operator!
+
+what if we use AND for this instead?
+or use AND as the normal mix, and addition for this (what would this do to sum()??)
+or maybe XOR?
+
+
++ other syntax options:
+
+wav = Sine() * After() * Sine()
+
+wav = Sine() * After(Sine()*Gain()*...)
+
+wav = (Sine() + After + Sine())
+
+wav = Sine(f=C) + Sine(f=A, after=True)
+
+wav = Sine().After(Sine())
+
+wav = Sine() + Square()*Shift(after=True)
+
+for implementation, maybe if there are several Signals in one node of the tree,
+and the first of which has "After" flag turned on, ignore it.
+This makes summing easier, but the user will have to clarify the order of operations.
+Which may be a good thing too, since it needs to be clear to the reader of the code
+as well, which signals are simultaneous.
+
+define Sequences? like a list of signals.
+
+should this even be a transform? doesnt really fit the format
+
+define a larger unit made up of a signal?
+this unit is not mixed but rather concated?
+
+perhaps supply a length-of operator?
+wav = (x:=Sine()) + Square().Shift(duration=x.length())
+
+* also, we may want after in conjunction with [negative] shift.
+* do we want before?
+
+is there a convenient way to have a series of notes after each other,
+but without after for the first note? so the entire sequence doesn't have to be 
+after something.
+
+
+-------------- reflections after test -----------------------
+tried using signal.after as an attribute, found out it is not so simple.
+for example:
+    signal = Sine(frequency=midC(-7), duration=6e3)
+    signal2 = (sum([Sine(frequency=midC(k-4), duration=1e3, after=True) for k in range(6)]))
+    signal += signal2
+made me redefine the addition tree so that signal lists are never extended.
+not necessarily a bad thing, but it's not specific to this approach.
+the problem is that with this action we have to be super clear
+what is the intended order of additions.
+
+before the change, the above was interpreted as:
+(Sine + Sine + Sine' + Sine' + Sine' + Sine' + Sine')
+with the first sine being long, causing all the last sines to fall at the end,
+and not after the 2nd sine.
+we have to indicate the order of operations.
+
+after the corredction we had:
+(Sine + (((((Sine + Sine') + Sine') + Sine') + Sine') + Sine'))
+which is nice, but we would like to have
+(Sine + (Sine + Sine' + Sine' + Sine' + Sine' + Sine'))
+
+the problem is that our signal list cannot really indicate order of operations,
+because that would require implemented parentheses.
+
+
+how about doing signal.append?
+contain the argument in a new list:
+signals = [Sine*T, S*T]
+appends = [Signals, Signals]
+now realise would first realise the entire of the signals[] tree,
+then do the appends one by one, adding them at the end.
+
+but to maintain skeletality, we would need something more like:
+signal = signal.append(s2)
+so maybe better just use static methods
+new_signal = Signal.concat(s1,s2,s3...)
+the concat should work similarly to addition, in the sense that
+concatenating two lists can simply merge,
+but if one is transformed by itself it is no longer considered a list but an operand.
+
+
+---------- test 2-----------------
+seems to work great and without major modifications.
+
+however, i suspect it owuld be nicer to define 2 new classes:
+Sequence(Signal), Mix(Signal)
+that would be those signals with the "sequence" or "signals" property.
+just to separate them from the regular signals.
+
+also, consider allowing the syntax:
+Signal.concat(Sine() + Sine() + Sine())
+then the signals list would be replaced by a sequence list and that's it.
+
+---- repeat()? -----
+Suppose we do:
+acc = Sine(f=A) + Sine(f=C#)*After() + Sine(f=E)*After()
+acc *= Repeat(3)
+
+implemented as:
+
+
+---- use cases -----
+
+def note(freq, duration):
+    return sum([(1-1/n)*Sine(frequency=freq*n, duration=duration) for n in range(8)])*FadeIn(3)
+
+def melody(notes):
+    wav = 0 # TODO have this typecast to an empty signal
+    for pitch in pitches:
+        wav += note(pitch, 700)*After()
+
+the eventual signal tree would be:
+
+
++------------------------------------------------+
+| 0  |  note.after | note.after | ... note.after |
+
+
+signal *= 5
+or maybe signal **= 2
+or something
+should repeat the signal x times!
+or perhaps add append?
+
+--------- signal addition issues --------------
+
+Sig + Sig = [Sig, Sig]
+
+Sig*Trans + Sig*Trans = [Sig*Trans, Sig*Trans]
+
+[S*T, S*T] + S*T = [S*T, S*T, S*T]
+
+BUT:
+
+[S*T, S*T]*T + S*T = [ [S*T, S*T]*T, S*T ]
+
+rules:
+1. if both operands are generics, we create a list.
+
+2. if one of the operands is an untransformed list, and one is a generic,
+   we prepend/append the generic to the list.
+
+3. if both operands are untransformed lists, they are merged into a single list.
+   (this encourages using After() as a transform?)
+
+4. if any of the operands is a transformed list, a new list is created containing
+   both as single items.
+
+
+(would order of evaluation matter? without parentheses specified?)
+
+do we have a different way to write this?
+1. create empty array
+2. if first operand is untransformed, either append or extend
+3. if 1st operand is transformed, only append.
+4. if 2nd operand is untransformed, either append or extend
+5. if 2nd operand is transformed, just append.
+
+
+
+---------- for slicing --------------------
+
+WAV("x.wav")[1] - give us the 2nd channel only
+WAV("x.wav")[:,:100] - only retain the first 100 ms
+
+implementable as implicitly applying a transform leaving with only one channel.
+and the 2nd one the same - just have to convert ms to samples.
+though we can also add args to WAV (begin, end), so it will be more memory efficient.
+
+now we need to find a way to paste them back together.
+would this be hard using __setitem__?
+
+some use cases:
+1. rip L channel from 1 WAV and R channel from another, paste together.
+2. apply some transform only to L channel
+3. only use a few seconds from some signal
+4. apply a transform only on a certain time span of a signal, leaving the rest as is
+5. cut and paste parts from different signals, put them together or sequentially
+6. overwrite parts
+7. add a signal only to a certain part (use shift for that!)
+
+it seems it can all be done using a combination of basic slicing, and already
+existing transforms, like Signal*Channels(0,1) to transform some mono signal
+into R chanel, but it could get clunky.
+
+examples:
+1. WAV("a.wav")[0]*Channels(1,0) + WAV("b.wav")[1]*Channels(0,1)
+2. WAV("a.wav")[0]*Channels(1,0) + WAV("a.wav")[1]*LowPass()*Channels(0,1)
+
+- how about a Channels transform/signal that accepts two signals as arguments,
+and puts them as separate channels? would make the above easier.
+
+3. WAV("a")[:,1000:2000]
+4. WAV("a")[:,0:1000] + WAV("a")[:,1e3:2e3]*LowPass()*Shift(1e3) + WAV("a")[:,2e3:]*Shift(1e3)
+(would be easier once we solve "after")
+
+5. WAV("a")[:,10:20] + ~~after WAV("b")[:,2:34]
+
+Syntax that we might want instead:
+1.
+s = Signal()
+s[0] = WAV("a")[0]
+s[1] = WAV("b")[1]
+
+2.
+s = WAV("a")
+s[1] *= LowPass()
+* this also may be implemented by replacing s with the clunkier spelling above
+
+4.
+s = WAV("a")
+s[:,1e3:2e3] *= LowPass()
+
+* this perhaps could be implemented by implicitly dividing s into 3 parts,
+  so that s is a list of signals.
+  of course that would be a mess if then we have s[:,1.5e3:2.5e3]*=Reverse()
+  but may still be viable. (and would be easier when we have "after")
+
+6.
+s = WAV("a")
+s[1, 10:20] = Sine()
+
+
+------- slicing solution -------
+signal.getitem returns a Signal_Slice, containing reference to the source and the times.
+calling signal.setitem has the following behaviour:
+* check whether VALUE is a Signal_Slice with the source pointing to SELF.
+  -  if so, ignore VALUE, and apply to SELF all of VALUE's transforms, with times set on to them.
+* otherwise, fracture SELF into a Sequence, 
+
+
+important: can transforms extend the signal on their own?
+there is the transform EXtend which does so.
+sliced transforms need to be careful not to move stuff around when they do
+artifical extensions (i.e. reverb etc)
+
+important: are transforms powerful enough to do flexible reverbs?
+i guess they can do so by direct manipulation on audio,
+but it also seems natural to implement transforms by 
+
+===============
+
+- functions scheduled for examination:
+    - signal.realise
+    - amplitude.realise
+
+- once we solve the big ones above, probably the next stage is having a full-fledged
+EQ and Compressor.
+
+
+- perhaps have transforms multipliable by each other to create chains,
+which can then be added in bulk to a signal.
+ the purpose is that the user can employ any order of multiplications to get
+the desired result
+
+
+
+- if num_channels, sample rate etc. are needed during signal realisation,
+we can perrhaps pass a param dictionary instead. if we can deal
+with only sample rate, thats good too.
+
+
+
+perhaps ensure that all signals ARE empty shells
+otherwise we cannot construct a signal for reuse
+
+
+===================== SIGNALS ====================
+
+subclass of Raw that stores the buffer of a mixed-down Audio!
+this is also great for incremental composition, you can put aside previous results
+
+
+class Mute # just do 0*Signal
+
+use lambda as frequency
+glis etc.
+
+implement len() of signals
+
+compare between signals using length?
+
+let users supply phase function instead of frequency function,
+to allow them to spare the manual integration.
+
+perhaps have all signals store their audio in a cache, since transformed
+signales may well be used multiple times
+
+=================== TRANSFORMS ===================
+
+- cut and delete middle of signal
+
+- do transforms *between* signals, i.e. binary transforms.
+  for example: crossfade, or slice something from the middle
+  for this we can perhaps implement the same concat syntax:
+  Signal | Binary-transform | Signal.
+
+implement __eq__? to see if class and arguments are the same
+
+force quantize? suppose i have byte width 2 but want only 1000 levels of amplitude
+
+Transform: Right/Left
+changes to Stereo and puts in appropriate plae
+Also:
+Stereo(pan = [-1,1])
+
+* mute according to pattern
+* add extend
+
+
+perhaps allow multiplication by float vector,, one per channel
+
+for multiple channels - enable user defined directions!
+not necessarily linear, can be used to compose for strangely placed 3d speakers
+
+
+have a pan transform that allows for a single function that defines direction,
+with the addition of a power law
+
+
+downsample/upsample
+
+
+
+transform: cut beginning, end middle of signal etc.
+
+split channels transform so as to process each one individually
+
+
+allow negative shifts? (which can cancel previous positive shifts,
+or lose the beginning of the audio)
+
+
+add slice transform (think about syntax first)
+or make signals subscriptable like np arrays!
+
+experiment: reverse compress.
+high amps get lowered down, low amps get powered up
+
+
+possibly faster reverb:
+for i, s in enumerate(audio.audio):
+    audio.audio[i] += temp
+    temp *= 0.2
+    temp += audio.audio[i]
+
+
+============== enhanced transforms/effect =====
+now that we have apply encapsulated by realise,
+perhaps we can create a new Superclass of transforms,
+which upon realise actually receieves the relevant
+Signal (not audio), does actual shit to it and then generates()!
+
+
+================== ANALYZE =======================
+
+DC balance - analyse and correct
+
+
+implement in analyze.py a function to test frequency response of transforms
+by applying them to the impulse and then computing DFT magniuteds
+
+
+for continuous DFT:
+https://en.wikipedia.org/wiki/Short-time_Fourier_transform
+
+================= OTHER CAPABILITIES =============
+interface with MIDI!
+
+allow realtime interactions
+
+
+================ DEBUG & STABILITY ===========================
+- Audio.__add__ should not affect audio.
+perhaps implement iadd instead.
+
+- Audio.conform should not return anything
+
+- when mixdown takes more than a few seconds, print a record of how long it took
+(preferably to the log as well)
+
+ensure that signals and transforms are applid according to the same order
+note that this may be annoying when using __radd__ etc
+
+
+summarize all places where floating number convert to int
+so the user knows exactly all the places of possible inaccuracy
+
+
+
+test times, check how long everything takes
+
+
+
+zero division error prevents us from playing silence
+
+
+
+TODO
+apparently it really doesn't copy:
+ones = lambda n: tuple([1.0 for x in range(n)])
+    w = WAV(filename)
+    wav = sum([(1-8/10)*w*Shift(duration=100*x)*Average_samples(weights=ones(2*x+1)) for x in range(5)])
+    #wav += 
+    
+    audio = wav.mixdown(sample_rate=44100, byte_width=2)
+    play_Audio(audio, is_wait=True)
+this downsamples!
+
+the problem actgually is not in copying the audio; its the fact
+that multiplying signals with transforms changes the original signal
+its the signal that may need to be copied anew
+perhaps just use audio cache is better
+
+
+============== ????? =============
+
+np view vs. copy
+http://www.jessicayung.com/numpy-views-vs-copies-avoiding-costly-mistakes/
+https://stackoverflow.com/questions/4370745/view-onto-a-numpy-array
+
+perhaps define "10s" to be interpreted as 10*1000
+
+alias "sum" as "mix"
+
+for export_test, get the actual code of the calling function,
+and store it as metadata to the WAV!
+
+come back to sound synthesis book one day
+
+
+add frequency/pitch class calculus
+as well as time measurement calculus (add beat, add 1/16, add 1/3 etc)
+which can be realised at generate-time according to selected tempo
+
+musical functionality to pick random note from distribution
+distributions can be midi ranges, scales, whatever
+
+connect to VSTs to use inside the code!
+
+
+dB = 20 * log10(amplitude)
+
+
+
+amplitude = 14731 / 32767
+          = 0.44
+
+dB = 20 * log10(0.44)
+   = -7.13
+
+
+
+
+
+
+
+
+

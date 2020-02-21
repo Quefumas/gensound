@@ -1,5 +1,4 @@
 .spyproject/
 __pycache__/
 data/
-plans.txt
 output/
