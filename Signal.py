@@ -39,9 +39,6 @@ class Signal:
         signal = self.generate(sample_rate)
         
         if not isinstance(signal, Audio):
-            if len(signal.shape) == 1:
-                signal.resize((1, signal.shape[0]))
-                # TODO is this the place?
             audio = Audio(sample_rate)
             audio.from_array(signal)
         else:
@@ -59,8 +56,6 @@ class Signal:
         otherwise, max_amplitude = None implies not to touch the amplitudes
         as given, unless they exceed 1 in which case we shrink everything proportionally.
         """
-        # TODO does this need num channels?
-        # perhaps some signals are inherently multiple-channeled?
         audio = self.realise(sample_rate)
         return audio.mixdown(byte_width, max_amplitude)
     
@@ -94,7 +89,8 @@ class Signal:
         if not isinstance(transform, Transform):
             return self._amplitude(transform)
         
-        s = self.copy()
+        s = self.copy() # TODO is this needed?
+        # it is, so we can reuse the same base signal multiple times
         s.transforms.append(transform)
         return s
     

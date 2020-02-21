@@ -226,7 +226,7 @@ class Combine(Transform):
         new_audio = self.signal.realise(audio.sample_rate)
         
         audio.audio[:, slc] = 0
-        audio.extend(slc.start+new_audio.length() - audio.length())
+        audio.to_length(slc.start+new_audio.length())
         audio.audio[:, slc.start:slc.start+new_audio.length()] += new_audio.audio
 
 ###### PANNING STUFF    

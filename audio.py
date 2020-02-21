@@ -14,10 +14,39 @@ import copy
 from utils import ints_by_width
 
 class Audio:
+    """Basically a wrapper for a numpy array, representing the signal.
+    Shape is (tracks, samples), tracks being >= 1.
+    This object is mostly dealt with inside Transform and Signal functions,
+    and typically should not be used directly unless you're creating new
+    Signals or Transforms.
+    Don't override too many operators - this is the nuts and bolts,
+    not the pretty facade.
+    """
     def __init__(self, sample_rate):
         self.sample_rate = sample_rate
-        self.audio = np.zeros((1,1), dtype=np.float64)
-        # TODO is (..,1) good?
+        self.audio = np.zeros((1, 0), dtype=np.float64)
+    
+    def from_array(self, array):
+        """
+        converts np.ndarray to Audio.
+        if array is not of type np.float64, converts it implicitly!
+        note that this normalizes the values to be within [-1,1]
+        """
+        
+        if len(array.shape) == 1:
+            array.resize((1, array.shape[0]))
+        
+        # TODO should we copy? major issue
+        # note that this is called practically everytime we generate() a signal!!!
+        self.audio = array.copy(order="C")
+    
+    def copy(self):
+        """
+        creates an identical Audio object.
+        """
+        return copy.deepcopy(self)
+    
+    ####### getters #######
     
     def num_channels(self):
         return self.audio.shape[0]
@@ -32,43 +61,7 @@ class Audio:
         return self.length()/self.sample_rate
     
     
-    #######################
-        
-    def __radd__(self, other):
-        if other == 0:
-            return self
-        else:
-            return other.__add__(self)
-    
-    def __add__(self, other):
-        assert isinstance(other, Audio)
-        self.conform(other)
-        self.audio[:,0:other.length()] += other.audio
-        # TODO delete the other Audio??? for safety and memory
-        return self
-    
-    def __mul__(self, other):
-        if isinstance(other, np.ndarray):
-            assert len(other.shape) == 1, "can multiply Audio by np.ndarray only for one-dimensional arrays"
-            if other.shape[0] > self.length():
-                other = other[0:self.length]
-            self.audio[:,0:other.shape[0]] *= other
-            return
-            
-        assert isinstance(other, Audio)
-        # for multiplying by a float, we multiply the signal instead
-        # TODO also does not support with Audios with differing params
-        self.conform(other)
-        self.audio[:,0:other.length()] *= other[:,:]
-        return self
-    
-    ###################
-    
-    def append(self, other):
-        assert isinstance(other, Audio)
-        self.conform(other, is_append=True)
-        self.audio[:,-other.length():] += other.audio
-        return self
+    ######### Unary manipulations #########
     
     """
     
@@ -102,46 +95,40 @@ class Audio:
         if self.is_mono():
             self.from_mono(other.num_channels())
         
-        self.extend(other.length() - self.length() if not is_append else other.length())
-    
-    def from_array(self, array):
-        """
-        converts np.ndarray to Audio.
-        if array is not of type np.float64, converts it implicitly!
-        note that this normalizes the values to be within [-1,1]
-        """
+        if is_append:
+            self.extend(other.length())
+        else:
+            self.to_length(other.length())
         
-        if len(array.shape) == 1:
-            array.resize((1, array.shape[0]))
+    
+    
+    ### time manipulations ###
+    
+    def to_length(self, length):
+        """ Ensures self.length is at least length, padding with zeros if needed.
+        """
+        if self.length() >= length:
+            return
         
-        # TODO inefficient slightly for creating an empty array first
-        self.audio = np.zeros_like(array, dtype=np.float64)
-        # TODO should this even happen?
-        # note that this is called practically everytime we generate() a signal!!!
-        normalize = np.max(np.abs(array))
-        self.audio = (array/normalize if normalize != 0 else array).copy(order="C")
-    
-    def copy(self):
-        """
-        creates an identical Audio object.
-        """
-        return copy.deepcopy(self)
-    
+        self.extend(length - self.length())
     
     def extend(self, how_much):
         """ extends all available channels with zeros """
-        if how_much <= 0: # this can happen
-            return
         self.audio = np.pad(self.audio, ((0,0),(0,how_much)), mode="constant", constant_values=0.0)
     
     def push_forward(self, how_much):
         """ pads the beginning with zeros """
+        # pad with nothing before and after the channel dimension
+        # pad with how_much before the time dimension, 0 after
         self.audio = np.pad(self.audio, ((0,0),(how_much,0)), mode="constant", constant_values=0.0)
     
     
     
+    
+    ### channel manipulations ###
+    
     def to_mono(self):
-        """ combines all channels down to one. does not scale!
+        """ mixes all channels down to one. does not scale!
         """
         self.audio = np.sum(self.audio, 0)
     
@@ -154,49 +141,105 @@ class Audio:
         self.audio.resize((num_channels, self.length()), refcheck=False)
         self.audio[:,:] = self.audio[0,:]
     
-    def to_channel(self, num_channels, channel):
-        """ adds new empty channels, putting the original signal in channel """
-        assert 0 <= channel < num_channels
-        # TODO assert num channels is valid
-        self.audio.resize((num_channels, self.length()), refcheck=False)
+    
+    
+    ######## binary operations ###########
+    
+    def mix(self, other):
+        assert isinstance(other, Audio)
+            
+        self.conform(other)
+        self.audio[:,0:other.length()] += other.audio
+        # TODO delete the other Audio??? for safety and memory
+        return self
+    
+    def append(self, other):
+        assert isinstance(other, Audio)
+        self.conform(other, is_append=True)
+        self.audio[:,-other.length():] += other.audio
+        return self
+    
+    
+    
+    ######## Overloading Operators ###########
         
-        if channel != 0:
-            self.audio[channel,:] = self.audio[0, :]
-            self.audio[0,:] = 0
-        
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return other.__add__(self)
+    
+    def __add__(self, other):
+        return self.mix(other)
+    
+    def __mul__(self, other):
+        # TODO this should be reexamined and perhaps moved into Convolution or sth
+        # also delegate to a non-overloaded function first
+        if isinstance(other, np.ndarray):
+            assert len(other.shape) == 1, "can multiply Audio by np.ndarray only for one-dimensional arrays"
+            if other.shape[0] > self.length():
+                other = other[0:self.length]
+            self.audio[:,0:other.shape[0]] *= other
+            return
+            
+        assert isinstance(other, Audio)
+        # for multiplying by a float, we multiply the signal instead
+        # TODO also does not support with Audios with differing params
+        self.conform(other)
+        self.audio[:,0:other.length()] *= other[:,:]
+        return self
+    
+    
+    
     ##################
     
     # static functions for manipulating arrays
     
+    # TODO needed?
     @staticmethod
     def add_channels(array, channels):
         raise NotImplementedError
         pass
     
-    ###################
     
-    ## prepare for mixdown
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ######## prepare for mixdown ########
     """
     we have these as static since in Audio.mixdown(), we do not wish
     to affect self.audio.
     """
     
     @staticmethod
-    def fit(audio, max_amplitude):
+    def fit(audio, max_amplitude=1):
         """
         stretches/squashes the amplitude of the samples to be [-max_amplitude, +max_amplitude]
-        given that max_amplitude <= 1.
+        for max_amplitude <= 1.
         
-        to disable fitting unless necessary, set max_amplitude = np.max(np.abs(audio))
-        TODO perhaps do this differently (set max_amplitude=None?)
+        for max_amplitude = None, leave things as they are.
         """
-        if max_amplitude > 1:
-            max_amplitude = 1
-            print("Squashing amplitudes...")
+        assert max_amplitude is None or 0 < max_amplitude
         
-        return audio * max_amplitude / np.max(np.abs(audio))
+        if max_amplitude == None:
+            return audio
         
-    # TODO move these to utils?
+        max_amp = np.max(np.abs(audio))
+        return audio * max_amplitude / max_amp if max_amp != 0 else audio
+        
     @staticmethod
     def stretch(audio, byte_width):
         """ stretches the samples to cover a range of width 2**bits,
@@ -218,11 +261,6 @@ class Audio:
         side effects are only the creation of self.byte_width and self.buffer.
         self.audio remains unaffected, and we use static methods for this end.
         """
-        assert max_amplitude is None or 0 < max_amplitude <= 1
-        
-        if max_amplitude is None:
-            # don't touch the amplitudes unnecessarily
-            max_amplitude = np.max(np.abs(self.audio))
         
         self.byte_width = byte_width
         
