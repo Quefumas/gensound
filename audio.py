@@ -26,19 +26,29 @@ class Audio:
         self.sample_rate = sample_rate
         self.audio = np.zeros((1, 0), dtype=np.float64)
     
+    def ensure_2d(self):
+        """ makes sure self.audio is 2-dimensional,
+        since this is not obvious for mono signals.
+        """
+        # TODO make sure this is called in a hermetic fashion, everywhere it is needed
+        if len(self.audio.shape) == 1:
+            self.audio.resize((1, self.audio.shape[0]))
+            return False # indicating it wasn't 2d
+        return True # the shape was fine all along
+        
+    
     def from_array(self, array):
         """
         converts np.ndarray to Audio.
         if array is not of type np.float64, converts it implicitly!
         note that this normalizes the values to be within [-1,1]
         """
+        self.audio = array
+        self.ensure_2d()
         
-        if len(array.shape) == 1:
-            array.resize((1, array.shape[0]))
-        
-        # TODO should we copy? major issue
+        # TODO should we copy?
         # note that this is called practically everytime we generate() a signal!!!
-        self.audio = array.copy(order="C")
+        self.audio = self.audio.copy(order="C")
     
     def copy(self):
         """
@@ -49,12 +59,14 @@ class Audio:
     ####### getters #######
     
     def num_channels(self):
+        assert len(self.audio.shape) == 2
         return self.audio.shape[0]
     
     def is_mono(self):
         return self.num_channels() == 1
     
     def length(self):
+        assert len(self.audio.shape) == 2
         return self.audio.shape[1]
     
     def duration(self):
@@ -162,7 +174,12 @@ class Audio:
     
     
     ######## Overloading Operators ###########
-        
+    ## TODO consider overloading __setitem__, __getitem__,
+    # so that we can do operations on audio instead of audio.audio
+    # (or is it being too wordy here?)
+    # also, choosing a single channel (not a slice) can be dealt with in the process,
+    # delegating this responsibility away from Signal.__subscripts
+    
     def __radd__(self, other):
         if other == 0:
             return self

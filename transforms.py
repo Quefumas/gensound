@@ -22,6 +22,11 @@ class Transform:
     """
     
     def __init__(self):
+        # TODO consider using *kwargs and making it copy all attributes to self
+        # this would save us many inherited inits simply doing self.duration = duration
+        # OTOH could this break something by name collision?
+        # also, wouldn't this make the code less clear (note that samples() also
+        # uses hidden self.duration)
         pass
     
     def __str__(self):
@@ -37,7 +42,73 @@ class Transform:
         this should change the object directly, don't return anything."""
         pass
 
-############################
+
+####### Basic shape stuff ##############
+
+class Shift(Transform):
+    """ shifts the signal forward in time."""
+    def __init__(self, duration):
+        self.duration = duration
+    
+    def realise(self, audio):
+        audio.push_forward(self.samples(audio.sample_rate))
+
+class Extend(Transform):
+    """ adds silence after the signal. needed?
+    """
+    def __init__(self, duration):
+        self.duration = duration
+    
+    def realise(self, audio):
+        audio.extend(self.samples(audio.sample_rate))
+
+class Reverse(Transform):
+    """
+    reverses the signal
+    """
+    def realise(self, audio):
+        audio.audio[:,:] = audio.audio[:,::-1]
+
+class Slice(Transform):
+    """ returns only a specified part of the signal.
+    Should not be invoked by the user, rather it is used by
+    Signal.__getitem.
+    """
+    def __init__(self, channel_slice, time_slice):
+        # TODO filter slices (if relevant?)
+        self.channel_slice = channel_slice
+        self.time_slice = time_slice
+    
+    def realise(self, audio):
+        audio.audio = audio.audio[self.channel_slice,
+                                  samples_slice(self.time_slice, audio.sample_rate)]
+        assert audio.ensure_2d(), "pbbly channel_slice wasn't a slice, so not ensure_2d()"
+
+class Combine(Transform):
+    """ given another Signal as input, realises it and pushes it back
+    into the affected signal in the relevant place.
+    if the signal to push inside is too small, it will mean a silence gap,
+    if too long, its remainder will be mixed into the continuation of the parent signal
+    Should not be invoked by the user, rather it is used by
+    Signal.__getitem.
+    """
+    def __init__(self, channel_slice, time_slice, signal):
+        self.channel_slice = channel_slice
+        self.time_slice = time_slice
+        self.signal = signal
+    
+    def realise(self, audio):
+        sample_slice = samples_slice(self.time_slice, audio.sample_rate)
+        
+        new_audio = self.signal.realise(audio.sample_rate)
+        
+        audio.audio[self.channel_slice, sample_slice] = 0
+        start_sample = sample_slice.start if sample_slice.start is not None else 0
+        audio.to_length(start_sample + new_audio.length())
+        audio.audio[self.channel_slice, start_sample:start_sample+new_audio.length()] += new_audio.audio
+
+
+######### Level/ampltidue Stuff ###################
 
 class Fade(Transform):
     min_fade = -50
@@ -170,70 +241,13 @@ class Limiter(Transform):
                                np.clip(np.abs(audio.audio), a_min=self.min_amplitude, a_max=None)
         
 
-#####################
-
-class Shift(Transform):
-    """ shifts the signal forward in time."""
-    def __init__(self, duration):
-        self.duration = duration
-    
-    def realise(self, audio):
-        audio.push_forward(self.samples(audio.sample_rate))
-
-class Extend(Transform):
-    """ adds silence after the signal. needed?
-    """
-    def __init__(self, duration):
-        self.duration = duration
-    
-    def realise(self, audio):
-        audio.extend(self.samples(audio.sample_rate))
-
-class Reverse(Transform):
-    """
-    reverses the signal
-    """
-    def __init__(self):
-        pass
-    
-    def realise(self, audio):
-        audio.audio[:,:] = audio.audio[:,::-1]
-
-class Slice(Transform):
-    """ returns only a specified part of the signal """
-    def __init__(self, s):
-        """ s is slice """
-        # TODO filter slices (if relevant?)
-        self.slice = s
-    
-    def realise(self, audio):
-        audio.audio = audio.audio[:,samples_slice(self.slice, audio.sample_rate)]
-
-class Combine(Transform):
-    """ given another Signal as input, realises it and pushes it back
-    into the affected signal in the relevant place.
-    if the signal to push inside is too small, it will mean a silence gap,
-    if too long, its remainder will be mixed into the continuation of the parent signal
-    """
-    def __init__(self, slice, signal):
-        self.slice = slice
-        self.signal = signal
-    
-    def realise(self, audio):
-        # TODO support channels
-        slc = samples_slice(self.slice, audio.sample_rate)
-        
-        new_audio = self.signal.realise(audio.sample_rate)
-        
-        audio.audio[:, slc] = 0
-        audio.to_length(slc.start+new_audio.length())
-        audio.audio[:, slc.start:slc.start+new_audio.length()] += new_audio.audio
 
 ###### PANNING STUFF    
 
 class Channels(Transform):
     """ transforms mono to channels with the appropriate amps
     """
+    # TODO reexamine
     def __init__(self, *amps):
         """ amps is a tuple, [-1,1] for each of the required channels """
         # TODO maybe better to use variable number of args instead of tuple, looks nicer

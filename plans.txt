@@ -36,6 +36,7 @@ next stages:
 * ADSR
 * TODO fix streak
 
+negative shifts?
 
 crossfade for concat???
 Sine() | CF | Triangle() ???
@@ -62,108 +63,12 @@ s= WAV(african)
 what about order of operations?
 do we want concat or mix first?
 
---- how about After() transform? ---
-
-Sine(f=A) + Sine(f=C#)*After(-100)
-
-makes the 2nd signal start 100 ms before the end of the previous one
-as opposed to shift, which shifts according to time zero
-this may also be examined; what if we add a 3rd one, shift according to the beginning
-of signal to which we are added?
-this whole thing will require fictive durations
-
-perhaps every signal should live with a "time index", that would guide
-whenevr they are added somewhere.
-this can cause problems with raw signals,
-since their time is rather undefined (depends on sample rate)
-but perhaps starting time would be enough?
-
-** consider what this would do to the associativity of the addition operator!
-
-what if we use AND for this instead?
-or use AND as the normal mix, and addition for this (what would this do to sum()??)
-or maybe XOR?
-
-
-+ other syntax options:
-
-wav = Sine() * After() * Sine()
-
-wav = Sine() * After(Sine()*Gain()*...)
-
-wav = (Sine() + After + Sine())
-
-wav = Sine(f=C) + Sine(f=A, after=True)
-
-wav = Sine().After(Sine())
-
-wav = Sine() + Square()*Shift(after=True)
-
-for implementation, maybe if there are several Signals in one node of the tree,
-and the first of which has "After" flag turned on, ignore it.
-This makes summing easier, but the user will have to clarify the order of operations.
-Which may be a good thing too, since it needs to be clear to the reader of the code
-as well, which signals are simultaneous.
-
-define Sequences? like a list of signals.
-
-should this even be a transform? doesnt really fit the format
-
-define a larger unit made up of a signal?
-this unit is not mixed but rather concated?
-
+=-====
 perhaps supply a length-of operator?
 wav = (x:=Sine()) + Square().Shift(duration=x.length())
 
 * also, we may want after in conjunction with [negative] shift.
 * do we want before?
-
-is there a convenient way to have a series of notes after each other,
-but without after for the first note? so the entire sequence doesn't have to be 
-after something.
-
-
--------------- reflections after test -----------------------
-tried using signal.after as an attribute, found out it is not so simple.
-for example:
-    signal = Sine(frequency=midC(-7), duration=6e3)
-    signal2 = (sum([Sine(frequency=midC(k-4), duration=1e3, after=True) for k in range(6)]))
-    signal += signal2
-made me redefine the addition tree so that signal lists are never extended.
-not necessarily a bad thing, but it's not specific to this approach.
-the problem is that with this action we have to be super clear
-what is the intended order of additions.
-
-before the change, the above was interpreted as:
-(Sine + Sine + Sine' + Sine' + Sine' + Sine' + Sine')
-with the first sine being long, causing all the last sines to fall at the end,
-and not after the 2nd sine.
-we have to indicate the order of operations.
-
-after the corredction we had:
-(Sine + (((((Sine + Sine') + Sine') + Sine') + Sine') + Sine'))
-which is nice, but we would like to have
-(Sine + (Sine + Sine' + Sine' + Sine' + Sine' + Sine'))
-
-the problem is that our signal list cannot really indicate order of operations,
-because that would require implemented parentheses.
-
-
-how about doing signal.append?
-contain the argument in a new list:
-signals = [Sine*T, S*T]
-appends = [Signals, Signals]
-now realise would first realise the entire of the signals[] tree,
-then do the appends one by one, adding them at the end.
-
-but to maintain skeletality, we would need something more like:
-signal = signal.append(s2)
-so maybe better just use static methods
-new_signal = Signal.concat(s1,s2,s3...)
-the concat should work similarly to addition, in the sense that
-concatenating two lists can simply merge,
-but if one is transformed by itself it is no longer considered a list but an operand.
-
 
 ---------- test 2-----------------
 seems to work great and without major modifications.
@@ -177,30 +82,7 @@ also, consider allowing the syntax:
 Signal.concat(Sine() + Sine() + Sine())
 then the signals list would be replaced by a sequence list and that's it.
 
----- repeat()? -----
-Suppose we do:
-acc = Sine(f=A) + Sine(f=C#)*After() + Sine(f=E)*After()
-acc *= Repeat(3)
-
-implemented as:
-
-
 ---- use cases -----
-
-def note(freq, duration):
-    return sum([(1-1/n)*Sine(frequency=freq*n, duration=duration) for n in range(8)])*FadeIn(3)
-
-def melody(notes):
-    wav = 0 # TODO have this typecast to an empty signal
-    for pitch in pitches:
-        wav += note(pitch, 700)*After()
-
-the eventual signal tree would be:
-
-
-+------------------------------------------------+
-| 0  |  note.after | note.after | ... note.after |
-
 
 signal *= 5
 or maybe signal **= 2

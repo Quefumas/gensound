@@ -96,8 +96,8 @@ def concat_scalar_test():
     s = L*Repan(0, None) + R*Repan(None, 1)
     
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
-    #play_Audio(audio)
-    export_test(audio, concat_scalar_test)
+    play_Audio(audio)
+    #export_test(audio, concat_scalar_test)
     # this is a funky effect of panning by dephasing...
 
 def reverse_phase_test():
@@ -113,9 +113,29 @@ def reverse_phase_test():
     #play_Audio(audio)
     export_test(audio, reverse_phase_test)
 
-if __name__ == "__main__":
-    concat_scalar_test()
+def channel_slice_test():
+    # series of tests
+    s = WAV(african)[5e3:15e3]
     
+    # t = s[0]
+    # t = s[1,1e3:7e3]
+    # t = s[1e3:7e3]
+    
+    #s[1] = 0.132*GreyNoise(duration=10e3)#*Gain(-20)
+    
+    #s[0,3e3:7e3] = s[1,2e3:6e3]
+    #s[0,1e3:6e3] += 0.13*Sine(frequency=midC(8))
+    s[0,1e3:5e3] *= Reverse()
+    #s[1] = s[0]*Gain(-6)
+    # etc...
+    
+    t = s
+    
+    audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
+if __name__ == "__main__":
+    channel_slice_test()
     
     
     #%%%%%

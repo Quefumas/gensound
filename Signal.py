@@ -199,17 +199,55 @@ class Signal:
         raise TypeError("Signal can only be concatted to other signals, or to 0.")
     
     #########
+    @staticmethod
+    def __subscripts(arg):
+        """ Accepts first arg from __get/setitem__ and expands it to include
+        both channel as well as time dimension.
+        
+        args[1] is relevant only for __setitem__.
+        
+        if args[0] = int,
+            then it is taken to refer to a track, e.g.:
+                signal[1] = Sine()
+                # channel 1 is now a sine wave
+        
+        if args[0] = slice,
+            then it is taken to refer to time span only:
+                signal[3e3:4e3] *= Reverse()
+                # reverse the content in the 3rd second
+        
+        if args[0] = tuple,
+            then args[0][0] refers to channel,
+            and args[0][1] refers to timespan:
+                signal[1:3,10e3:15e3] *= Fade()
+                # Applies fade in time 10s-15s only on channels 1, 2
+        
+        in addition: if the channel is an int (not slice),
+            transform it into an equivalent slice
+        """
+        assert isinstance(arg, (tuple, int, slice))
+        
+        if isinstance(arg, tuple):
+            assert len(arg) == 2, "improper amount of subscripts"
+            assert isinstance(arg[1], slice), "time may only be described as ranges"
+            if isinstance(arg[0], int):
+                arg = (slice(arg[0], arg[0]+1), arg[1])
+            assert isinstance(arg[0], slice)
+            return arg
+        if isinstance(arg, int):
+            return (slice(arg, arg+1), slice(None))
+        if isinstance(arg, slice):
+            return (slice(None), arg)
+    
     def __getitem__(self, *args):
-        # no channels yet TODO
-        assert isinstance(args[0], slice)
-        return self.copy()*Slice(args[0])
+        # TODO deal with out-of-bound values for channels and time
+        return self.copy()*Slice(*Signal.__subscripts(args[0]))
     
     def __setitem__(self, *args):
-        # no channels yet TODO
-        assert isinstance(args[0], slice)
-        assert isinstance(args[1], Signal) # TODO what are my requirements for the other stuff? to be signal?
-        
-        self.transforms.append(Combine(args[0], args[1]))
+        assert isinstance(args[1], Signal)
+        # TODO deal with out-of-bound values for channels and time
+        # TODO should copy self first?
+        self.transforms.append(Combine(*Signal.__subscripts(args[0]), args[1]))
     
 #### other "high-level" signals
 

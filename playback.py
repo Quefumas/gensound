@@ -63,12 +63,16 @@ def play_WAV(filename="", is_wait=False):
 def WAV_to_Audio(filename=""):
     wav = sa.WaveObject.from_wave_file(filename)
     # TODO type np.int16
-    buffer = np.frombuffer(wav.audio_data, np.int16)
+    buffer = np.frombuffer(wav.audio_data, np.int16).astype(np.float64)
     
     buffer = np.reshape(buffer,
                         newshape=(wav.num_channels,
                                   int(len(buffer)/wav.num_channels))[::-1]).T.copy(order='C')
-    
+    buffer /= 2**(8*wav.bytes_per_sample-1)
+    # TODO the above needs some consideration
+    # should we convert to float immediately, or wait till the last minute?
+    # is this the right place to convert?
+    # and should this be normalized in some way in relation to the synthesized signals?
     audio = Audio(wav.sample_rate)
     audio.from_array(buffer)
     
