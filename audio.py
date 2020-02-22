@@ -150,8 +150,10 @@ class Audio:
         assert self.is_mono(), "Can't call Audio.from_mono() for non-mono Audio."
         if num_channels == 1:
             return
+        self.audio = self.audio.copy() # TODO is this wasteful?
         self.audio.resize((num_channels, self.length()), refcheck=False)
         self.audio[:,:] = self.audio[0,:]
+        assert self.ensure_2d()
     
     
     

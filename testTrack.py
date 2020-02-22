@@ -125,12 +125,12 @@ def channel_slice_test():
     
     #s[0,3e3:7e3] = s[1,2e3:6e3]
     #s[0,1e3:6e3] += 0.13*Sine(frequency=midC(8))
-    s[0,1e3:5e3] *= Reverse()
+    #s[0,1e3:5e3] *= Reverse()
     #s[1] = s[0]*Gain(-6)
     # etc...
     
-    t = s
-    
+    t = s[0]*Channels(0,1)
+    t[0] = 0.1*Sine()
     audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
 

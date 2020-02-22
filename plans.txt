@@ -14,14 +14,13 @@ V find syntax for upsampling/slowing down/ etc.
 V find how to put a signal after another signal
 V and to repeat signals
 V make signals/trnasforms empty skeletons
-so that one may reuse them, or define their own to be reused
-(make sure they store no audio data! apart from RAW)
+    so that one may reuse them, or define their own to be reused
+    (make sure they store no audio data! apart from RAW)
 V slice signals
 * take back to mono etc.
 - translate fadeins etc into db
 - Solve strange panning issues
 V solve thing about float vs. int (and enable ints as floats all around)
-- signal *= 3.0 this does not work
 - ensure safety when converting ms to sampling Hz.
 V signal addition code ignores transforms applied to sums?
 * keep track of all dangerous floats (when converting from time to samples)
@@ -31,7 +30,7 @@ perhaps we should use + as after and & as mix?
 next stages:
 * parametrization
 * controlled glissandos
-* tracks stuff
+V tracks stuff
 * fix panning
 * ADSR
 * TODO fix streak
@@ -90,111 +89,6 @@ or something
 should repeat the signal x times!
 or perhaps add append?
 
---------- signal addition issues --------------
-
-Sig + Sig = [Sig, Sig]
-
-Sig*Trans + Sig*Trans = [Sig*Trans, Sig*Trans]
-
-[S*T, S*T] + S*T = [S*T, S*T, S*T]
-
-BUT:
-
-[S*T, S*T]*T + S*T = [ [S*T, S*T]*T, S*T ]
-
-rules:
-1. if both operands are generics, we create a list.
-
-2. if one of the operands is an untransformed list, and one is a generic,
-   we prepend/append the generic to the list.
-
-3. if both operands are untransformed lists, they are merged into a single list.
-   (this encourages using After() as a transform?)
-
-4. if any of the operands is a transformed list, a new list is created containing
-   both as single items.
-
-
-(would order of evaluation matter? without parentheses specified?)
-
-do we have a different way to write this?
-1. create empty array
-2. if first operand is untransformed, either append or extend
-3. if 1st operand is transformed, only append.
-4. if 2nd operand is untransformed, either append or extend
-5. if 2nd operand is transformed, just append.
-
-
-
----------- for slicing --------------------
-
-WAV("x.wav")[1] - give us the 2nd channel only
-WAV("x.wav")[:,:100] - only retain the first 100 ms
-
-implementable as implicitly applying a transform leaving with only one channel.
-and the 2nd one the same - just have to convert ms to samples.
-though we can also add args to WAV (begin, end), so it will be more memory efficient.
-
-now we need to find a way to paste them back together.
-would this be hard using __setitem__?
-
-some use cases:
-1. rip L channel from 1 WAV and R channel from another, paste together.
-2. apply some transform only to L channel
-3. only use a few seconds from some signal
-4. apply a transform only on a certain time span of a signal, leaving the rest as is
-5. cut and paste parts from different signals, put them together or sequentially
-6. overwrite parts
-7. add a signal only to a certain part (use shift for that!)
-
-it seems it can all be done using a combination of basic slicing, and already
-existing transforms, like Signal*Channels(0,1) to transform some mono signal
-into R chanel, but it could get clunky.
-
-examples:
-1. WAV("a.wav")[0]*Channels(1,0) + WAV("b.wav")[1]*Channels(0,1)
-2. WAV("a.wav")[0]*Channels(1,0) + WAV("a.wav")[1]*LowPass()*Channels(0,1)
-
-- how about a Channels transform/signal that accepts two signals as arguments,
-and puts them as separate channels? would make the above easier.
-
-3. WAV("a")[:,1000:2000]
-4. WAV("a")[:,0:1000] + WAV("a")[:,1e3:2e3]*LowPass()*Shift(1e3) + WAV("a")[:,2e3:]*Shift(1e3)
-(would be easier once we solve "after")
-
-5. WAV("a")[:,10:20] + ~~after WAV("b")[:,2:34]
-
-Syntax that we might want instead:
-1.
-s = Signal()
-s[0] = WAV("a")[0]
-s[1] = WAV("b")[1]
-
-2.
-s = WAV("a")
-s[1] *= LowPass()
-* this also may be implemented by replacing s with the clunkier spelling above
-
-4.
-s = WAV("a")
-s[:,1e3:2e3] *= LowPass()
-
-* this perhaps could be implemented by implicitly dividing s into 3 parts,
-  so that s is a list of signals.
-  of course that would be a mess if then we have s[:,1.5e3:2.5e3]*=Reverse()
-  but may still be viable. (and would be easier when we have "after")
-
-6.
-s = WAV("a")
-s[1, 10:20] = Sine()
-
-
-------- slicing solution -------
-signal.getitem returns a Signal_Slice, containing reference to the source and the times.
-calling signal.setitem has the following behaviour:
-* check whether VALUE is a Signal_Slice with the source pointing to SELF.
-  -  if so, ignore VALUE, and apply to SELF all of VALUE's transforms, with times set on to them.
-* otherwise, fracture SELF into a Sequence, 
 
 
 important: can transforms extend the signal on their own?
@@ -220,6 +114,7 @@ EQ and Compressor.
 which can then be added in bulk to a signal.
  the purpose is that the user can employ any order of multiplications to get
 the desired result
+for that we may need transforms to copy themselves on apply
 
 
 
