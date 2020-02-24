@@ -39,7 +39,34 @@ negative shifts?
 
 crossfade for concat???
 Sine() | CF | Triangle() ???
-=============
+
+
+
+====== Syntactical stuff =======
+
+----- changing number of channels syntatically, suggestions:
+
+t = Signal()
+t[0:2,:] = Sine() # automatically switches into stereo
+
+=-=
+
+t = Sine()
+t[1] = Square() # automatically adds another channel?
+
+=-=
+
+mono = t[0] + t[1] #?
+
+mono = sum(t) #?
+
+mono = t.mono() # mono in what way?
+
+=-=
+
+t = Sine()[0:2] # automatically expands the sine into stereo
+# this syntax would have the advantage that it does not require
+# defining t in advance!
 
 -------- Summary of operators to support nicely:
 
@@ -68,18 +95,6 @@ wav = (x:=Sine()) + Square().Shift(duration=x.length())
 
 * also, we may want after in conjunction with [negative] shift.
 * do we want before?
-
----------- test 2-----------------
-seems to work great and without major modifications.
-
-however, i suspect it owuld be nicer to define 2 new classes:
-Sequence(Signal), Mix(Signal)
-that would be those signals with the "sequence" or "signals" property.
-just to separate them from the regular signals.
-
-also, consider allowing the syntax:
-Signal.concat(Sine() + Sine() + Sine())
-then the signals list would be replaced by a sequence list and that's it.
 
 ---- use cases -----
 

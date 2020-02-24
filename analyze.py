@@ -8,6 +8,8 @@ Created on Thu Sep  5 19:04:56 2019
 import numpy as np
 from audio import Audio
 
+from musicTheory import freq_to_pitch
+
 def RMS(audio, start, end):
     return (np.sum(audio.audio[:,start:end]**2) / (audio.num_channels*(end-start)))**0.5
 
@@ -29,6 +31,56 @@ def DFT_window(audio, N, start=0):
     return [(sum([window(n)*audio.audio[0, start+n]*np.cos(2*np.pi*n*m/N) for n in range(0,N)]),
     -sum([window(n)*audio.audio[0, start+n]*np.sin(2*np.pi*n*m/N) for n in range(0,N)])) for m in range(0,N)]
 
-def iDFT(audio):
-    raise NotImplementedError
-    pass
+def freq_report(audio, N, sample_rate, start=0):
+    FT = DFT(audio, N, start)
+    freqs = []
+    
+    for i, X in enumerate(FT):
+        freq = i*sample_rate/N
+        pitch = freq_to_pitch(freq)
+        
+        power = X[0]**2 + X[1]**2
+        mag = power**0.5
+        
+        phase = np.arctan(X[1]/X[0])
+        
+        freqs.append({
+            "frequency" : round(freq, 2),
+            "pitch"     : pitch,
+            "magnitude" : round(mag, 2),
+            "phase"     : round(phase, 2),
+            })
+    
+    return freqs
+    
+
+def iDFT(freqs, sample_rate):
+    """Freqs is list of [Xreal, Ximag]
+    """
+    
+    N = len(freqs)
+    
+    xs = []
+    
+    for n in range(N):
+        f = 2*np.pi*n/N
+        x = sum([real*np.cos(f*m) + imag*np.sin(f*m) for m, (real, imag) in enumerate(freqs)])
+        # TODO make sure that imag*cos and real*sin really do cancel each other
+        
+        xs.append(x / N)
+    
+    audio = Audio(sample_rate)
+    audio.from_array(xs)
+    
+    return audio
+
+
+
+
+
+
+
+
+
+
+

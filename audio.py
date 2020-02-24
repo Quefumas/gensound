@@ -43,6 +43,9 @@ class Audio:
         if array is not of type np.float64, converts it implicitly!
         note that this normalizes the values to be within [-1,1]
         """
+        if not isinstance(array, np.ndarray):
+            array = np.asarray(array, dtype=np.float64)
+        
         self.audio = array
         self.ensure_2d()
         
