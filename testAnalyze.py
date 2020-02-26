@@ -5,11 +5,13 @@ Created on Thu Sep  5 19:07:59 2019
 @author: Dror
 """
 
-from analyze import RMS, DFT, freq_report, iDFT
+import numpy as np
+
+from analyze import RMS, DFT, freq_report, iDFT, DFT2, iDFT2
 from audio import Audio
 from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
 from transforms import Fade, AmpFreq, Shift, Channels, Pan
-from playback import WAV_to_Audio, play_Audio
+from playback import WAV_to_Audio, play_Audio, export_WAV
 
 def test_RMS():
     sine = Sine().mixdown(sample_rate=11025, byte_width=2)
@@ -61,12 +63,36 @@ def test_iDFT():
     play_Audio(output)
     #breakpoint()
     
+def test_DFT2_and_back():
+    sample_rate = 11025
+    N = 1000
+    sets = 10
+    duration = 5000
+    
+    sines = (Sine(duration=duration)+Sine(frequency=400, duration=duration)).mixdown(sample_rate=sample_rate, byte_width=2)
+    export_WAV("output/analyze/back1.wav", sines)
+    #breakpoint()
+    for i in range(sets):
+        strip = sines.audio[0,i*N:(i+1)*N]
+        freqs = DFT2(strip)
+        freqs[36] = 0+0j
+        #breakpoint()
+        strip2 = iDFT2(freqs)
+        
+        sines.audio[0, i*N:(i+1)*N] = np.real(strip2)*np.random.random()
+    #breakpoint()
+    sines.mixdown(byte_width=2, max_amplitude=0.3)
+    export_WAV("output/analyze/back2.wav", sines)
+    
+    #breakpoint()
+    
 
 if __name__ == "__main__":
     #test_RMS()
     #Fs, mags = test_DFT()
     #rep = test_report()
-    test_iDFT()
+    #test_iDFT()
+    test_DFT2_and_back()
     pass
 
 

@@ -41,6 +41,8 @@ crossfade for concat???
 Sine() | CF | Triangle() ???
 
 
+* TODO: test why squares get negative all the time
+* TODO: Audio.mixdown vs. Signal.mixdown
 
 ====== Syntactical stuff =======
 

@@ -19,7 +19,6 @@ def DFT(audio, N, start=0):
     return [(sum([audio.audio[0, start+n]*np.cos(2*np.pi*n*m/N) for n in range(0,N)]),
     -sum([audio.audio[0, start+n]*np.sin(2*np.pi*n*m/N) for n in range(0,N)])) for m in range(0,N)]
     
-
 def DFT_window(audio, N, start=0):
     """ use a window function on the signal to reduce leaking """
     triangle_window = lambda n: 2*n/N if n < (1+N/2) else 2 - 2*n/N
@@ -73,6 +72,39 @@ def iDFT(freqs, sample_rate):
     audio.from_array(xs)
     
     return audio
+
+############
+    
+def DFT2(samples):
+    N = len(samples)
+    return [sum([samples[n]*np.e**(-1j*2*np.pi*m*n/N) for n in range(N)]) for m in range(N)]
+
+def iDFT2(freqs):
+    N = len(freqs)
+    return [sum([freqs[n]*np.e**(1j*2*np.pi*m*n/N) for n in range(N)])/N for m in range(N)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
