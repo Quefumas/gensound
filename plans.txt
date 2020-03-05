@@ -43,7 +43,7 @@ Sine() | CF | Triangle() ???
 
 * TODO: test why squares get negative all the time
 * TODO: Audio.mixdown vs. Signal.mixdown
-
+* TODO enable concating signal to 0 (supported already?), or to empty Signal()?
 ====== Syntactical stuff =======
 
 ----- changing number of channels syntatically, suggestions:

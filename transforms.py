@@ -342,7 +342,7 @@ class Average_samples(Transform):
     of downsample rough.
     """
     
-    def __init__(self, weights):
+    def __init__(self, *weights):
         """
         weights is int -> average #weights neighboring samples
         weights is tuple -> average len(weights) neighboring samples,
@@ -350,11 +350,11 @@ class Average_samples(Transform):
         TODO: on the edges this causes a small fade in fade out of length len(weights).
         not necessarily a bug though.
         """
-        assert isinstance(weights, (int, tuple, list)), "weights argument should be either int or list/tuple"
-        #assert isinstance(weights, int) or sum(weights) == 1, "weights must sum to 1"
-        if isinstance(weights, int):
-            weights = tuple(1 for w in range(weights))
+        if len(weights) == 1:
+            weights = tuple(1 for w in range(weights[0]))
         
+        total = sum(weights)
+        weights = [w/total for w in weights]
         self.weights = weights
     
     def realise(self, audio):
@@ -362,8 +362,6 @@ class Average_samples(Transform):
         
         for i, weight in enumerate(self.weights):
             res[:,i:audio.audio.shape[1]+i] += weight*audio.audio
-        
-        res /= sum(self.weights)
         
         pos = int(np.floor((len(self.weights) - 1)/2))
         # the index from which to start reading the averaged signal

@@ -118,12 +118,12 @@ def downsample_test(filename):
 
 def averagesample_test(filename):
     wav = WAV(filename)
-    #wav *= Average_samples(weights=(5,4,3,2,1,2,3,4,5))
-    wav *= Average_samples(weights=(1,1,1,1,1,1,1,1,1))
-    #wav *= Average_samples(weights=(25,16,9,4,1,4,9,16,25))
-    #wav *= Average_samples(weights=(1,0,0,0,0,0,0,0,1))
-    #wav *= Average_samples(weights=(1,-1,1,-1,1,-1,1,-1,1))
-    #wav *= Average_samples(weights=(-1,-1,-1,-1,10,-1,-1,-1,-1)) # high pass!
+    #wav *= Average_samples(5,4,3,2,1,2,3,4,5)
+    wav *= Average_samples(1,1,1,1,1,1,1,1,1)
+    #wav *= Average_samples(25,16,9,4,1,4,9,16,25)
+    #wav *= Average_samples(1,0,0,0,0,0,0,0,1)
+    #wav *= Average_samples(1,-1,1,-1,1,-1,1,-1,1)
+    #wav *= Average_samples(-1,-1,-1,-1,10,-1,-1,-1,-1) # high pass!
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     
     play_Audio(audio, is_wait=True)
@@ -134,10 +134,10 @@ def dummy_reverb_test():
     #amp = lambda x: 
     #wav = WAV(filename) + WAV(filename)*Amplitude(amp)*Shift(duration=500)
     #wav = WAV(filename)*AmpFreq(frequency=0.12, size=0.25)
-    #wav += WAV(filename)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*Average_samples(weights=(1,1,1,1,1,1,1,1,1))
+    #wav += WAV(filename)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*Average_samples(1,1,1,1,1,1,1,1,1)
     
-    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(weights=2*x+1) for x in range(5)])
-    wav += 0.6*WAV(filename)*Downsample_rough(factor=5)*Average_samples(weights=5)
+    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(2*x+1) for x in range(5)])
+    wav += 0.6*WAV(filename)*Downsample_rough(factor=5)*Average_samples(5)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
@@ -146,16 +146,16 @@ def dummy_reverb_test():
 def repan_reverb_test():
     filename = "data/african_sketches_1.wav"
     
-    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(weights=2*x+1)*Pan((1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
-    wav += 0.6*WAV(filename)*Pan((0,None))*Downsample_rough(factor=5)*Average_samples(weights=5)
+    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(2*x+1)*Pan((1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
+    wav += 0.6*WAV(filename)*Pan((0,None))*Downsample_rough(factor=5)*Average_samples(5)
     wav += 0.6*WAV(filename)*Pan((None,1))
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
 
 def reverse_test():
-    wav = WAV("data/african_sketches_1.wav")*Reverse()*Downsample_rough(factor=5)*Average_samples(weights=5)
-    wav += WAV("data/african_sketches_1.wav")*Shift(duration=150)*Average_samples(weights=(1,1,1,1,1,1,1,1,1))
+    wav = WAV("data/african_sketches_1.wav")*Reverse()*Downsample_rough(factor=5)*Average_samples(5)
+    wav += WAV("data/african_sketches_1.wav")*Shift(duration=150)*Average_samples(1,1,1,1,1,1,1,1,1)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.09)
     play_Audio(audio, is_wait=True)

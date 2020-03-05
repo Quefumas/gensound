@@ -311,7 +311,10 @@ class Triangle(Signal):
     
     def generate(self, sample_rate):
         # strange manipulation on sawtooth
-        return 2*np.abs((2*np.pi* self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False) % (2*np.pi))-np.pi)-np.pi
+        return 2*np.abs((2*np.pi
+                       * self.frequency
+                       * np.linspace(0, self.duration/1000, self.samples(sample_rate), False)
+                       % (2*np.pi) - np.pi))/np.pi - 1
     
     
 class Square(Signal):
@@ -321,7 +324,14 @@ class Square(Signal):
         self.duration = duration
     
     def generate(self, sample_rate):
-        return (((2*np.pi* self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False) % (2*np.pi)) < np.pi) - np.pi).astype(np.float64)
+        return (((  2*np.pi
+                  * self.frequency
+                  * np.linspace(0,
+                                self.duration/1000,
+                                self.samples(sample_rate),
+                                False)
+                  % (2*np.pi)
+                  < np.pi)*2 - 1).astype(np.float64))
 
 class Sawtooth(Signal):
     def __init__(self, frequency=220, duration=5000):
@@ -330,7 +340,7 @@ class Sawtooth(Signal):
         self.duration = duration
     
     def generate(self, sample_rate):
-        return (2*np.pi* self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False) % (2*np.pi))-np.pi
+        return (2*np.pi* self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False) % (2*np.pi))/np.pi-1
 
 class Step(Signal):
     def __init__(self, duration=1):
