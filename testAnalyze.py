@@ -13,6 +13,9 @@ from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
 from transforms import Fade, AmpFreq, Shift, Channels, Pan
 from playback import WAV_to_Audio, play_Audio, export_WAV
 
+
+african = "data/african_sketches_1.wav"
+
 def test_RMS():
     sine = Sine().mixdown(sample_rate=11025, byte_width=2)
     square = Square().mixdown(sample_rate=11025, byte_width=2)
@@ -67,24 +70,23 @@ def test_DFT2_and_back():
     sample_rate = 11025
     N = 1000
     sets = 10
-    duration = 5000
+    duration = 2500
     
-    sines = (Sine(duration=duration)+Sine(frequency=400, duration=duration)).mixdown(sample_rate=sample_rate, byte_width=2)
-    export_WAV("output/analyze/back1.wav", sines)
-    #breakpoint()
+    #sines = (Sine(duration=duration)+Sine(frequency=400, duration=duration)).mixdown(sample_rate=sample_rate, byte_width=2)
+    #export_WAV("output/analyze/back1.wav", sines)
+    sines = WAV(african)[13e3:15.5e3].mixdown(sample_rate=sample_rate, byte_width=2)
+    
     for i in range(sets):
         strip = sines.audio[0,i*N:(i+1)*N]
         freqs = DFT2(strip)
-        freqs[36] = 0+0j
+        freqs[50:] *= 0 #np.zeros((len(freqs)-50))
         #breakpoint()
         strip2 = iDFT2(freqs)
-        
-        sines.audio[0, i*N:(i+1)*N] = np.real(strip2)*np.random.random()
+        sines.audio[0, i*N:(i+1)*N] = np.real(strip2)
     #breakpoint()
-    sines.mixdown(byte_width=2, max_amplitude=0.3)
+    sines.mixdown(byte_width=2, max_amplitude=0.9)
     export_WAV("output/analyze/back2.wav", sines)
     
-    #breakpoint()
     
 
 if __name__ == "__main__":
