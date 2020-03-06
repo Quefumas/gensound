@@ -133,11 +133,50 @@ def channel_slice_test():
     t[0] = 0.1*Sine()
     audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
+    #export_test(audio, channel_slice_test)
+
+def test_gain_dB():
+    s = Signal()
+    
+    for i in range(10):
+        s |= Sine(duration=1e3)*Gain(-6*i)
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
+def test_filter_noise():
+    g = GreyNoise()
+    g *= Average_samples(0.04, 0.12, 0.2, 0.12, 0.04)
+    #g *= Average_samples(5)
+    audio = g.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
+
+def pan_mono_test():
+    panLaw = -3
+    panMax = 100
+    panMin = -100
+    width = panMax - panMin
+    
+    pan_shape = lambda x: np.log((x+panMax+0.1)/(width)) # +0.1 to prevent log(0)
+    LdB = lambda x: panLaw*pan_shape(x)/pan_shape(0)
+    RdB = lambda x: LdB(-x)
+    
+    L = lambda t: LdB(width*t/5 + panMin)
+    R = lambda t: RdB(width*t/5 + panMin)
+    
+    # =-===========
+    s = Sine(duration=10e3)*Channels(1,0)
+    s[2.5e3:7.5e3] *= Pan(L, R)
+    s[7.5e3:] *= Repan(1, 0)
+    
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, pan_mono_test)
 
 if __name__ == "__main__":
-    channel_slice_test()
-    
-    
+    #test_gain_dB()
+    pan_mono_test()
     #%%%%%
 
 

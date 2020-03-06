@@ -261,17 +261,13 @@ class Channels(Transform):
 class Pan(Transform):
     """ applies arbitrary function to amplitudes of all channels
     """
-    def __init__(self, pans):
+    def __init__(self, *pans):
         """ pans is either a function (range) -> ndarray(float64), or a tuple of these
         wrong, right now accepting functions R -> R
         """
-        # TODO preferably use *pans but 1st make sure compatibiliy with paramterization
         # TODO better written with iscallable?
         # or isinstance(pans, (collections.Callable, tuple))?
-        assert type(pans) in (type(lambda x:x), tuple), "invalid argument for Pan transform"
-        
-        if not isinstance(pans, tuple):
-            pans = (pans,)
+        # assert type(pans) in (type(lambda x:x), tuple), "invalid argument for Pan transform"
         
         # TODO find better conversion
         self.pans = tuple([lambda_to_range(pan) for pan in pans])
@@ -280,11 +276,13 @@ class Pan(Transform):
         assert len(self.pans) in (1, audio.num_channels())
         
         if len(self.pans) < audio.num_channels():
-            self.pans = (self.pans[0],) * audio.num_channels()
-            # TODO note that this is a side effect; though *shouldn't* harm anything
+            pans = (self.pans[0],) * audio.num_channels()
+        else:
+            pans = self.pans
         
-        for (i,pan) in enumerate(self.pans):
+        for (i,pan) in enumerate(pans):
             amps = pan(audio.length(), audio.sample_rate)
+            #amps = DB_to_Linear(pan(audio.length(), audio.sample_rate))
             audio.audio[i,:] *= amps
         
 

@@ -94,7 +94,7 @@ def pan_test():
             lambda x: np.log(1+(np.e-1)*x/top))
     
     
-    t *= Pan(pans)
+    t *= Pan(*pans)
     
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio, is_wait=True)
@@ -146,9 +146,9 @@ def dummy_reverb_test():
 def repan_reverb_test():
     filename = "data/african_sketches_1.wav"
     
-    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(2*x+1)*Pan((1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
-    wav += 0.6*WAV(filename)*Pan((0,None))*Downsample_rough(factor=5)*Average_samples(5)
-    wav += 0.6*WAV(filename)*Pan((None,1))
+    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(2*x+1)*Pan(*(1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
+    wav += 0.6*WAV(filename)*Pan(0,None)*Downsample_rough(factor=5)*Average_samples(5)
+    wav += 0.6*WAV(filename)*Pan(None,1)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
