@@ -29,7 +29,7 @@ class Signal:
         new: can also return Audio if there is a need;
         but generally should be np.ndarray
         """
-        pass
+        return np.zeros(shape=(1,0))
     
     def realise(self, sample_rate):
         """ returns Audio instance.

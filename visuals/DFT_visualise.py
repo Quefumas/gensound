@@ -20,7 +20,19 @@ def visualise_FIRs(*FIRs, is_log=False):
         plt.yscale('log')
     
     for mags in points:
-        plt.plot(range(len(freqs)//2), mags)
+        plt.plot(range(len(mags)), mags)
+    
+    plt.show()
+
+def visualise_windows(*windows, is_log=False):
+    windows = [w[0:len(w)] for w in windows]
+    
+    import matplotlib.pyplot as plt
+    if is_log:
+        plt.yscale('log')
+    
+    for w in windows:
+        plt.plot(range(len(w)), w)
     
     plt.show()
 
@@ -35,4 +47,8 @@ if __name__ == "__main__":
     strange1 = fill([25,16,9,4,1,4,9,16,25])
     strange2 = fill([1,0,0,0,0,0,0,0,0,0,1])
     strange3 = fill([0.5,-1,2,-1,0.5])
-    visualise_FIRs(highpass_try, strange3, is_log=True)
+    blackman = [ 0.42 - 0.5*np.cos(2*np.pi*k/127) + 0.08*np.cos(4*np.pi*k/127) for k in range(128)]
+    #blackman = [blackman[k]*(1/128)*np.sin(np.pi*k*12/128)/np.sin(np.pi*k/128)  for k in range(len(blackman))]
+    #visualise_FIRs(graded_fir(5), blackman, is_log=False)
+    
+    visualise_windows(blackman)

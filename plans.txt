@@ -17,11 +17,10 @@ V make signals/trnasforms empty skeletons
     so that one may reuse them, or define their own to be reused
     (make sure they store no audio data! apart from RAW)
 V slice signals
-* take back to mono etc.
-- translate fadeins etc into db
+V take back to mono etc.
+V translate fadeins etc into db
 - Solve strange panning issues
 V solve thing about float vs. int (and enable ints as floats all around)
-- ensure safety when converting ms to sampling Hz.
 V signal addition code ignores transforms applied to sums?
 * keep track of all dangerous floats (when converting from time to samples)
 no doubt we still need direct After function; putting signals in arrays is not always appropriate
@@ -41,9 +40,12 @@ crossfade for concat???
 Sine() | CF | Triangle() ???
 
 
-* TODO: test why squares get negative all the time
-* TODO: Audio.mixdown vs. Signal.mixdown
-* TODO enable concating signal to 0 (supported already?), or to empty Signal()?
+V TODO: test why squares get negative all the time
+* TODO: Audio.mixdown vs. Signal.mixdown.
+  Probably should change name of Audio.mixdown - it's just a preparation
+  for output of the already-mixed data. possibly should not even be called
+  by Signal.mixdown.
+V TODO enable concating signal to 0 (supported already?), or to empty Signal()?
 ====== Syntactical stuff =======
 
 ----- changing number of channels syntatically, suggestions:
