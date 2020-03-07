@@ -46,9 +46,15 @@ V TODO: test why squares get negative all the time
   for output of the already-mixed data. possibly should not even be called
   by Signal.mixdown.
 V TODO enable concating signal to 0 (supported already?), or to empty Signal()?
+
 ====== Syntactical stuff =======
 
------ changing number of channels syntatically, suggestions:
+----
+use '.' to apply transforms?
+Sine().Pan().Gain().Shift() + ...
+In that case can't use amplitude as float
+
+--===- Channel stuff synatax ===
 
 t = Signal()
 t[0:2,:] = Sine() # automatically switches into stereo
@@ -71,6 +77,83 @@ mono = t.mono() # mono in what way?
 t = Sine()[0:2] # automatically expands the sine into stereo
 # this syntax would have the advantage that it does not require
 # defining t in advance!
+
+=-=
+
+MonoSignal*Stereo(Lfunc, Rfunc)?
+Mono*Stereo(35L)?
+
+common operations:
+* mapping mono to several channels (exact copies)
+    stereo = mono[0:2] ?
+    stereo = (0.5,1)*mono[0:2] ?
+    # TODO aside: signal subscript to distinguish ints and floats for channels and time?
+    
+    Signal function?
+    Sine().to_channels(3)
+* mapping mono into one of several channels (adding empty channels)
+    stereo = mono[0:2]
+    stereo[0:2] *= (0,1) ?
+* moving channels around (i.e. RePan)
+    stereo = stereo[0:2:-1] ?
+    
+    triple = Signal()[0:3]
+    triple[0] = one
+    triple[1] = two
+    triple[2] = three
+    
+    what if just:
+    triple = Signal()
+    triple[0] = one
+    triple[2] = three # automatically opens 3rd channel
+* applying fades/gains to channels in separate
+    stereo[0] *= fade()
+    stereo.L ?
+* taking mono signal and moving it around in stereo (or more) by some function
+    need as input a panLaw, function mapping an argument to levels in all channels
+    and then do for a mono:
+    pan = package.range(-100, 100, 5e3)
+    stereo = mono*Pan(panLaw=packg.def_panLaw, pan)
+* taking stereo signal and panning it in stereo (i.e. make it take up -100L to -10L)
+    new_stereo = stereo*Pan(panLaw=default, panL, panR)
+
+preferably have as many of these done by syntax as possible.
+
+=-=== parametrization syntax =====
+
+things that would be paramterized:
+* Dbs/amplitudes
+* EQ data
+* frequency or phase (integral of frequency)
+
+here the object is functions of time (also of channels??)
+
+pan = -1*one(5secs) | line(-100L, 100R, 5secs) | one(5secs)
+also do like sigmoid (1/(e^-x +1)) or tanh/arctan between two values, or log from -infty etc.   
+# perhaps make Signal inherit from "Time-dependent" class, which is also used for time params
+
+what about:
+line(-100, 100)*time(5 secs)
+line(from=-100, to=100, duration=5e3)
+
+or we can define as checkpoints:
+pan = line((0,0), (50,1e3), (50,3e3), (100,5e3))
+
+maybe fancir:
+
+pan = (0,-100) | line | (3e3, -50) | line | (5e3, -50)
+
+or we can omit the "line":
+pan = (0,-100) | (3e3, -50) | (5e3, -50)
+
+or maybe:
+pan = -100 | 5e3*line | 100 | 10e3*sigmoid(beta=3) | 50
+
+* cumulative vs. absolute time durations - important considerations
+* looks kinda sick to do this alternating concat between values and functions
+* also need to do last value continuing to infinity.
+* to allow integration we may also let predefined curves supply their own integral
+behaves like an iterator/iterable?
 
 -------- Summary of operators to support nicely:
 
@@ -119,7 +202,7 @@ important: are transforms powerful enough to do flexible reverbs?
 i guess they can do so by direct manipulation on audio,
 but it also seems natural to implement transforms by 
 
-===============
+============================
 
 - functions scheduled for examination:
     - signal.realise
