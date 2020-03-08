@@ -52,11 +52,68 @@ class Param():
     
     def __iter__(self):
         pass
+
+
+class dummy_iter(list):
+    def __init__(self, curve, rate):
+        self.curve = curve
+        self.rate = rate
+        self.duration = curve.duration
+        self.range = np.linspace(start=0, stop=self.duration, num=round(self.duration*self.rate/1000), endpoint=True)
+        self.index = -1
+        print(self.range.shape)
     
+    def __iter__(self):
+        return self
+    
+    def __mul__(self, other):
+        return self.range*other
+    
+    def __next__(self):
+        self.index += 1
+        
+        try:
+            return self.curve[self.range[self.index]]
+        except IndexError:
+            self.index = 0
+            raise StopIteration
+    
+    __array_priority__ = 10000
+
 if __name__ == "__main__":
-    z = np.linspace(0, 1, 400)
-    x = Line(1, 15, 4e3)
-    z *= x.iterator(100)
+#    z = np.linspace(0, 1, 400)
+#    x = Line(1, 15, 4e3)
+#    z *= x.iterator(100)
+    
+    a = Line(1, 15, 4e3)
+    t = []
+    for i in dummy_iter(a, 10):
+        t += [i]
+#    b = np.ones(shape=(1,40))
+#    b = dummy_iter(a, 10)*b
+#    b = b*range(1,41)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

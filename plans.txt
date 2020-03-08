@@ -155,6 +155,12 @@ pan = -100 | 5e3*line | 100 | 10e3*sigmoid(beta=3) | 50
 * to allow integration we may also let predefined curves supply their own integral
 behaves like an iterator/iterable?
 
+=--- need to implement what for curves? =---
+typically they would be iterated over (think of time-dependent convolution),
+or multiplied
+perhaps easiest for now is to make them flatten themselves to arrays as needed
+
+
 -------- Summary of operators to support nicely:
 
 & mix
