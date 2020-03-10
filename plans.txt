@@ -257,6 +257,16 @@ to allow them to spare the manual integration.
 perhaps have all signals store their audio in a cache, since transformed
 signales may well be used multiple times
 
+class Majchord(Mix):
+    def __init__(self, base_freq, sig, duration):
+        self.signals = [sig(frequency=base_freq, duration=duration),
+                        sig(frequency=base_freq*semi(4), duration=duration)]
+                        ...
+
+also easier representations of melody,
+i.e. give semitones and signal type, durations,
+and it automatically gnerates a Sequence
+
 =================== TRANSFORMS ===================
 
 - cut and delete middle of signal

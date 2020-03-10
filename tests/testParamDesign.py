@@ -7,52 +7,12 @@ Created on Fri Mar  6 23:12:57 2020
 
 import numpy as np
 
-class Curve():
-    def __init__(self):
-        pass
-    
-    def __len__(self):
-        return self.duration
-    
-    def iterator(self, sample_rate):
-        def iterable():
-            m = np.linspace(0, self.duration, round(sample_rate*self.duration/1000))
-            for i in range(len(m)):
-                yield self.__getitem__(m[i])
-        return iterable
-    
-    
-class Constant(Curve):
-    def __init__(self, value, duration):
-        self.value = value
-        self.duration = duration
-    
-    def __getitem__(self, key): # key this should be in miliseconds
-        return self.value
-    
-class Line(Curve):
-    def __init__(self, begin, end, duration):
-        self.begin = begin
-        self.end = end
-        self.duration = duration
-    
-    def __getitem__(self, key):
-        return key*(self.end-self.begin)/self.duration + self.begin
+from utils import samples
+from Signal import Sine
+from curve import CompoundCurve, Curve, Constant, Line
+from playback import play_WAV, play_Audio, export_test
 
-
-class Param():
-    def __init__(self):
-        self.functions = [()]
-    
-    def __len__(self):
-        pass
-    
-    def __getitem__(self, key):
-        pass
-    
-    def __iter__(self):
-        pass
-
+############ ---------------
 
 class dummy_iter(list):
     def __init__(self, curve, rate):
@@ -80,19 +40,47 @@ class dummy_iter(list):
     
     __array_priority__ = 10000
 
+####################################
+    
+def test_glis():
+    c = CompoundCurve()
+    c.curves.append(Constant(220, 6e3))
+    c.curves.append(Line(220, 330, 9e3))
+    c.curves.append(Constant(330, 3e3))
+    
+    s = Sine(frequency=c, duration=18e3)
+    # TODO duration shouldn't be releveant if frequency is a curve
+    # in that case it should be computed inside Signal.__init__ on its own
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, test_glis)
+    
+
+
 if __name__ == "__main__":
 #    z = np.linspace(0, 1, 400)
 #    x = Line(1, 15, 4e3)
 #    z *= x.iterator(100)
     
-    a = Line(1, 15, 4e3)
-    t = []
-    for i in dummy_iter(a, 10):
-        t += [i]
+    # a = Line(1, 15, 4e3)
+    # t = []
+    # for i in dummy_iter(a, 10):
+    #     t += [i]
 #    b = np.ones(shape=(1,40))
 #    b = dummy_iter(a, 10)*b
 #    b = b*range(1,41)
-
+    #######
+    c = CompoundCurve()
+    c.curves.append(Constant(3, 6e3))
+    c.curves.append(Line(3, 11, 9e3))
+    c.curves.append(Constant(11, 3e3))
+    
+    # x = c.flatten(4)
+    # y = c.integral(4)
+    # by observing y, it's not perfect
+    
+    
+    test_glis()
 
 
 

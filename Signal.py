@@ -9,10 +9,12 @@ import copy
 
 import numpy as np
 
+from utils import isnumber, samples
+
 from transforms import Transform, Amplitude, Slice, Combine
+from curve import Curve
 from audio import Audio
 from playback import WAV_to_Audio
-from utils import isnumber, samples
 
 class Signal:
     def __init__(self):
@@ -301,6 +303,8 @@ class Sine(Signal):
         self.duration = duration
         
     def generate(self, sample_rate):
+        if isinstance(self.frequency, Curve):
+            return np.sin(2*np.pi * self.frequency.integral(sample_rate))
         return np.sin(self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False) * 2 * np.pi)
     
 class Triangle(Signal):
