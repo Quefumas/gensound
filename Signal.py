@@ -296,56 +296,6 @@ class Silence(Signal):
     def generate(self, sample_rate):
         return np.zeros(self.samples(sample_rate), dtype=np.float64)
 
-class Sine(Signal):
-    def __init__(self, frequency=220, duration=5000):
-        super().__init__()
-        self.frequency = frequency
-        self.duration = duration
-        
-    def generate(self, sample_rate):
-        if isinstance(self.frequency, Curve):
-            return np.sin(2*np.pi * self.frequency.integral(sample_rate))
-        return np.sin(self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False) * 2 * np.pi)
-    
-class Triangle(Signal):
-    def __init__(self, frequency=220, duration=5000):
-        super().__init__()
-        self.frequency = frequency
-        self.duration = duration
-    
-    def generate(self, sample_rate):
-        # strange manipulation on sawtooth
-        return 2*np.abs((2*np.pi
-                       * self.frequency
-                       * np.linspace(0, self.duration/1000, self.samples(sample_rate), False)
-                       % (2*np.pi) - np.pi))/np.pi - 1
-    
-    
-class Square(Signal):
-    def __init__(self, frequency=220, duration=5000):
-        super().__init__()
-        self.frequency = frequency
-        self.duration = duration
-    
-    def generate(self, sample_rate):
-        return (((  2*np.pi
-                  * self.frequency
-                  * np.linspace(0,
-                                self.duration/1000,
-                                self.samples(sample_rate),
-                                False)
-                  % (2*np.pi)
-                  < np.pi)*2 - 1).astype(np.float64))
-
-class Sawtooth(Signal):
-    def __init__(self, frequency=220, duration=5000):
-        super().__init__()
-        self.frequency = frequency
-        self.duration = duration
-    
-    def generate(self, sample_rate):
-        return (2*np.pi* self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False) % (2*np.pi))/np.pi-1
-
 class Step(Signal):
     def __init__(self, duration=1):
         super().__init__()
@@ -362,6 +312,37 @@ class GreyNoise(Signal):
     def generate(self, sample_rate):
         return 2*np.random.rand(self.samples(sample_rate)) - 1
 
+
+#### single-pitched signals
+
+
+class Sine(Signal): # oscillator? pitch? phaser?
+    def wave(self, phase):
+        # TODO can also be done using @classmethod on generate()?
+        # and then this can be referred as cls.wave, instead of self?
+        return np.sin(phase)
+    
+    def __init__(self, frequency=220, duration=5000):
+        super().__init__()
+        self.frequency = frequency
+        self.duration = duration
+        
+    def generate(self, sample_rate):
+        if isinstance(self.frequency, Curve):
+            return self.wave(2*np.pi * self.frequency.integral(sample_rate))
+        return self.wave(2*np.pi * self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False))
+    
+class Triangle(Sine):
+    def wave(self, phase):
+        return 2*np.abs((phase % (2*np.pi) - np.pi))/np.pi - 1
+    
+class Square(Sine):
+    def wave(self, phase):
+        return ((phase % (2*np.pi) < np.pi)*2 - 1).astype(np.float64)
+
+class Sawtooth(Sine):
+    def wave(self, phase):
+        return (phase % (2*np.pi))/np.pi-1
 
 
 ### raw audio signals
