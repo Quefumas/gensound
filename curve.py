@@ -28,6 +28,9 @@ class Curve():
         vals = self.flatten(sample_rate)
         return [sum(vals[0:i]) for i in range(len(vals))]
     
+    def samples(self, sample_rate):
+        return samples(self.duration, sample_rate)
+    
     # TODO add support for logical or as concat
     # should this be done here or at compoundcurve? imitate signal
     
@@ -69,12 +72,12 @@ class Constant(Curve):
         self.duration = duration
     
     def flatten(self, sample_rate):
-        return np.full(shape=samples(self.duration, sample_rate), fill_value=self.value)
+        return np.full(shape=self.samples(sample_rate), fill_value=self.value)
     
     def integral(self, sample_rate):
         # TODO maybe slightly different from super.integral, due to start/end conditions
         return np.linspace(start=0, stop=self.value*self.duration/1000,
-                           num=samples(self.duration, sample_rate), endpoint=False)
+                           num=self.samples(sample_rate), endpoint=False)
     
 class Line(Curve):
     def __init__(self, begin, end, duration):
@@ -83,14 +86,14 @@ class Line(Curve):
         self.duration = duration
     
     def flatten(self, sample_rate):
-        return np.linspace(start=self.begin, stop=self.end, num=samples(self.duration, sample_rate), endpoint=False)
+        return np.linspace(start=self.begin, stop=self.end, num=self.samples(sample_rate), endpoint=False)
     # TODO class method of computing time ruler, or maybe length
     def integral(self, sample_rate):
         # at^/2+ bt = (at/2+b)*t
         return np.linspace(start=self.begin, stop=(self.end-self.begin)/2+self.begin,
-                           num=samples(self.duration, sample_rate), endpoint=False) \
+                           num=self.samples(sample_rate), endpoint=False) \
             * np.linspace(start=0, stop=self.duration/1000,
-                                              num=(samples(self.duration, sample_rate)),
+                                              num=self.samples(sample_rate),
                                               endpoint=False)
 
 
@@ -101,11 +104,11 @@ class Logistic(Curve): # Sigmoid
         self.duration = duration
     
     def flatten(self, sample_rate):
-        return (self.end-self.begin)/(1+np.e**(-np.linspace(start=-6, stop=6, num=samples(self.duration, sample_rate), endpoint=False)))+self.begin
+        return (self.end-self.begin)/(1+np.e**(-np.linspace(start=-6, stop=6, num=self.samples(sample_rate), endpoint=False)))+self.begin
     
     def integral(self, sample_rate):
-        time1 = np.linspace(start=-6, stop=6, num=samples(self.duration, sample_rate), endpoint=False)
-        time2 = np.linspace(start=0, stop=self.duration/1000, num=samples(self.duration, sample_rate), endpoint=False)
+        time1 = np.linspace(start=-6, stop=6, num=self.samples(sample_rate), endpoint=False)
+        time2 = np.linspace(start=0, stop=self.duration/1000, num=self.samples(sample_rate), endpoint=False)
         return (self.end-self.begin)*np.log(1+np.e**time1)/2+ self.begin*time2
 
         

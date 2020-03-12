@@ -46,7 +46,7 @@ V TODO: test why squares get negative all the time
   for output of the already-mixed data. possibly should not even be called
   by Signal.mixdown.
 V TODO enable concating signal to 0 (supported already?), or to empty Signal()?
-
+enforce "no such thing as seconds" rule! but remember that frequency is measured in Hz...
 ====== Syntactical stuff =======
 
 ----
