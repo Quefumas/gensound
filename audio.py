@@ -260,7 +260,7 @@ class Audio:
             return audio
         
         max_amp = np.max(np.abs(audio))
-        return audio * max_amplitude / max_amp if max_amp != 0 else audio
+        return audio * (max_amplitude / max_amp) if max_amp != 0 else audio
         
     @staticmethod
     def stretch(audio, byte_width):

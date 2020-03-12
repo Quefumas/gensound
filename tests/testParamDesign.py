@@ -8,8 +8,10 @@ Created on Fri Mar  6 23:12:57 2020
 import numpy as np
 
 from utils import samples
-from Signal import Sine
-from curve import CompoundCurve, Curve, Constant, Line
+from musicTheory import midC
+from Signal import Sine, Triangle
+from transforms import Average_samples
+from curve import CompoundCurve, Curve, Constant, Line, Logistic
 from playback import play_WAV, play_Audio, export_test
 
 ############ ---------------
@@ -43,17 +45,20 @@ class dummy_iter(list):
 ####################################
     
 def test_glis():
-    c = CompoundCurve()
-    c.curves.append(Constant(220, 6e3))
-    c.curves.append(Line(220, 330, 9e3))
-    c.curves.append(Constant(330, 3e3))
+    c = Constant(220, 3e3) | Line(220, 330, 6e3) | Constant(330, 3e3)
+    c2 = Constant(220, 3e3) | Logistic(220, 330, 6e3) | Constant(330, 3e3)
+    c3 = Constant(midC(5), 1e3) | Line(midC(5), midC(1), 9e3) | Constant(midC(1), 2e3)
+    c4 = Constant(midC(14), 6e3) | Line(midC(14), midC(10), 5e3) | Constant(midC(10), 1e3)
     
-    s = Sine(frequency=c, duration=18e3)
+    s = Triangle(frequency=c2, duration=12e3)
+    s += Triangle(frequency=c3, duration=12e3)
+    s += Triangle(frequency=c4, duration=12e3)
     # TODO duration shouldn't be releveant if frequency is a curve
     # in that case it should be computed inside Signal.__init__ on its own
+    
     audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
-    #play_Audio(audio)
-    export_test(audio, test_glis)
+    play_Audio(audio)
+    #export_test(audio, test_glis)
     
 
 
@@ -71,9 +76,10 @@ if __name__ == "__main__":
 #    b = b*range(1,41)
     #######
     c = CompoundCurve()
-    c.curves.append(Constant(3, 6e3))
-    c.curves.append(Line(3, 11, 9e3))
+    c.curves.append(Constant(3, 3e3))
+    c.curves.append(Line(3, 11, 6e3))
     c.curves.append(Constant(11, 3e3))
+    
     
     # x = c.flatten(4)
     # y = c.integral(4)

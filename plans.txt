@@ -78,6 +78,9 @@ t = Sine()[0:2] # automatically expands the sine into stereo
 # this syntax would have the advantage that it does not require
 # defining t in advance!
 
+# can be done in Signal.__getitem__:
+# return self.copy()*Channels(*([1]*t))*Slice(*Signal.__subscripts(args[0]))
+
 =-=
 
 MonoSignal*Stereo(Lfunc, Rfunc)?

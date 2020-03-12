@@ -104,7 +104,7 @@ class Signal:
             other = Silence(duration=other)
             
         s = Sequence()
-        
+        # use isinstance(self, Sequence) instead? more semantic
         if not self.transforms and isinstance(self, Sequence):
             s.sequence += self.sequence
         else:
@@ -317,10 +317,7 @@ class GreyNoise(Signal):
 
 
 class Sine(Signal): # oscillator? pitch? phaser?
-    def wave(self, phase):
-        # TODO can also be done using @classmethod on generate()?
-        # and then this can be referred as cls.wave, instead of self?
-        return np.sin(phase)
+    wave = np.sin
     
     def __init__(self, frequency=220, duration=5000):
         super().__init__()
@@ -329,20 +326,17 @@ class Sine(Signal): # oscillator? pitch? phaser?
         
     def generate(self, sample_rate):
         if isinstance(self.frequency, Curve):
-            return self.wave(2*np.pi * self.frequency.integral(sample_rate))
-        return self.wave(2*np.pi * self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False))
+            return type(self).wave(2*np.pi * self.frequency.integral(sample_rate))
+        return type(self).wave(2*np.pi * self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False))
     
 class Triangle(Sine):
-    def wave(self, phase):
-        return 2*np.abs((phase % (2*np.pi) - np.pi))/np.pi - 1
+    wave = lambda phase: 2*np.abs((phase % (2*np.pi) - np.pi))/np.pi - 1
     
 class Square(Sine):
-    def wave(self, phase):
-        return ((phase % (2*np.pi) < np.pi)*2 - 1).astype(np.float64)
+    wave = lambda phase: ((phase % (2*np.pi) < np.pi)*2 - 1).astype(np.float64)
 
 class Sawtooth(Sine):
-    def wave(self, phase):
-        return (phase % (2*np.pi))/np.pi-1
+    wave = lambda phase: (phase % (2*np.pi))/np.pi-1
 
 
 ### raw audio signals

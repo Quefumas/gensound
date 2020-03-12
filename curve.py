@@ -7,8 +7,10 @@ Created on Tue Mar 10 18:34:24 2020
 
 import numpy as np
 
-from utils import samples
+from utils import samples, isnumber
 
+# TODO add capabilities to adapt user-defined functions into curves on the fly
+# i.e. x= Curve(lambda k: ...), then passing the lambda into flatten etc.
 class Curve():
     def __init__(self):
         pass
@@ -26,7 +28,41 @@ class Curve():
         vals = self.flatten(sample_rate)
         return [sum(vals[0:i]) for i in range(len(vals))]
     
+    # TODO add support for logical or as concat
+    # should this be done here or at compoundcurve? imitate signal
     
+    def __or__(self, other):
+        c = CompoundCurve()
+        
+        if isinstance(self, CompoundCurve):
+            c.curves += self.curves
+        else:
+            c.curves += [self]
+        
+        if isinstance(other, CompoundCurve):
+            c.curves += other.curves
+        else:
+            c.curves += [other]
+        
+        return c
+    
+
+class CompoundCurve(Curve):
+    def __init__(self):
+        self.curves = []
+    
+    def flatten(self, sample_rate):
+        return np.concatenate([c.flatten(sample_rate) for c in self.curves])
+    
+    def integral(self, sample_rate):
+        result = self.curves[0].integral(sample_rate)
+        
+        for curve in self.curves[1:]:
+            result = np.concatenate((result, result[-1]+curve.integral(sample_rate)))
+        
+        return result
+    
+
 class Constant(Curve):
     def __init__(self, value, duration):
         self.value = value
@@ -48,7 +84,7 @@ class Line(Curve):
     
     def flatten(self, sample_rate):
         return np.linspace(start=self.begin, stop=self.end, num=samples(self.duration, sample_rate), endpoint=False)
-    
+    # TODO class method of computing time ruler, or maybe length
     def integral(self, sample_rate):
         # at^/2+ bt = (at/2+b)*t
         return np.linspace(start=self.begin, stop=(self.end-self.begin)/2+self.begin,
@@ -58,18 +94,32 @@ class Line(Curve):
                                               endpoint=False)
 
 
-class CompoundCurve(Curve):
-    def __init__(self):
-        self.curves = []
+class Logistic(Curve): # Sigmoid
+    def __init__(self, begin, end, duration):
+        self.begin = begin
+        self.end = end
+        self.duration = duration
     
     def flatten(self, sample_rate):
-        return np.concatenate([c.flatten(sample_rate) for c in self.curves])
+        return (self.end-self.begin)/(1+np.e**(-np.linspace(start=-6, stop=6, num=samples(self.duration, sample_rate), endpoint=False)))+self.begin
     
     def integral(self, sample_rate):
-        result = self.curves[0].integral(sample_rate)
+        time1 = np.linspace(start=-6, stop=6, num=samples(self.duration, sample_rate), endpoint=False)
+        time2 = np.linspace(start=0, stop=self.duration/1000, num=samples(self.duration, sample_rate), endpoint=False)
+        return (self.end-self.begin)*np.log(1+np.e**time1)/2+ self.begin*time2
+
         
-        for curve in self.curves[1:]:
-            result = np.concatenate((result, result[-1]+curve.integral(sample_rate)))
-        
-        return result
-        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
