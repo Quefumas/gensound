@@ -7,11 +7,10 @@ Created on Fri Mar  6 23:12:57 2020
 
 import numpy as np
 
-from utils import samples
 from musicTheory import midC
 from Signal import Sine, Triangle
-from transforms import Average_samples
-from curve import CompoundCurve, Curve, Constant, Line, Logistic
+from transforms import Average_samples, Downsample_rough
+from curve import CompoundCurve, Curve, Constant, Line, Logistic, SineCurve
 from playback import play_WAV, play_Audio, export_test
 
 ############ ---------------
@@ -46,15 +45,12 @@ class dummy_iter(list):
     
 def test_glis():
     c = Constant(220, 3e3) | Line(220, 330, 6e3) | Constant(330, 3e3)
-    c2 = Constant(220, 3e3) | Logistic(220, 330, 6e3) | Constant(330, 3e3)
-    c3 = Constant(midC(5), 1e3) | Line(midC(5), midC(1), 9e3) | Constant(midC(1), 2e3)
-    c4 = Constant(midC(14), 6e3) | Line(midC(14), midC(10), 5e3) | Constant(midC(10), 1e3)
+    c2 = Constant(220, 2e3) | Logistic(220, midC(1), 8e3) | Constant(midC(1), 2e3)
+    c3 = Constant(midC(5), 1e3) | Line(midC(5), midC(1), 9e3) | Constant(midC(1), 3e3)
+    c4 = Constant(midC(14), 6e3) | Line(midC(14), midC(10), 5e3) | Constant(midC(10), 2e3)
     
-    s = Triangle(frequency=c2, duration=12e3)
-    s += Triangle(frequency=c3, duration=12e3)
-    s += Triangle(frequency=c4, duration=12e3)
-    # TODO duration shouldn't be releveant if frequency is a curve
-    # in that case it should be computed inside Signal.__init__ on its own
+    c5 = SineCurve(frequency=10, depth=0.1, baseline=330, duration=5e3)
+    s = Triangle(frequency=c5, duration=12e3) * Downsample_rough(factor=10) * Average_samples(7)
     
     audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)

@@ -2,6 +2,7 @@
 
 import numpy as np
 from analyze import DFT2
+from curve import Curve, Line, Logistic, SineCurve
 
 def visualise_FIRs(*FIRs, is_log=False):
     points = []
@@ -37,7 +38,15 @@ def visualise_windows(*windows, is_log=False):
     plt.show()
 
 
-if __name__ == "__main__":
+def visualise_curve(curve, integral=False):
+    import matplotlib.pyplot as plt
+    sample_rate = 1000
+    x = np.linspace(0, curve.duration/1000, num=curve.num_samples(sample_rate))
+    y = curve.flatten(sample_rate) if not integral else curve.integral(sample_rate)
+    plt.plot(x, y)
+    plt.show()
+
+def test_visualise_windows():
     fill = lambda l: l + [0]*(128-len(l))
     basic_avg_fir = lambda n: fill([1/n]*n)
     graded_fir = lambda n: fill([i-0.5 for i in range(1,n//2+2)] + [n//2-i-0.5 for i in range(n//2)])
@@ -52,3 +61,28 @@ if __name__ == "__main__":
     #visualise_FIRs(graded_fir(5), blackman, is_log=False)
     
     visualise_windows(blackman)
+
+def test_visualise_curve():
+    c = Logistic(220,440, 6e3)
+    c = SineCurve(3, 10, 50, 10e3)
+    visualise_curve(c, True)
+
+if __name__ == "__main__":
+    test_visualise_curve()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

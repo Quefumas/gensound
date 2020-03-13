@@ -47,6 +47,19 @@ V TODO: test why squares get negative all the time
   by Signal.mixdown.
 V TODO enable concating signal to 0 (supported already?), or to empty Signal()?
 enforce "no such thing as seconds" rule! but remember that frequency is measured in Hz...
+
+Paramterization TODOs:
+* Panning
+* some problems when concatting two together
+* merge with Signal
+* for signal have duration irrelevant when frequency is a curve (since it has duration already)
+
+to consider: 
+SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | Constant(...)
+may cause problems due to sine not completing whole cycle
+we do not want to force user to compute this, what could be better is 
+SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | CF | Constant(...)
+i.e. design a kind of cross-fade that makes these continuous
 ====== Syntactical stuff =======
 
 ----

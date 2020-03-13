@@ -9,7 +9,7 @@ import numpy as np
 from audio import Audio
 from utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
-                  samples, samples_slice
+                  num_samples, samples_slice
 
 class Transform:
     """ represents post-processing on some given signal.
@@ -25,17 +25,17 @@ class Transform:
         # TODO consider using *kwargs and making it copy all attributes to self
         # this would save us many inherited inits simply doing self.duration = duration
         # OTOH could this break something by name collision?
-        # also, wouldn't this make the code less clear (note that samples() also
+        # also, wouldn't this make the code less clear (note that num_samples() also
         # uses hidden self.duration)
         pass
     
     def __str__(self):
         return str(type(self).__name__)
     
-    def samples(self, sample_rate):
+    def num_samples(self, sample_rate):
         if not hasattr(self, "duration"):
             raise TypeError("transform.duration must be defined to support conversion to samples")
-        return samples(self.duration, sample_rate)
+        return num_samples(self.duration, sample_rate)
     
     def realise(self, audio):
         """ here we apply the transformation on the Audio object.
@@ -51,7 +51,7 @@ class Shift(Transform):
         self.duration = duration
     
     def realise(self, audio):
-        audio.push_forward(self.samples(audio.sample_rate))
+        audio.push_forward(self.num_samples(audio.sample_rate))
 
 class Extend(Transform):
     """ adds silence after the signal. needed?
@@ -60,7 +60,7 @@ class Extend(Transform):
         self.duration = duration
     
     def realise(self, audio):
-        audio.extend(self.samples(audio.sample_rate))
+        audio.extend(self.num_samples(audio.sample_rate))
 
 class Reverse(Transform):
     """
@@ -118,7 +118,7 @@ class Fade(Transform):
         self.duration = duration
     
     def realise(self, audio):
-        amp = DB_to_Linear(np.linspace(Fade.min_fade, 0, self.samples(audio.sample_rate)))
+        amp = DB_to_Linear(np.linspace(Fade.min_fade, 0, self.num_samples(audio.sample_rate)))
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
         

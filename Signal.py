@@ -9,7 +9,7 @@ import copy
 
 import numpy as np
 
-from utils import isnumber, samples
+from utils import isnumber, num_samples
 
 from transforms import Transform, Amplitude, Slice, Combine
 from curve import Curve
@@ -62,8 +62,8 @@ class Signal:
         return audio.mixdown(byte_width, max_amplitude)
     
     #####################
-    def samples(self, sample_rate):
-        return samples(self.duration, sample_rate)
+    def num_samples(self, sample_rate):
+        return num_samples(self.duration, sample_rate)
         
     def copy(self):
         """
@@ -294,7 +294,7 @@ class Silence(Signal):
         self.duration = duration
     
     def generate(self, sample_rate):
-        return np.zeros(self.samples(sample_rate), dtype=np.float64)
+        return np.zeros(self.num_samples(sample_rate), dtype=np.float64)
 
 class Step(Signal):
     def __init__(self, duration=1):
@@ -302,7 +302,7 @@ class Step(Signal):
         self.duration = duration
     
     def generate(self, sample_rate):
-        return np.ones((self.samples(sample_rate),), dtype=np.float64)
+        return np.ones((self.num_samples(sample_rate),), dtype=np.float64)
 
 class GreyNoise(Signal):
     def __init__(self, duration=5000):
@@ -310,7 +310,7 @@ class GreyNoise(Signal):
         self.duration = duration
     
     def generate(self, sample_rate):
-        return 2*np.random.rand(self.samples(sample_rate)) - 1
+        return 2*np.random.rand(self.num_samples(sample_rate)) - 1
 
 
 #### single-pitched signals
@@ -327,7 +327,7 @@ class Sine(Signal): # oscillator? pitch? phaser?
     def generate(self, sample_rate):
         if isinstance(self.frequency, Curve):
             return type(self).wave(2*np.pi * self.frequency.integral(sample_rate))
-        return type(self).wave(2*np.pi * self.frequency * np.linspace(0, self.duration/1000, self.samples(sample_rate), False))
+        return type(self).wave(2*np.pi * self.frequency * np.linspace(0, self.duration/1000, self.num_samples(sample_rate), False))
     
 class Triangle(Sine):
     wave = lambda phase: 2*np.abs((phase % (2*np.pi) - np.pi))/np.pi - 1

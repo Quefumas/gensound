@@ -7,7 +7,7 @@ Created on Tue Mar 10 18:34:24 2020
 
 import numpy as np
 
-from utils import samples, isnumber
+from utils import num_samples, isnumber
 
 # TODO add capabilities to adapt user-defined functions into curves on the fly
 # i.e. x= Curve(lambda k: ...), then passing the lambda into flatten etc.
@@ -28,8 +28,11 @@ class Curve():
         vals = self.flatten(sample_rate)
         return [sum(vals[0:i]) for i in range(len(vals))]
     
-    def samples(self, sample_rate):
-        return samples(self.duration, sample_rate)
+    def num_samples(self, sample_rate):
+        return num_samples(self.duration, sample_rate)
+    
+    def sample_times(self, sample_rate):
+        return np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate), endpoint=False)
     
     # TODO add support for logical or as concat
     # should this be done here or at compoundcurve? imitate signal
@@ -72,12 +75,12 @@ class Constant(Curve):
         self.duration = duration
     
     def flatten(self, sample_rate):
-        return np.full(shape=self.samples(sample_rate), fill_value=self.value)
+        return np.full(shape=self.num_samples(sample_rate), fill_value=self.value)
     
     def integral(self, sample_rate):
         # TODO maybe slightly different from super.integral, due to start/end conditions
         return np.linspace(start=0, stop=self.value*self.duration/1000,
-                           num=self.samples(sample_rate), endpoint=False)
+                           num=self.num_samples(sample_rate), endpoint=False)
     
 class Line(Curve):
     def __init__(self, begin, end, duration):
@@ -86,32 +89,57 @@ class Line(Curve):
         self.duration = duration
     
     def flatten(self, sample_rate):
-        return np.linspace(start=self.begin, stop=self.end, num=self.samples(sample_rate), endpoint=False)
+        return np.linspace(start=self.begin, stop=self.end, num=self.num_samples(sample_rate), endpoint=False)
     # TODO class method of computing time ruler, or maybe length
     def integral(self, sample_rate):
         # at^/2+ bt = (at/2+b)*t
         return np.linspace(start=self.begin, stop=(self.end-self.begin)/2+self.begin,
-                           num=self.samples(sample_rate), endpoint=False) \
+                           num=self.num_samples(sample_rate), endpoint=False) \
             * np.linspace(start=0, stop=self.duration/1000,
-                                              num=self.samples(sample_rate),
+                                              num=self.num_samples(sample_rate),
                                               endpoint=False)
-
 
 class Logistic(Curve): # Sigmoid
     def __init__(self, begin, end, duration):
         self.begin = begin
         self.end = end
         self.duration = duration
+        
+        self.L = self.end - self.begin # height
+        self.T = self.begin # elevation
+        self.x0 = self.duration/2000 # midpoint
+        self.k = 10*1000/self.duration # steepness
+        
     
     def flatten(self, sample_rate):
-        return (self.end-self.begin)/(1+np.e**(-np.linspace(start=-6, stop=6, num=self.samples(sample_rate), endpoint=False)))+self.begin
+        # 1 / (1 + e^(-k(x-x0)))
+        time = np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate), endpoint=False)
+        return self.L/(1+np.e**(-self.k*(time - self.x0))) + self.T
     
     def integral(self, sample_rate):
-        time1 = np.linspace(start=-6, stop=6, num=self.samples(sample_rate), endpoint=False)
-        time2 = np.linspace(start=0, stop=self.duration/1000, num=self.samples(sample_rate), endpoint=False)
-        return (self.end-self.begin)*np.log(1+np.e**time1)/2+ self.begin*time2
+        # L/k * ln(1 + e^(k(x-x0))) + Tx
+        # TODO faster implementation?
+        time = np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate))
+        return (self.L/self.k) * np.log(1 + np.e**(self.k*(time - self.x0))) + self.T * time
 
-        
+class SineCurve(Curve):
+    def __init__(self, frequency, depth, baseline, duration):
+        self.frequency = frequency
+        self.depth = depth
+        self.baseline = baseline
+        self.duration = duration
+    
+    def flatten(self, sample_rate):
+        return self.depth*np.sin(2*np.pi*self.frequency*self.sample_times(sample_rate)) + self.baseline
+    
+    def integral(self, sample_rate):
+        # sin (x-pi/2) + 1
+        return self.depth*np.sin(2*np.pi*self.frequency*self.sample_times(sample_rate) - np.pi/2) + self.depth + self.baseline*self.sample_times(sample_rate)
+    
+
+
+
+
 
 
 
