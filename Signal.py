@@ -16,6 +16,8 @@ from curve import Curve
 from audio import Audio
 from playback import WAV_to_Audio
 
+#CHANNEL_NAMES = {"L":0, "R":1}
+
 class Signal:
     def __init__(self):
         self.transforms = []
@@ -213,7 +215,11 @@ class Signal:
                 signal[1] = Sine()
                 # channel 1 is now a sine wave
         
-        if args[0] = slice,
+        if args[0] = slice of ints,
+            then it is taken to refer to tracks, e.g.:
+                signal = signal[1::-1] # switches L/R
+        
+        if args[0] = slice of floats,
             then it is taken to refer to time span only:
                 signal[3e3:4e3] *= Reverse()
                 # reverse the content in the 3rd second
@@ -239,10 +245,22 @@ class Signal:
         if isinstance(arg, int):
             return (slice(arg, arg+1), slice(None))
         if isinstance(arg, slice):
-            return (slice(None), arg)
+            # TODO beware of illegal values
+            # if both are None, interpret as channels
+            if isinstance(arg.start, (int, type(None))) and isinstance(arg.stop, (int, type(None))):
+                # slice of channels
+                return (arg, slice(None))
+            if isinstance(arg.start, (float, type(None))) and isinstance(arg.stop, (float, type(None))):
+                # slice of time
+                return (slice(None), arg)
+            
+            raise TypeError("Slice can't be interpreted: inconsistent types")
+        
+        raise TypeError("Argument not acceptable as subscript")
     
     def __getitem__(self, *args):
         # TODO deal with out-of-bound values for channels and time
+        # for now we enable out-of-bound channels when starting at 0 and audio is mono
         return self.copy()*Slice(*Signal.__subscripts(args[0]))
     
     def __setitem__(self, *args):
@@ -251,7 +269,23 @@ class Signal:
         # TODO should copy self first?
         self.transforms.append(Combine(*Signal.__subscripts(args[0]), args[1]))
     
-#### other "high-level" signals
+    # def __getattr__(self, name):
+    #     # so we can do signal.L to access left channel (0)
+    #     if name in CHANNEL_NAMES:
+    #         return self[CHANNEL_NAMES[name]]
+        # problems: we need to define self.L differently when its setattr vs. getagttr
+        # and also avoid recursion when using setattr
+    #     raise AttributeError
+    
+    def __iter__(self):
+        # can't iterate over channels since they're not known until mixdown
+        # (transforms affect them during realise)
+        # this is to prevent sum(signal) as a way to mix into mono
+        # instead of getting into a loop (didn't go deep into that one)
+        # 
+        raise TypeError("May not iterate over Signal objects, as channel number is unknown prior to mixdown.")
+    
+#### other "high-level" signals ##############################3
 
 class Mix(Signal):
     """
@@ -286,7 +320,7 @@ class Sequence(Signal):
         
         return audio
 
-#### particular signals
+#### particular signals #########
 
 class Silence(Signal):
     def __init__(self, duration=5000):

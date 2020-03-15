@@ -21,6 +21,7 @@ sec = 1000
 
 
 ints_by_width = (np.int8, np.int16, np.int32, np.int64)
+sample_rates = (8000, 11025, 16000, 22050, 24000, 32000, 44100, 48000, 96000)
 
 DB_to_Linear = lambda x: 10**(x/20)
 Linear_to_DB = lambda x: 20*np.log(x)/np.log(10)

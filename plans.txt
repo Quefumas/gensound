@@ -19,7 +19,6 @@ V make signals/trnasforms empty skeletons
 V slice signals
 V take back to mono etc.
 V translate fadeins etc into db
-- Solve strange panning issues
 V solve thing about float vs. int (and enable ints as floats all around)
 V signal addition code ignores transforms applied to sums?
 * keep track of all dangerous floats (when converting from time to samples)
@@ -28,15 +27,15 @@ perhaps we should use + as after and & as mix?
 
 next stages:
 * parametrization
-* controlled glissandos
+V controlled glissandos
 V tracks stuff
 * fix panning
 * ADSR
 * TODO fix streak
 
-negative shifts?
+* negative shifts?
 
-crossfade for concat???
+* crossfade for concat???
 Sine() | CF | Triangle() ???
 
 
@@ -54,12 +53,21 @@ Paramterization TODOs:
 * merge with Signal
 * for signal have duration irrelevant when frequency is a curve (since it has duration already)
 
-to consider: 
+* to consider: 
 SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | Constant(...)
 may cause problems due to sine not completing whole cycle
 we do not want to force user to compute this, what could be better is 
 SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | CF | Constant(...)
 i.e. design a kind of cross-fade that makes these continuous
+
+- Curve*Signal interpreted as Amplitude*Signal? [i.e. replacing float]
+
+* s = WAV(african)[5e3:10e3] takes different parts of african according
+  to the sample rate given when realising. bug or feature?
+* s = WAV(african)[15e3:25e3:2] works as expected. bug or feature?
+
+- make number of eventual channels seep up to master signal?
+  or conclude it by examining the tree? just so we can iterate over channels and do sums?
 ====== Syntactical stuff =======
 
 ----
@@ -84,15 +92,13 @@ mono = t[0] + t[1] #?
 mono = sum(t) #?
 
 mono = t.mono() # mono in what way?
-
+mono = t * mono()?
 =-=
 
+V
 t = Sine()[0:2] # automatically expands the sine into stereo
 # this syntax would have the advantage that it does not require
 # defining t in advance!
-
-# can be done in Signal.__getitem__:
-# return self.copy()*Channels(*([1]*t))*Slice(*Signal.__subscripts(args[0]))
 
 =-=
 
@@ -101,17 +107,17 @@ Mono*Stereo(35L)?
 
 common operations:
 * mapping mono to several channels (exact copies)
-    stereo = mono[0:2] ?
+V   stereo = mono[0:2] ?
     stereo = (0.5,1)*mono[0:2] ?
     # TODO aside: signal subscript to distinguish ints and floats for channels and time?
     
     Signal function?
     Sine().to_channels(3)
 * mapping mono into one of several channels (adding empty channels)
-    stereo = mono[0:2]
+V   stereo = mono[0:2]
     stereo[0:2] *= (0,1) ?
-* moving channels around (i.e. RePan)
-    stereo = stereo[0:2:-1] ?
+V moving channels around (i.e. RePan)
+    stereo = stereo[0:2:-1] ? # works already
     
     triple = Signal()[0:3]
     triple[0] = one
@@ -124,7 +130,8 @@ common operations:
     triple[2] = three # automatically opens 3rd channel
 * applying fades/gains to channels in separate
     stereo[0] *= fade()
-    stereo.L ?
+    stereo.L ? # overriding set/getattr is a messy, will doo later
+
 * taking mono signal and moving it around in stereo (or more) by some function
     need as input a panLaw, function mapping an argument to levels in all channels
     and then do for a mono:
@@ -165,9 +172,18 @@ pan = (0,-100) | (3e3, -50) | (5e3, -50)
 or maybe:
 pan = -100 | 5e3*line | 100 | 10e3*sigmoid(beta=3) | 50
 
+* another possibility:
+curve = 1e3*const(5) | 5e3*line(220,440)
+(though this would go against mergin signals and curves)
+
 * cumulative vs. absolute time durations - important considerations
 * looks kinda sick to do this alternating concat between values and functions
 * also need to do last value continuing to infinity.
+  but that would make duration not clear.
+  (wait: this depends on whether the param is freq or amplitude)
+  may be better (i,e for envelopes) to have the duration of the note specified,
+  and the curve only applying for its own duration.
+  i.e. note of 6 secs, with the envelope applying for 100ms
 * to allow integration we may also let predefined curves supply their own integral
 behaves like an iterator/iterable?
 
@@ -205,13 +221,6 @@ wav = (x:=Sine()) + Square().Shift(duration=x.length())
 * also, we may want after in conjunction with [negative] shift.
 * do we want before?
 
----- use cases -----
-
-signal *= 5
-or maybe signal **= 2
-or something
-should repeat the signal x times!
-or perhaps add append?
 
 
 
@@ -256,12 +265,6 @@ otherwise we cannot construct a signal for reuse
 
 subclass of Raw that stores the buffer of a mixed-down Audio!
 this is also great for incremental composition, you can put aside previous results
-
-
-class Mute # just do 0*Signal
-
-use lambda as frequency
-glis etc.
 
 implement len() of signals
 
@@ -319,17 +322,8 @@ downsample/upsample
 
 
 
-transform: cut beginning, end middle of signal etc.
-
-split channels transform so as to process each one individually
-
-
 allow negative shifts? (which can cancel previous positive shifts,
 or lose the beginning of the audio)
-
-
-add slice transform (think about syntax first)
-or make signals subscriptable like np arrays!
 
 experiment: reverse compress.
 high amps get lowered down, low amps get powered up
@@ -385,11 +379,6 @@ so the user knows exactly all the places of possible inaccuracy
 
 
 
-test times, check how long everything takes
-
-
-
-zero division error prevents us from playing silence
 
 
 

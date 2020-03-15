@@ -10,12 +10,13 @@ import numpy as np
 from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
 from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
                        Downsample_rough, Average_samples, Amplitude, \
-                       Reverse, Repan, Gain, Limiter, Convolution, Slice
+                       Reverse, Repan, Gain, Limiter, Convolution, Slice, \
+                       Mono
 from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 
 from musicTheory import midC
 
-african = "data/african_sketches_1.wav"
+african = "../data/african_sketches_1.wav"
 
 
 def slice_test():
@@ -171,12 +172,47 @@ def pan_mono_test():
     s[7.5e3:] *= Repan(1, 0)
     
     audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    #export_test(audio, pan_mono_test)
+
+def test_reverse_channels():
+    s = WAV(african)[15e3:25e3]
+    s[0] += (WAV(african)[15e3:35e3:2]*Gain(-6))[1]
+    s[1] += (WAV(african)[15e3:45e3:3]*Gain(-6))[0]
+    s = s[1::-1]
+    audio = s.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    #export_test(audio, test_reverse_channels)
+
+def test_to_stereo_syntax():
+    s = Sine()[0:2] # automatically casts into stereo
+    s[0] += 0.2*Triangle(frequency=360)
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
+def test_implicit_add_channel():
+    s = Sine() #[0:2]
+    #s[0] += 0.4*Triangle(duration=6e3) # exceeding signal bounds in time
+    s[2] = 0.2*Triangle() # channels it into mono channel with empty R
+    #print(s)
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
     #play_Audio(audio)
-    export_test(audio, pan_mono_test)
+    export_test(audio, test_implicit_add_channel)
+
+def test_to_mono():
+    s = WAV(african)[15e3:25e3]
+    ### s = sum(s) # raises error - we do not know how many channels there are
+    s = s[0] + s[1] # use this
+    #s *= Mono() # or this
+    audio = s.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
+def test_something():
+    ...
 
 if __name__ == "__main__":
     #test_gain_dB()
-    pan_mono_test()
+    #pan_mono_test()
     #%%%%%
 
 

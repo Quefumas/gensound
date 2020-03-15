@@ -73,6 +73,8 @@ class Slice(Transform):
     """ returns only a specified part of the signal.
     Should not be invoked by the user, rather it is used by
     Signal.__getitem.
+    
+    # TODO if hell froze over maybe its possible to merge this with Combine
     """
     def __init__(self, channel_slice, time_slice):
         # TODO filter slices (if relevant?)
@@ -80,6 +82,8 @@ class Slice(Transform):
         self.time_slice = time_slice
     
     def realise(self, audio):
+        if audio.is_mono() and self.channel_slice.start == 0 and self.channel_slice.stop > 0:
+            audio.from_mono(self.channel_slice.stop)
         audio.audio = audio.audio[self.channel_slice,
                                   samples_slice(self.time_slice, audio.sample_rate)]
         assert audio.ensure_2d(), "pbbly channel_slice wasn't a slice, so not ensure_2d()"
@@ -98,11 +102,20 @@ class Combine(Transform):
         self.signal = signal
     
     def realise(self, audio):
+        # locating correct samples
         sample_slice = samples_slice(self.time_slice, audio.sample_rate)
         
+        # add channels in case of out-of-bounds channel subscript
+        max_channel = max(self.channel_slice.start, self.channel_slice.stop-1)
+        if max_channel >= audio.num_channels():
+            audio.to_channels(max_channel+1)
+            
+        
+        # preparing new audio
         new_audio = self.signal.realise(audio.sample_rate)
         
-        audio.audio[self.channel_slice, sample_slice] = 0
+        # putting the new audio in
+        audio.audio[self.channel_slice, sample_slice] = 0 # TODO is this needed?
         start_sample = sample_slice.start if sample_slice.start is not None else 0
         audio.to_length(start_sample + new_audio.length())
         audio.audio[self.channel_slice, start_sample:start_sample+new_audio.length()] += new_audio.audio
@@ -242,7 +255,13 @@ class Limiter(Transform):
         
 
 
-###### PANNING STUFF    
+###### PANNING STUFF
+
+class Mono(Transform):
+    """ transforms multi-channel audio to mono
+    """
+    def realise(self, audio):
+        audio.audio = np.sum(audio.audio, axis=0, keepdims=True)
 
 class Channels(Transform):
     """ transforms mono to channels with the appropriate amps

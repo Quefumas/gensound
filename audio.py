@@ -61,6 +61,8 @@ class Audio:
     
     ####### getters #######
     
+    # always get the info from self.audio itself;
+    # we manipulate it directly all the time
     def num_channels(self):
         assert len(self.audio.shape) == 2
         return self.audio.shape[0]
@@ -158,7 +160,9 @@ class Audio:
         self.audio[:,:] = self.audio[0,:]
         assert self.ensure_2d()
     
-    
+    def to_channels(self, num_channels):
+        shape = (num_channels-self.num_channels(), self.length())
+        self.audio = np.vstack((self.audio, np.zeros(shape, dtype=np.float64)))
     
     ######## binary operations ###########
     
@@ -210,29 +214,6 @@ class Audio:
         self.conform(other)
         self.audio[:,0:other.length()] *= other[:,:]
         return self
-    
-    
-    
-    ##################
-    
-    # static functions for manipulating arrays
-    
-    # TODO needed?
-    @staticmethod
-    def add_channels(array, channels):
-        raise NotImplementedError
-        pass
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
