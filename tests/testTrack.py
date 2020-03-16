@@ -11,7 +11,8 @@ from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Ste
 from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
                        Downsample_rough, Average_samples, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
-                       Mono
+                       Mono, ADSR
+from curve import Curve, Constant, Line, Logistic, SineCurve
 from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 
 from musicTheory import midC
@@ -207,12 +208,50 @@ def test_to_mono():
     audio = s.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
 
+def test_reverse_channels_2():
+    s = WAV(african)[15e3:25e3]
+    s[0], s[1] = s[1], s[0] # this works
+    audio = s.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
+def test_amplitude_param():
+    s = WAV(african)[15e3:25e3]
+    c1 = Constant(1, 3e3) | Line(1, 0.01, duration=7e3)
+    c2 = SineCurve(frequency=3, depth=0.3, baseline=0.7, duration=10e3)
+    s *= Amplitude(c1, c2)
+    audio = s.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    # export_test(audio, test_amplitude_param)
+
+def test_gain_param():
+    s = WAV(african)[15e3:28e3]
+    c1 = Line(-80,0,duration=8e3)
+    c2 = Line(-40,-6,duration=4e3)
+    s *= Gain(c1, c2)
+    s[1,4e3:] *= Gain(-6)
+    audio = s.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    # export_test(audio, test_gain_param)
+
+def test_ADSR():
+    notes = [-3, -6, 1, 4, 3, -1, 1, 9, 8, 4, 6]*2
+    melody = Signal.concat(*[ Square(frequency=midC(notes[i]), duration=0.5e3)*
+                             ADSR(attack=0.03e3, decay=0.1e3, sustain=0.8, release=0.02e3, hold=0.1e3)
+                            for i in range(len(notes))])
+    melody[1] = Signal.concat(*[ Square(frequency=midC(notes[(i+2)%(len(notes))]), duration=0.5e3)*
+                             ADSR(attack=0.03e3, decay=0.1e3, sustain=0.8, release=0.02e3, hold=0)
+                            for i in range(len(notes))])
+    melody *= Average_samples(5)
+    audio = melody.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, test_ADSR)
+
 def test_something():
     ...
 
 if __name__ == "__main__":
-    #test_gain_dB()
     #pan_mono_test()
+    test_ADSR()
     #%%%%%
 
 

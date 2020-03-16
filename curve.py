@@ -26,6 +26,8 @@ class Curve():
         to override it for specific curves
         """
         vals = self.flatten(sample_rate)
+        # TODO debug
+        # TODO for exmple this should be divided by the durations....
         return [sum(vals[0:i]) for i in range(len(vals))]
     
     def num_samples(self, sample_rate):
@@ -68,6 +70,10 @@ class CompoundCurve(Curve):
         
         return result
     
+    def __getattr__(self, name):
+        if name == "duration":
+            return sum([c.duration for c in self.curves])
+        raise AttributeError
 
 class Constant(Curve):
     def __init__(self, value, duration):

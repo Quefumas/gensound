@@ -6,6 +6,7 @@ Created on Sun Aug 18 21:01:16 2019
 """
 
 import numpy as np
+from curve import Curve, Line, Logistic, Constant
 from audio import Audio
 from utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
@@ -149,11 +150,19 @@ class Gain(Transform):
     """
     Adds positive/negative gain in dBs to the signal.
     """
-    def __init__(self, dB):
-        self.dB = dB
+    def __init__(self, *dBs):
+        self.dBs = dBs
     
     def realise(self, audio):
-        audio.audio[:,:] *= DB_to_Linear(self.dB)
+        # should we make this inherit from amplitude? like Triangle/Sine relation?
+        for (i, dB) in enumerate(self.dBs):
+            if isnumber(dB):
+                audio.audio[i,:] *= DB_to_Linear(dB)
+            elif isinstance(dB, Curve):
+                vals = DB_to_Linear(dB.flatten(audio.sample_rate))
+                audio.audio[i,0:dB.num_samples(audio.sample_rate)] *= vals
+            else:
+                raise TypeError("Unsupported amplitude type")
 
 class Amplitude(Transform):
     """ simple increase/decrease of amplitude.
@@ -163,25 +172,28 @@ class Amplitude(Transform):
     
     use Gain() to change in dB
     """
-    def __init__(self, size):
-        self.size = size
-        
-        if iscallable(size):
-            self.size = lambda_to_range(size)
+    def __init__(self, *amps):
+        self.amps = amps
     
     def realise(self, audio):
-        # TODO shouldn't this just affect a copy of audio????
-        if isnumber(self.size):
-            audio.audio = self.size*audio.audio
-            return
-        
-        if iscallable(self.size):
-            amps = self.size(audio.length(), audio.sample_rate)
-            # TODO view or copy?
-            # TODO what about different channels?
-            audio.audio *= amps
-        else:
-            raise TypeError()
+        # TODO do multiple channels at the same time?
+        for (i,amp) in enumerate(self.amps):
+            # TODO shouldn't this just affect a copy of audio????
+            # above comment was previously for the line:
+            # audio.audio = self.size*audio.audio
+            if isnumber(amp):
+                audio.audio[i,:] *= amp
+            elif isinstance(amp, Curve):
+                vals = amp.flatten(audio.sample_rate)
+                # TODO view or copy?
+                # TODO what if curve duration doesn't match signal?
+                # or can we have curve duration extracted from signal? automatically matching it
+                # should we just stretch the last value of curve?
+                # should we define curve.conform?
+                # also what if curve is too long?
+                audio.audio[i,0:amp.num_samples(audio.sample_rate)] *= vals
+            else:
+                raise TypeError("Unsupported amplitude type")
 
 
 class AmpFreq(Transform):
@@ -410,7 +422,28 @@ class Convolution(Transform):
         else:
             audio.audio[:,:] *= (self.add + other)
 
-
+class ADSR(Transform):
+    """ applied ADSR envelope to signal
+    """
+    
+    def __init__(self, attack, decay, sustain, release, hold=0): #hold=None?
+        self.attack = attack
+        self.hold = hold
+        self.decay = decay
+        self.sustain = sustain
+        self.release = release
+        
+    def realise(self, audio):
+        env_start = Line(0, 1, self.attack) | Constant(1, self.hold)
+        env_start |= Line(1, self.sustain, duration = self.decay)
+        length_start = env_start.num_samples(audio.sample_rate)
+        # or maybe as one envelope by extrpolating from audio.duration()?
+        env_end = Line(self.sustain, 0, duration=self.release)
+        length_end = env_end.num_samples(audio.sample_rate)
+        
+        audio.audio[:,:length_start] *= env_start.flatten(audio.sample_rate)
+        audio.audio[:,length_start:-length_end] *= self.sustain
+        audio.audio[:,-length_end:] *= env_end.flatten(audio.sample_rate)
 
 
 

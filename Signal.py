@@ -66,6 +66,10 @@ class Signal:
     #####################
     def num_samples(self, sample_rate):
         return num_samples(self.duration, sample_rate)
+    
+    def sample_times(self, sample_rate):
+        return np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate), endpoint=False)
+    
         
     def copy(self):
         """
@@ -361,9 +365,9 @@ class Sine(Signal): # oscillator? pitch? phaser?
     def generate(self, sample_rate):
         if isinstance(self.frequency, Curve):
             return type(self).wave(2*np.pi * self.frequency.integral(sample_rate))
-        return type(self).wave(2*np.pi * self.frequency * np.linspace(0, self.duration/1000, self.num_samples(sample_rate), False))
-    
-class Triangle(Sine):
+        return type(self).wave(2*np.pi * self.frequency * self.sample_times(sample_rate))
+
+class Triangle(Sine): # TODO start at 0, not 1
     wave = lambda phase: 2*np.abs((phase % (2*np.pi) - np.pi))/np.pi - 1
     
 class Square(Sine):

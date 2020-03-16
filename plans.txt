@@ -5,7 +5,7 @@ Created on Thu Aug 22 20:44:57 2019
 @author: Dror
 """
 
-
+timeit(setup="import numpy as np", number=10000, stmt="")
 ================ CORE ======================
 
 fundamental improvements to do:
@@ -26,11 +26,16 @@ no doubt we still need direct After function; putting signals in arrays is not a
 perhaps we should use + as after and & as mix?
 
 next stages:
+V curves controlling Gain, Amplitude
+* AmpFreq(?), Fade(?), then go over all other transforms
+* fix curve discontinuity
+* finish panning
+
 * parametrization
 V controlled glissandos
 V tracks stuff
 * fix panning
-* ADSR
+V ADSR
 * TODO fix streak
 
 * negative shifts?
@@ -54,11 +59,11 @@ Paramterization TODOs:
 * for signal have duration irrelevant when frequency is a curve (since it has duration already)
 
 * to consider: 
-SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | Constant(...)
-may cause problems due to sine not completing whole cycle
-we do not want to force user to compute this, what could be better is 
-SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | CF | Constant(...)
-i.e. design a kind of cross-fade that makes these continuous
+    SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | Constant(...)
+    may cause problems due to sine not completing whole cycle
+    we do not want to force user to compute this, what could be better is 
+    SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | CF | Constant(...)
+    i.e. design a kind of cross-fade that makes these continuous
 
 - Curve*Signal interpreted as Amplitude*Signal? [i.e. replacing float]
 
@@ -66,11 +71,46 @@ i.e. design a kind of cross-fade that makes these continuous
   to the sample rate given when realising. bug or feature?
 * s = WAV(african)[15e3:25e3:2] works as expected. bug or feature?
 
-- make number of eventual channels seep up to master signal?
+? make number of eventual channels seep up to master signal?
   or conclude it by examining the tree? just so we can iterate over channels and do sums?
-====== Syntactical stuff =======
+  
+? if signal has 2 subscripts and the 2nd [time] is in ints - maybe have it refer to samples
+  instead of time. this allows for more surgical placement of new signals.
+  is this possible? or wanted?
+  otoh, keep in mind that we can't actually change value of single samples via Signal
+  and maybe it should stay that way (though we can replace it with a signal of our choosing or mute it)
 
-----
+
+
+=============== Syntactical stuff =============
+
+-===- Panning -===-
+(pan law should be class variable for Pan, so we can set it once)
+
+use cases:
+* take mono signal and pan it into several channels
+* apply amplitude on individual channels (this is covered already no?)
+* take stereo signal and make it span the space differently
+    relatively easy to derive from the 1st note above
+
+mono -> multiple - how do we do it?
+* provide n curves to indicate particular gains/levels
+  but note that we can just expand mono to multi then apply individual envelops
+* pre-define a mapping R -> R^n, and then just give one function t->R
+
+e.g.:
+Pan.panLaw = 4.5
+s = Sine()*Pan(-30L) # 2 channels by default
+c = Line(-30, 30, 5e3)
+s = Sine()*Pan(c)
+
+suppose listener in middle of triangle, we can use complex number to give exact source of sound
+    to_channels = lambda x: ()
+does it mean we need to enable 2d curves??? or just combining them
+it would be easier to use polar coordinates instead of complex numbers tho
+
+
+-===- Transforms --
 use '.' to apply transforms?
 Sine().Pan().Gain().Shift() + ...
 In that case can't use amplitude as float
@@ -166,15 +206,15 @@ maybe fancir:
 
 pan = (0,-100) | line | (3e3, -50) | line | (5e3, -50)
 
-or we can omit the "line":
+or we can omit the "line" (but what if we want other curves?):
 pan = (0,-100) | (3e3, -50) | (5e3, -50)
 
 or maybe:
 pan = -100 | 5e3*line | 100 | 10e3*sigmoid(beta=3) | 50
 
 * another possibility:
-curve = 1e3*const(5) | 5e3*line(220,440)
-(though this would go against mergin signals and curves)
+    curve = 1e3*const(5) | 5e3*line(220,440)
+    (though this would go against mergin signals and curves)
 
 * cumulative vs. absolute time durations - important considerations
 * looks kinda sick to do this alternating concat between values and functions
@@ -233,7 +273,7 @@ important: are transforms powerful enough to do flexible reverbs?
 i guess they can do so by direct manipulation on audio,
 but it also seems natural to implement transforms by 
 
-============================
+=================Other stuff =======================
 
 - functions scheduled for examination:
     - signal.realise
