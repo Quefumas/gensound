@@ -161,6 +161,8 @@ class Audio:
         assert self.ensure_2d()
     
     def to_channels(self, num_channels):
+        """ ensures there are at least num_channels
+        """
         shape = (num_channels-self.num_channels(), self.length())
         self.audio = np.vstack((self.audio, np.zeros(shape, dtype=np.float64)))
     

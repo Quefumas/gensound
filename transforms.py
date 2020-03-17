@@ -292,30 +292,46 @@ class Channels(Transform):
 class Pan(Transform):
     """ applies arbitrary function to amplitudes of all channels
     """
-    def __init__(self, *pans):
-        """ pans is either a function (range) -> ndarray(float64), or a tuple of these
-        wrong, right now accepting functions R -> R
-        """
-        # TODO better written with iscallable?
-        # or isinstance(pans, (collections.Callable, tuple))?
-        # assert type(pans) in (type(lambda x:x), tuple), "invalid argument for Pan transform"
+    width = 200 # means hard left is -100, hard right is 100
+    #eps = 0.001 # can use this to avoid np.log(0) warning; not necessary
+    # i.e. np.log((x+hardR)/width) below
+    
+    # you can set Pan.panLaw once and for all; anytime before mixdown() js good
+    panLaw = -6 # -3 seems appropriate for headphones
+    
+    # TODO faster computations
+    pan_shape = lambda x: np.log(x/Pan.width + 0.5)*(-Pan.panLaw / np.log(2)) # +0.1 to prevent log(0)
+    LdB = lambda x: Pan.pan_shape(-x)
+    RdB = lambda x: Pan.pan_shape(x)
+    defaultStereo = lambda x: (Pan.LdB(x), Pan.RdB(x))
+    
+    def __init__(self, pan, scheme=defaultStereo):
+        """ pan is a number or curve, which will be fed into the
+        underlying panning scheme.
         
-        # TODO find better conversion
-        self.pans = tuple([lambda_to_range(pan) for pan in pans])
+        The underlying panning scheme is a number or Curve/MultiCurve in R -> R^n.
+        n is interpreted as number of affected output channels,
+        and the output values as gains.
+        the domain R may be defined by the user whichever way they want.
+        
+        the default panning scheme maps numbers in [-100,100] into (-inf, 0]^2
+        """
+        self.pan = pan
+        self.scheme = scheme
     
     def realise(self, audio):
-        assert len(self.pans) in (1, audio.num_channels())
+        # or maybe we can string some monos together and apply same panning for all?
+        assert audio.num_channels() == 1, "panning is from mono to multi"
         
-        if len(self.pans) < audio.num_channels():
-            pans = (self.pans[0],) * audio.num_channels()
-        else:
-            pans = self.pans
+        if isnumber(self.pan):
+            dBs = self.scheme(self.pan)
+        elif isinstance(self.pan, Curve):
+            dBs = self.scheme(self.pan.flatten(audio.sample_rate))
         
-        for (i,pan) in enumerate(pans):
-            amps = pan(audio.length(), audio.sample_rate)
-            #amps = DB_to_Linear(pan(audio.length(), audio.sample_rate))
-            audio.audio[i,:] *= amps
+        audio.from_mono(len(dBs))
         
+        for (i, dB) in enumerate(dBs):
+            audio.audio[i,:] *= DB_to_Linear(dB)        
 
 class Repan(Transform):
     """ Allows switching between channels.

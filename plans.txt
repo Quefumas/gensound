@@ -189,6 +189,8 @@ things that would be paramterized:
 * EQ data
 * frequency or phase (integral of frequency)
 
+* define Curve.__call__? makes it easier to define panning schemes
+
 here the object is functions of time (also of channels??)
 
 pan = -1*one(5secs) | line(-100L, 100R, 5secs) | one(5secs)
@@ -400,6 +402,7 @@ interface with MIDI!
 
 allow realtime interactions
 
+look at Audacity list of effects (and source code) for more transform ideas
 
 ================ DEBUG & STABILITY ===========================
 - Audio.__add__ should not affect audio.

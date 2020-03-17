@@ -154,27 +154,7 @@ def test_filter_noise():
     play_Audio(audio)
 
 
-def pan_mono_test():
-    panLaw = -3
-    panMax = 100
-    panMin = -100
-    width = panMax - panMin
-    
-    pan_shape = lambda x: np.log((x+panMax+0.1)/(width)) # +0.1 to prevent log(0)
-    LdB = lambda x: panLaw*pan_shape(x)/pan_shape(0)
-    RdB = lambda x: LdB(-x)
-    
-    L = lambda t: LdB(width*t/5 + panMin)
-    R = lambda t: RdB(width*t/5 + panMin)
-    
-    # =-===========
-    s = Sine(duration=10e3)*Channels(1,0)
-    s[2.5e3:7.5e3] *= Pan(L, R)
-    s[7.5e3:] *= Repan(1, 0)
-    
-    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
-    play_Audio(audio)
-    #export_test(audio, pan_mono_test)
+
 
 def test_reverse_channels():
     s = WAV(african)[15e3:25e3]
@@ -246,12 +226,83 @@ def test_ADSR():
     #play_Audio(audio)
     export_test(audio, test_ADSR)
 
+
+
+
+
+
+def pan_mono_test():
+    panLaw = -3
+    panMax = 100
+    panMin = -100
+    width = panMax - panMin
+    
+    pan_shape = lambda x: np.log((x+panMax+0.1)/(width)) # +0.1 to prevent log(0)
+    LdB = lambda x: panLaw*pan_shape(x)/pan_shape(0)
+    RdB = lambda x: LdB(-x)
+    
+    L = lambda t: LdB(width*t/5 + panMin)
+    R = lambda t: RdB(width*t/5 + panMin)
+    
+    # =-===========
+    s = Sine(duration=10e3)*Channels(1,0)
+    s[2.5e3:7.5e3] *= Pan(L, R)
+    s[7.5e3:] *= Repan(1, 0)
+    
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    #export_test(audio, pan_mono_test)
+
+def pan_mono_test2():
+    panMax = 100
+    panMin = -100
+    width = panMax - panMin
+    eps = 0.001
+    
+    panLaw = -6 # -3 seems appropriate for headphones
+    time = 8e3
+    
+    pan_shape = lambda x: np.log((x+panMax)/(width)) # +0.1 to prevent log(0)
+    LdB = lambda x: (-panLaw/np.log(2))*pan_shape(x)
+    RdB = lambda x: LdB(-x)
+    
+    L = lambda t: LdB(width*t*1000/time + panMin)
+    R = lambda t: RdB(width*t*1000/time + panMin)
+    
+    # =-===========
+    s = Sine(duration=10e3)[0:2]
+    s *= Gain(Curve(L, duration=time), Curve(R, duration=8e3))
+    
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, pan_mono_test2)
+
+def pan_mono_test3():
+    s = Sine(duration=2e3)*Pan(-100)
+    s |= Sine(duration=2e3)*Pan(0)
+    s |= Sine(duration=2e3)*Pan(100)
+    
+    c = Line(-100, 100, 5e3) | Logistic(100, -100, duration=5e3)
+    s2 = Sine(duration=10e3)*Pan(c)
+    
+    Pan.panLaw = -6
+    audio = s2.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, pan_mono_test3)
+
+
+
+
+
+
+
+
 def test_something():
     ...
 
 if __name__ == "__main__":
-    #pan_mono_test()
-    test_ADSR()
+    pan_mono_test3()
+    #test_ADSR()
     #%%%%%
 
 

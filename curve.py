@@ -12,13 +12,23 @@ from utils import num_samples, isnumber
 # TODO add capabilities to adapt user-defined functions into curves on the fly
 # i.e. x= Curve(lambda k: ...), then passing the lambda into flatten etc.
 class Curve():
-    def __init__(self):
-        pass
+    def __init__(self, f, duration):
+        self.f = f # TODO test with user-supplied f
+        self.duration = duration
+        
+    def multi(self):
+        """ converts to 1-d MultiCurve.
+        """
+        if isinstance(self, MultiCurve):
+            return self
+        
+        return MultiCurve(self)
     
     def flatten(self, sample_rate):
         """ return a ndarray with the values of self for all sample points
         """
-        pass
+        # implemented for generic f passed into __init__, but in general this is overriden
+        return np.asarray(self.f(self.sample_times(sample_rate)), dtype=np.float64)
     
     def integral(self, sample_rate):
         """ does the same as flatten, but with the cumulative sum of self
@@ -55,7 +65,11 @@ class Curve():
         return c
     
 
+###### High-level curves #####
+
 class CompoundCurve(Curve):
+    """ A concatenation of Curves (similar to Signal/Sequence)
+    """
     def __init__(self):
         self.curves = []
     
@@ -74,6 +88,22 @@ class CompoundCurve(Curve):
         if name == "duration":
             return sum([c.duration for c in self.curves])
         raise AttributeError
+
+class MultiCurve(Curve):
+    """ Multidimensional Curve - one for each dimension (i.e. channel)
+    """
+    def __init__(self, *curves):
+        # TODO implicitly assumes all curves of similar duration
+        # will probably crash otherwise
+        self.curves = curves
+    
+    def flatten(self, sample_rate):
+        return np.asarray([[curve.flatten(sample_rate)] for curve in self.curves], dtype=np.float64)
+    
+    def intergral(self, sample_rate):
+        return np.asarray([[curve.integral(sample_rate)] for curve in self.curves], dtype=np.float64)
+    
+###### Particular Curves ######
 
 class Constant(Curve):
     def __init__(self, value, duration):
@@ -115,6 +145,7 @@ class Logistic(Curve): # Sigmoid
         self.T = self.begin # elevation
         self.x0 = self.duration/2000 # midpoint
         self.k = 10*1000/self.duration # steepness
+        # TODO parametrize steepness too
         
     
     def flatten(self, sample_rate):
@@ -142,7 +173,21 @@ class SineCurve(Curve):
         # sin (x-pi/2) + 1
         return self.depth*np.sin(2*np.pi*self.frequency*self.sample_times(sample_rate) - np.pi/2) + self.depth + self.baseline*self.sample_times(sample_rate)
     
-
+class Log(Curve):
+    def __init__(self, max, duration, midpoint=-3):
+        self.max = max
+        self.duration = duration
+        self.midpoint = midpoint
+        self.curvature = -midpoint/np.log(2)
+        assert midpoint < 0
+        assert max > 0
+    
+    def flatten(self, sample_rate):
+        return (np.log(self.sample_times(sample_rate)) - np.log(self.duration/1000))*self.curvature + self.max
+    
+    def integral(self, sample_rate):
+        # TODO is this necessary?
+        raise TypeError("Log curves should not be used as phases.")
 
 
 
