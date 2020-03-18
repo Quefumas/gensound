@@ -37,7 +37,11 @@ class Curve():
         """
         vals = self.flatten(sample_rate, inclusive=True)
         return np.asarray([sum(vals[0:i+1])*i/((i+1)*sample_rate) for i in range(len(vals))], dtype=np.float64)
-        
+    
+    def endpoint(self):
+        """ returns edge value of the curve, which is normally not actually achieved.
+        """
+        return self.f(self.duration/1000)
     
     def num_samples(self, sample_rate):
         return num_samples(self.duration, sample_rate)
@@ -88,6 +92,9 @@ class CompoundCurve(Curve):
         
         return result
     
+    def endpoint(self):
+        return self.curves[-1].end()
+
     def __getattr__(self, name):
         if name == "duration":
             return sum([c.duration for c in self.curves])
@@ -107,6 +114,9 @@ class MultiCurve(Curve):
     def integral(self, sample_rate):
         return np.asarray([curve.integral(sample_rate) for curve in self.curves], dtype=np.float64)
     
+    def endpoint(self):
+        return np.asarray([curve.end() for curve in self.curves], dtype=np.float64)
+    
 ###### Particular Curves ######
 
 class Constant(Curve):
@@ -121,6 +131,9 @@ class Constant(Curve):
         # TODO maybe slightly different from super.integral, due to start/end conditions
         return np.linspace(start=0, stop=self.value*self.duration/1000,
                            num=self.num_samples(sample_rate)+1, endpoint=True)
+    
+    def endpoint(self):
+        return self.value
     
 class Line(Curve):
     def __init__(self, begin, end, duration):
@@ -138,6 +151,9 @@ class Line(Curve):
             * np.linspace(start=0, stop=self.duration/1000,
                                               num=self.num_samples(sample_rate)+1,
                                               endpoint=True)
+    
+    def endpoint(self):
+        return self.end
 
 class Logistic(Curve): # Sigmoid
     def __init__(self, begin, end, duration):
@@ -162,6 +178,9 @@ class Logistic(Curve): # Sigmoid
         # TODO faster implementation?
         time = self.sample_times(sample_rate, inclusive=True)
         return (self.L/self.k) * np.log(1 + np.e**(self.k*(time - self.x0))) + self.T * time
+    
+    def endpoint(self):
+        return self.end
 
 class SineCurve(Curve):
     def __init__(self, frequency, depth, baseline, duration):
@@ -176,6 +195,9 @@ class SineCurve(Curve):
     def integral(self, sample_rate):
         # sin (x-pi/2) + 1
         return self.depth*np.sin(2*np.pi*self.frequency*self.sample_times(sample_rate, inclusive=True) - np.pi/2) + self.depth + self.baseline*self.sample_times(sample_rate,inclusive=True)
+    
+    def endpoint(self):
+        raise NotImplementedError
     
 class Log(Curve):
     def __init__(self, max, duration, midpoint=-3):
@@ -192,6 +214,9 @@ class Log(Curve):
     def integral(self, sample_rate):
         # TODO is this necessary?
         raise TypeError("Log curves should not be used as phases.")
+    
+    def endpoint(self):
+        return self.max
 
 
 

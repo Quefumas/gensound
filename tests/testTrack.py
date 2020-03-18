@@ -30,11 +30,20 @@ def curve_continuity_test():
     play_Audio(audio)
     #export_test(audio, curve_continuity_test)
 
+def to_infinity_curve_test():
+    c = Line(-80,-10,10e3)
+    p = Line(-100, 100, 5e3)
+    #s = Sine(duration=20e3)*Gain(c)
+    s = Sine(duration=10e3)*Pan(p)
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, to_infinity_curve_test)
+
 def test_something():
     ...
 
 if __name__ == "__main__":
-    curve_continuity_test()
+    to_infinity_curve_test()
     #%%%%%
 
 

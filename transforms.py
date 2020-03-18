@@ -161,6 +161,7 @@ class Gain(Transform):
             elif isinstance(dB, Curve):
                 vals = DB_to_Linear(dB.flatten(audio.sample_rate))
                 audio.audio[i,0:dB.num_samples(audio.sample_rate)] *= vals
+                audio.audio[i,dB.num_samples(audio.sample_rate):] *= DB_to_Linear(dB.endpoint())
             else:
                 raise TypeError("Unsupported amplitude type")
 
@@ -192,9 +193,9 @@ class Amplitude(Transform):
                 # should we define curve.conform?
                 # also what if curve is too long?
                 audio.audio[i,0:amp.num_samples(audio.sample_rate)] *= vals
+                audio.audio[i,amp.num_samples(audio.sample_rate):] *= amp.endpoint()
             else:
                 raise TypeError("Unsupported amplitude type")
-
 
 class AmpFreq(Transform):
     """
@@ -331,7 +332,8 @@ class Pan(Transform):
         audio.from_mono(len(dBs))
         
         for (i, dB) in enumerate(dBs):
-            audio.audio[i,:] *= DB_to_Linear(dB)        
+            audio.audio[i,:len(dB)] *= DB_to_Linear(dB)
+            audio.audio[i,len(dB):] *= DB_to_Linear(self.scheme(self.pan.endpoint())[i])
 
 class Repan(Transform):
     """ Allows switching between channels.

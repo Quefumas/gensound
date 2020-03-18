@@ -37,6 +37,7 @@ V tracks stuff
 V fix panning
 V ADSR
 * TODO fix streak
+* pan stereo
 
 * negative shifts?
 
@@ -55,11 +56,22 @@ V TODO: test why squares get negative all the time
 V TODO enable concating signal to 0 (supported already?), or to empty Signal()?
 enforce "no such thing as seconds" rule! but remember that frequency is measured in Hz...
 
-Paramterization TODOs:
+= Paramterization TODOs:
 V Panning
 V some problems when concatting two together
 * merge with Signal
 * for signal have duration irrelevant when frequency is a curve (since it has duration already)
+
+= curves continuing to infinity issues:
+* for frequency, that would mean the signal duration can be specified to be
+    more than frequency duration. if that is done, we'd expect the signal
+    to stop early as well if the duration is shorter than the curve
+* or, for frequency have the duration setting ignored; if you want the pitch
+    to keep going, add Constant() at the end of the curve.
+    in glissando madrigal settings that makes more sense.
+* for amplitude/gain/fade/pan envelope, these are transforms and not signals!
+    so we expect the curve to affect only the transform, but then stay at
+    the place it stopped.
 
 * to consider: 
     SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | Constant(...)
@@ -91,7 +103,7 @@ V some problems when concatting two together
 (pan law should be class variable for Pan, so we can set it once)
 
 use cases:
-* take mono signal and pan it into several channels
+V take mono signal and pan it into several channels
 * apply amplitude on individual channels (this is covered already no?)
 * take stereo signal and make it span the space differently
     relatively easy to derive from the 1st note above
@@ -101,11 +113,6 @@ mono -> multiple - how do we do it?
   but note that we can just expand mono to multi then apply individual envelops
 * pre-define a mapping R -> R^n, and then just give one function t->R
 
-e.g.:
-Pan.panLaw = 4.5
-s = Sine()*Pan(-30L) # 2 channels by default
-c = Line(-30, 30, 5e3)
-s = Sine()*Pan(c)
 
 suppose listener in middle of triangle, we can use complex number to give exact source of sound
     to_channels = lambda x: ()
@@ -118,68 +125,9 @@ use '.' to apply transforms?
 Sine().Pan().Gain().Shift() + ...
 In that case can't use amplitude as float
 
---===- Channel stuff synatax ===
 
-t = Signal()
-t[0:2,:] = Sine() # automatically switches into stereo
+* stereo.L ? # overriding set/getattr is a messy, will doo later
 
-=-=
-
-t = Sine()
-t[1] = Square() # automatically adds another channel?
-
-=-=
-
-mono = t[0] + t[1] #?
-
-mono = sum(t) #?
-
-mono = t.mono() # mono in what way?
-mono = t * mono()?
-=-=
-
-V
-t = Sine()[0:2] # automatically expands the sine into stereo
-# this syntax would have the advantage that it does not require
-# defining t in advance!
-
-=-=
-
-MonoSignal*Stereo(Lfunc, Rfunc)?
-Mono*Stereo(35L)?
-
-common operations:
-* mapping mono to several channels (exact copies)
-V   stereo = mono[0:2] ?
-    stereo = (0.5,1)*mono[0:2] ?
-    # TODO aside: signal subscript to distinguish ints and floats for channels and time?
-    
-    Signal function?
-    Sine().to_channels(3)
-* mapping mono into one of several channels (adding empty channels)
-V   stereo = mono[0:2]
-    stereo[0:2] *= (0,1) ?
-V moving channels around (i.e. RePan)
-    stereo = stereo[0:2:-1] ? # works already
-    
-    triple = Signal()[0:3]
-    triple[0] = one
-    triple[1] = two
-    triple[2] = three
-    
-    what if just:
-    triple = Signal()
-    triple[0] = one
-    triple[2] = three # automatically opens 3rd channel
-* applying fades/gains to channels in separate
-    stereo[0] *= fade()
-    stereo.L ? # overriding set/getattr is a messy, will doo later
-
-* taking mono signal and moving it around in stereo (or more) by some function
-    need as input a panLaw, function mapping an argument to levels in all channels
-    and then do for a mono:
-    pan = package.range(-100, 100, 5e3)
-    stereo = mono*Pan(panLaw=packg.def_panLaw, pan)
 * taking stereo signal and panning it in stereo (i.e. make it take up -100L to -10L)
     new_stereo = stereo*Pan(panLaw=default, panL, panR)
 
@@ -190,32 +138,17 @@ preferably have as many of these done by syntax as possible.
 things that would be paramterized:
 * Dbs/amplitudes
 * EQ data
+* Pan
 * frequency or phase (integral of frequency)
 
 * define Curve.__call__? makes it easier to define panning schemes
 
 here the object is functions of time (also of channels??)
 
-pan = -1*one(5secs) | line(-100L, 100R, 5secs) | one(5secs)
-also do like sigmoid (1/(e^-x +1)) or tanh/arctan between two values, or log from -infty etc.   
 # perhaps make Signal inherit from "Time-dependent" class, which is also used for time params
-
-what about:
-line(-100, 100)*time(5 secs)
-line(from=-100, to=100, duration=5e3)
 
 or we can define as checkpoints:
 pan = line((0,0), (50,1e3), (50,3e3), (100,5e3))
-
-maybe fancir:
-
-pan = (0,-100) | line | (3e3, -50) | line | (5e3, -50)
-
-or we can omit the "line" (but what if we want other curves?):
-pan = (0,-100) | (3e3, -50) | (5e3, -50)
-
-or maybe:
-pan = -100 | 5e3*line | 100 | 10e3*sigmoid(beta=3) | 50
 
 * another possibility:
     curve = 1e3*const(5) | 5e3*line(220,440)
@@ -232,12 +165,6 @@ pan = -100 | 5e3*line | 100 | 10e3*sigmoid(beta=3) | 50
 * to allow integration we may also let predefined curves supply their own integral
 behaves like an iterator/iterable?
 
-=--- need to implement what for curves? =---
-typically they would be iterated over (think of time-dependent convolution),
-or multiplied
-perhaps easiest for now is to make them flatten themselves to arrays as needed
-
-
 -------- Summary of operators to support nicely:
 
 & mix
@@ -247,15 +174,8 @@ perhaps easiest for now is to make them flatten themselves to arrays as needed
 * scalar? amplitude
 
 t = s[:,3e3:5e3]
-
 s[:, 3e3:5e3] *= Reverse()
 
-s[:, 3e3:5e3] = Reverse()
-
-s[:, 3e3:5e3] += Reverse()
-
-
-s= WAV(african)
 what about order of operations?
 do we want concat or mix first?
 
