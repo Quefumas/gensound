@@ -2,7 +2,7 @@
 
 import numpy as np
 from analyze import DFT2
-from curve import Curve, Line, Logistic, SineCurve
+from curve import Curve, Line, Logistic, SineCurve, Constant
 
 def visualise_FIRs(*FIRs, is_log=False):
     points = []
@@ -42,7 +42,7 @@ def visualise_curve(curve, integral=False):
     import matplotlib.pyplot as plt
     sample_rate = 1000
     x = np.linspace(0, curve.duration/1000, num=curve.num_samples(sample_rate))
-    y = curve.flatten(sample_rate) if not integral else curve.integral(sample_rate)
+    y = curve.flatten(sample_rate) if not integral else curve.integral(sample_rate)[:-1]
     plt.plot(x, y)
     plt.show()
 
@@ -65,6 +65,7 @@ def test_visualise_windows():
 def test_visualise_curve():
     c = Logistic(220,440, 6e3)
     c = SineCurve(3, 10, 50, 10e3)
+    c = Line(1,5,5e3) | Constant(5, 5e3)
     visualise_curve(c, True)
 
 if __name__ == "__main__":

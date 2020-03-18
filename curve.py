@@ -24,27 +24,29 @@ class Curve():
         
         return MultiCurve(self)
     
-    def flatten(self, sample_rate):
+    def flatten(self, sample_rate, inclusive=False):
         """ return a ndarray with the values of self for all sample points
         """
         # implemented for generic f passed into __init__, but in general this is overriden
-        return np.asarray(self.f(self.sample_times(sample_rate)), dtype=np.float64)
+        return np.asarray(self.f(self.sample_times(sample_rate, inclusive)), dtype=np.float64)
     
     def integral(self, sample_rate):
         """ does the same as flatten, but with the cumulative sum of self
         the implementation here is catch-all, but usually much more efficient
-        to override it for specific curves
+        to override it for specific curves.
         """
-        vals = self.flatten(sample_rate)
-        # TODO debug
-        # TODO for exmple this should be divided by the durations....
-        return [sum(vals[0:i]) for i in range(len(vals))]
+        vals = self.flatten(sample_rate, inclusive=True)
+        return np.asarray([sum(vals[0:i+1])*i/((i+1)*sample_rate) for i in range(len(vals))], dtype=np.float64)
+        
     
     def num_samples(self, sample_rate):
         return num_samples(self.duration, sample_rate)
     
-    def sample_times(self, sample_rate):
-        return np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate), endpoint=False)
+    def sample_times(self, sample_rate, inclusive=False):
+        if not inclusive:
+            return np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate), endpoint=False)
+        
+        return np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate)+1, endpoint=True)
     
     # TODO add support for logical or as concat
     # should this be done here or at compoundcurve? imitate signal
@@ -78,9 +80,11 @@ class CompoundCurve(Curve):
     
     def integral(self, sample_rate):
         result = self.curves[0].integral(sample_rate)
-        
+        # TODO faster implementation?
         for curve in self.curves[1:]:
-            result = np.concatenate((result, result[-1]+curve.integral(sample_rate)))
+            # TODO HARD assumption that this function is only useful for frequency curves!
+            # therefore the %1, to curb huge numbers
+            result = np.concatenate((result[:-1], (result[-1]%1)+curve.integral(sample_rate)))
         
         return result
     
@@ -98,10 +102,10 @@ class MultiCurve(Curve):
         self.curves = curves
     
     def flatten(self, sample_rate):
-        return np.asarray([[curve.flatten(sample_rate)] for curve in self.curves], dtype=np.float64)
+        return np.asarray([curve.flatten(sample_rate) for curve in self.curves], dtype=np.float64)
     
-    def intergral(self, sample_rate):
-        return np.asarray([[curve.integral(sample_rate)] for curve in self.curves], dtype=np.float64)
+    def integral(self, sample_rate):
+        return np.asarray([curve.integral(sample_rate) for curve in self.curves], dtype=np.float64)
     
 ###### Particular Curves ######
 
@@ -116,7 +120,7 @@ class Constant(Curve):
     def integral(self, sample_rate):
         # TODO maybe slightly different from super.integral, due to start/end conditions
         return np.linspace(start=0, stop=self.value*self.duration/1000,
-                           num=self.num_samples(sample_rate), endpoint=False)
+                           num=self.num_samples(sample_rate)+1, endpoint=True)
     
 class Line(Curve):
     def __init__(self, begin, end, duration):
@@ -130,10 +134,10 @@ class Line(Curve):
     def integral(self, sample_rate):
         # at^/2+ bt = (at/2+b)*t
         return np.linspace(start=self.begin, stop=(self.end-self.begin)/2+self.begin,
-                           num=self.num_samples(sample_rate), endpoint=False) \
+                           num=self.num_samples(sample_rate)+1, endpoint=True) \
             * np.linspace(start=0, stop=self.duration/1000,
-                                              num=self.num_samples(sample_rate),
-                                              endpoint=False)
+                                              num=self.num_samples(sample_rate)+1,
+                                              endpoint=True)
 
 class Logistic(Curve): # Sigmoid
     def __init__(self, begin, end, duration):
@@ -150,13 +154,13 @@ class Logistic(Curve): # Sigmoid
     
     def flatten(self, sample_rate):
         # 1 / (1 + e^(-k(x-x0)))
-        time = np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate), endpoint=False)
+        time = self.sample_times(sample_rate)
         return self.L/(1+np.e**(-self.k*(time - self.x0))) + self.T
     
     def integral(self, sample_rate):
         # L/k * ln(1 + e^(k(x-x0))) + Tx
         # TODO faster implementation?
-        time = np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate))
+        time = self.sample_times(sample_rate, inclusive=True)
         return (self.L/self.k) * np.log(1 + np.e**(self.k*(time - self.x0))) + self.T * time
 
 class SineCurve(Curve):
@@ -171,7 +175,7 @@ class SineCurve(Curve):
     
     def integral(self, sample_rate):
         # sin (x-pi/2) + 1
-        return self.depth*np.sin(2*np.pi*self.frequency*self.sample_times(sample_rate) - np.pi/2) + self.depth + self.baseline*self.sample_times(sample_rate)
+        return self.depth*np.sin(2*np.pi*self.frequency*self.sample_times(sample_rate, inclusive=True) - np.pi/2) + self.depth + self.baseline*self.sample_times(sample_rate,inclusive=True)
     
 class Log(Curve):
     def __init__(self, max, duration, midpoint=-3):

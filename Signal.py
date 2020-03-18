@@ -361,10 +361,17 @@ class Sine(Signal): # oscillator? pitch? phaser?
         super().__init__()
         self.frequency = frequency
         self.duration = duration
+        # TODO if frequency is a curve then duration should be derived from it?
+        # or ignored?
         
     def generate(self, sample_rate):
+        # TODO currently the [:-1] after the integral is needed,
+        # otherwise it would be one sample too long. perhaps there is more elegant solution,
+        # maybe passing an argument telling it to lose the last sample,
+        # or better, having CompoundCurve give the extra argument telling its
+        # children NOT to lose the last sample
         if isinstance(self.frequency, Curve):
-            return type(self).wave(2*np.pi * self.frequency.integral(sample_rate))
+            return type(self).wave(2*np.pi * self.frequency.integral(sample_rate)[:-1])
         return type(self).wave(2*np.pi * self.frequency * self.sample_times(sample_rate))
 
 class Triangle(Sine): # TODO start at 0, not 1

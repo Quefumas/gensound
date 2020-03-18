@@ -28,17 +28,20 @@ perhaps we should use + as after and & as mix?
 next stages:
 V curves controlling Gain, Amplitude
 * AmpFreq(?), Fade(?), then go over all other transforms
-* fix curve discontinuity
-* finish panning
+V fix curve discontinuity
+V finish panning
 
 * parametrization
 V controlled glissandos
 V tracks stuff
-* fix panning
+V fix panning
 V ADSR
 * TODO fix streak
 
 * negative shifts?
+
+V user-defined curves
+- user-defined panning schemes [futuristic tho]
 
 * crossfade for concat???
 Sine() | CF | Triangle() ???
@@ -53,8 +56,8 @@ V TODO enable concating signal to 0 (supported already?), or to empty Signal()?
 enforce "no such thing as seconds" rule! but remember that frequency is measured in Hz...
 
 Paramterization TODOs:
-* Panning
-* some problems when concatting two together
+V Panning
+V some problems when concatting two together
 * merge with Signal
 * for signal have duration irrelevant when frequency is a curve (since it has duration already)
 
