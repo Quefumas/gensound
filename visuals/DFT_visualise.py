@@ -3,6 +3,7 @@
 import numpy as np
 from analyze import DFT2
 from curve import Curve, Line, Logistic, SineCurve, Constant
+from filters import LowPassBasic
 
 def visualise_FIRs(*FIRs, is_log=False):
     points = []
@@ -60,7 +61,11 @@ def test_visualise_windows():
     #blackman = [blackman[k]*(1/128)*np.sin(np.pi*k*12/128)/np.sin(np.pi*k/128)  for k in range(len(blackman))]
     #visualise_FIRs(graded_fir(5), blackman, is_log=False)
     
-    visualise_windows(blackman)
+    lowpass_basic = LowPassBasic(440, 201).coefficients(44100)#[40:60]
+    
+    #visualise_windows(lowpass_basic)
+    visualise_FIRs(lowpass_basic, is_log=True)
+    #visualise_FIRs(basic_avg_fir(11), is_log=True)
 
 def test_visualise_curve():
     c = Logistic(220,440, 6e3)
@@ -69,7 +74,8 @@ def test_visualise_curve():
     visualise_curve(c, True)
 
 if __name__ == "__main__":
-    test_visualise_curve()
+    #test_visualise_curve()
+    test_visualise_windows()
 
 
 

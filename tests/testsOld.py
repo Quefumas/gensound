@@ -14,9 +14,10 @@ import numpy as np
 
 from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
 from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
-                       Downsample_rough, Average_samples, Amplitude, \
+                       Downsample_rough, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
+from filtersa import Average_samples
 from curve import Curve, Constant, Line, Logistic, SineCurve
 from playback import play_WAV, play_Audio, export_WAV
 

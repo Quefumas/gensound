@@ -383,41 +383,6 @@ class Downsample_rough(Transform):
             #audio.audio[:,i::self.factor] = audio.audio[:,self.phase:l + (-self.factor if less else 0):self.factor]
 
 
-class Average_samples(Transform):
-    """ averages each sample with its neighbors, possible to specify weights as well.
-    effectively functions as a low pass filter, without the aliasing effects
-    of downsample rough.
-    """
-    
-    def __init__(self, *weights):
-        """
-        weights is int -> average #weights neighboring samples
-        weights is tuple -> average len(weights) neighboring samples,
-                            according to specified weights. will be normalized to 1.
-        TODO: on the edges this causes a small fade in fade out of length len(weights).
-        not necessarily a bug though.
-        """
-        if len(weights) == 1:
-            weights = tuple(1 for w in range(weights[0]))
-        
-        total = sum(weights)
-        weights = [w/total for w in weights]
-        self.weights = weights
-    
-    def realise(self, audio):
-        res = np.zeros((audio.audio.shape[0], audio.audio.shape[1] + len(self.weights) - 1), dtype=np.float64)
-        
-        for i, weight in enumerate(self.weights):
-            res[:,i:audio.audio.shape[1]+i] += weight*audio.audio
-        
-        pos = int(np.floor((len(self.weights) - 1)/2))
-        # the index from which to start reading the averaged signal
-        # (as it is longer due to time delays)
-        
-        audio.audio[:,:] = res[:, pos:pos+audio.audio.shape[1]]
-
-
-
 ###### EXPERIMENTS ######
 
 class Convolution(Transform):
