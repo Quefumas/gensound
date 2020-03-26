@@ -11,13 +11,13 @@ from curve import MultiCurve, Constant, Line
 
 ### Panning Scheme setup
 C_pan_shape = lambda x: np.log(x/100)*(6 / np.log(2)) - 5
-CdB = lambda x: C_pan_shape(100-x[0])
+CdB = lambda r, alpha: C_pan_shape(100-r)
 
 LR_pan_shape = lambda x: np.log(x/200 + 0.5)*(3 / np.log(2))
-LdB = lambda x: LR_pan_shape(-x[1]) + C_pan_shape(x[0])
-RdB = lambda x: LR_pan_shape(x[1]) + C_pan_shape(x[0])
+LdB = lambda r, alpha: LR_pan_shape(-alpha) + C_pan_shape(r)
+RdB = lambda r, alpha: LR_pan_shape(alpha) + C_pan_shape(r)
 
-tPS = lambda x: np.asarray([LdB(x), RdB(x), CdB(x)])
+tPS = lambda x: np.asarray([LdB(*x), RdB(*x), CdB(*x)])
 ### Defining the signal movement in space and time
 step = 3e3 # time to do each arch on the triangle, going L->C->R->L
 
@@ -42,11 +42,17 @@ defaultStereo = lambda x: (LdB_(x), RdB_(x))
 # pans = perimeter.flatten(3)
 pans1 = np.asarray([(0,0),
                     (50,-100),
-                    (50,100)], dtype=(np.float64,)*2).T
+                    (50,100)], dtype=(np.float64,)*2)
+
+pans1 = perimeter.flatten(3)
+# dtype = np.float64 if len(self.curves) == 1 else (np.float64,)*len(self.curves)
+# np.asarray([curve.flatten(sample_rate) for curve in self.curves], dtype=dtype).T
+
 pans2 = np.asarray([-100,0,100])
 
 #dBs = trianglePanScheme(pans)
-dBs = tPS(pans1).T
+dBs = 0
+dBs = tPS(pans1)
 
 
 

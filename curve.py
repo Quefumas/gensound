@@ -109,11 +109,8 @@ class MultiCurve(Curve):
         self.curves = curves
     
     def flatten(self, sample_rate):
-        # note this returns tranpose, so that each item
-        # can represent a location vector for panning purposes
-        # at a single point in time
-        breakpoint()
-        return np.asarray([curve.flatten(sample_rate) for curve in self.curves], dtype=((np.float64,)*len(self.curves)))
+        dtype = np.float64 if len(self.curves) == 1 else (np.float64,)*len(self.curves)
+        return np.asarray([curve.flatten(sample_rate) for curve in self.curves], dtype=dtype)
     
     def integral(self, sample_rate):
         return np.asarray([curve.integral(sample_rate) for curve in self.curves], dtype=np.float64)
