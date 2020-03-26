@@ -315,7 +315,7 @@ class Pan(Transform):
     def realise(self, audio):
         # or maybe we can string some monos together and apply same panning for all?
         assert audio.num_channels() == 1, "panning is from mono to multi"
-        
+        breakpoint()
         if isnumber(self.pan):
             dBs = self.scheme(self.pan)
         elif isinstance(self.pan, Curve):
