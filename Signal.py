@@ -91,7 +91,7 @@ class Signal:
     
     def _amplitude(self, number):
         assert isnumber(number)
-        return self*Amplitude(size=number)
+        return self*Amplitude(number)
     
     def _apply(self, transform):
         if not isinstance(transform, Transform):

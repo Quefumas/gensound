@@ -13,17 +13,17 @@ them later as examples.
 import numpy as np
 
 from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
-from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
+from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Downsample_rough, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
-from filtersa import Average_samples
+from filters import Average_samples
 from curve import Curve, Constant, Line, Logistic, SineCurve
-from playback import play_WAV, play_Audio, export_WAV
+from playback import play_Audio, export_test
 
 from musicTheory import midC
 
-african = "data/african_sketches_1.wav"
+african = "../data/african_sketches_1.wav"
 
 def melody_test():
     step = 500
@@ -57,9 +57,9 @@ def only_signal_harmonics(f=220, seconds=10):
     play_Audio(audio)
 
 def simple_test(f=220, seconds=5):
-    t = Sine(frequency=230, duration=seconds*1000)*AmpFreq(frequency=1, size=0.2)*Channels(0.7,0.7)
-    t += Triangle(frequency=380, duration=seconds*1000)*AmpFreq(frequency=0.4, size=0.3)*Channels(0,1)
-    t += Square(frequency=300, duration=seconds*1000)*AmpFreq(frequency=0.7, size=0.2)*Channels(1,0)
+    t = 0.7*Sine(frequency=230, duration=seconds*1000)*AmpFreq(frequency=1, size=0.2)[0:2]
+    t[1] += Triangle(frequency=380, duration=seconds*1000)*AmpFreq(frequency=0.4, size=0.3)
+    t[0] += Square(frequency=300, duration=seconds*1000)*AmpFreq(frequency=0.7, size=0.2)
     t *= Fade(is_in=True, duration=3*1000)
     #t *= Fade(is_in=False, duration=20)
     t *= Shift(duration=1*1000)
@@ -71,16 +71,15 @@ def WAV_test(filename=""):
     wav *= Fade(is_in=True, duration=10)
     
     wav += 0.03*GreyNoise(duration=20*1000)*AmpFreq(frequency=0.03, size=0.2)
-    wav += 0.06*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3*1000)*Channels(0.7,0.7)
+    wav += (0.06*0.7)*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3*1000)[0:2]
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     
-    export_WAV("data/export.wav", audio)
     #play_Audio(ad, is_wait=True)
     
     
 def timing_test():
-    t = Sine(frequency=230, duration=3*1000)*AmpFreq(frequency=1, size=0.2)*Channels(0.7,0.7)
+    t = 0.7*Sine(frequency=230, duration=3*1000)*AmpFreq(frequency=1, size=0.2)[0:2]
     t += Square(frequency=250, duration=3*1000)*Shift(duration=3*1000)
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio, is_wait=True)
@@ -88,8 +87,7 @@ def timing_test():
 
 def pan_test():
     seconds = 10
-    t = Sine(frequency=230, duration=seconds*1000)#*AmpFreq(frequency=1, size=0.2)
-    t *= Channels(1,1)
+    t = Sine(frequency=230, duration=seconds*1000)[0:2]#*AmpFreq(frequency=1, size=0.2)
     
     top = seconds*11025
     
@@ -132,34 +130,30 @@ def averagesample_test(filename):
     play_Audio(audio, is_wait=True)
 
 def dummy_reverb_test():
-    filename = "data/african_sketches_1.wav"
-    
     #amp = lambda x: 
-    #wav = WAV(filename) + WAV(filename)*Amplitude(amp)*Shift(duration=500)
-    #wav = WAV(filename)*AmpFreq(frequency=0.12, size=0.25)
-    #wav += WAV(filename)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*Average_samples(1,1,1,1,1,1,1,1,1)
+    #wav = WAV(african) + WAV(african)*Amplitude(amp)*Shift(duration=500)
+    #wav = WAV(african)*AmpFreq(frequency=0.12, size=0.25)
+    #wav += WAV(african)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*Average_samples(1,1,1,1,1,1,1,1,1)
     
-    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(2*x+1) for x in range(5)])
-    wav += 0.6*WAV(filename)*Downsample_rough(factor=5)*Average_samples(5)
+    wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*Average_samples(2*x+1) for x in range(5)])
+    wav += 0.6*WAV(african)*Downsample_rough(factor=5)*Average_samples(5)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
-    #export_WAV(filename="data/african_plus_reverb_with_added_lowpass_downsample.wav", audio=audio)
+    #filename="data/african_plus_reverb_with_added_lowpass_downsample.wav"
 
 def repan_reverb_test():
-    filename = "data/african_sketches_1.wav"
-    
     # TODO these aren't relevant for new pan
-    wav = sum([(1-8/10)*WAV(filename)*Shift(duration=100*x)*Average_samples(2*x+1)*Pan(*(1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
-    wav += 0.6*WAV(filename)*Pan(0,None)*Downsample_rough(factor=5)*Average_samples(5)
-    wav += 0.6*WAV(filename)*Pan(None,1)
+    wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*Average_samples(2*x+1)*Pan(*(1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
+    wav += 0.6*WAV(african)*Pan(0,None)*Downsample_rough(factor=5)*Average_samples(5)
+    wav += 0.6*WAV(african)*Pan(None,1)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
 
 def reverse_test():
-    wav = WAV("data/african_sketches_1.wav")*Reverse()*Downsample_rough(factor=5)*Average_samples(5)
-    wav += WAV("data/african_sketches_1.wav")*Shift(duration=150)*Average_samples(1,1,1,1,1,1,1,1,1)
+    wav = WAV(african)*Reverse()*Downsample_rough(factor=5)*Average_samples(5)
+    wav += WAV(african)*Shift(duration=150)*Average_samples(1,1,1,1,1,1,1,1,1)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.09)
     play_Audio(audio, is_wait=True)
@@ -190,14 +184,14 @@ def envelope_test():
     play_Audio(audio, is_wait=True)
 
 def reuse_WAV_test():
-    wav = WAV("data/african_sketches_1.wav")
+    wav = WAV(african)
     signal = wav*Reverse() + wav*Shift(duration=150)
     print(signal)
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.09)
     play_Audio(audio, is_wait=True)
 
 def repan_test():
-    signal = WAV("data/african_sketches_1.wav")*Repan(1,0) #switch L/R
+    signal = WAV(african)*Repan(1,0) #switch L/R
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=None)
     play_Audio(audio, is_wait=True)
     pass
@@ -205,7 +199,7 @@ def repan_test():
 def log_amp_test():
     # tests logarithmic scaling of amplitude factors
     signal = WAV(african)*Repan(0,None) #switch L/R
-    signal += 0.125*WAV("data/african_sketches_1.wav")*Repan(None,1)
+    signal += 0.125*WAV(african)*Repan(None,1)
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.5)
     play_Audio(audio, is_wait=True)
     pass
@@ -215,7 +209,6 @@ def gain_test():
     signal += WAV(african)*Repan(None,1)*Gain(-9)
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=None)
     play_Audio(audio, is_wait=True)
-    #export_WAV("data/gain_test.wav", audio)
 
 def limit_test():
     signal = WAV(african)
@@ -285,7 +278,7 @@ def after_test_3():
     print(s)
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio, is_wait=False)
-    #export_WAV("data/sine loops 4 voices.wav", audio)
+    #"data/sine loops 4 voices.wav"
 
 def solfege_test_1():
     num_notes = 20
@@ -410,7 +403,7 @@ def reverse_phase_test():
 
 def channel_slice_test():
     # series of tests
-    s = WAV(african)[5e3:15e3]
+    #s = WAV(african)[5e3:15e3]
     
     # t = s[0]
     # t = s[1,1e3:7e3]
@@ -424,9 +417,11 @@ def channel_slice_test():
     #s[1] = s[0]*Gain(-6)
     # etc...
     
-    t = s[0]*Channels(0,1)
-    t[0] = 0.1*Sine()
-    audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    ##########
+    s = 0.1*Sine()
+    s[1] = WAV(african)[0,5e3:15e3]
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
     #export_test(audio, channel_slice_test)
 
@@ -525,22 +520,8 @@ def test_ADSR():
 
 
 def pan_mono_test():
-    panLaw = -3
-    panMax = 100
-    panMin = -100
-    width = panMax - panMin
-    
-    pan_shape = lambda x: np.log((x+panMax+0.1)/(width)) # +0.1 to prevent log(0)
-    LdB = lambda x: panLaw*pan_shape(x)/pan_shape(0)
-    RdB = lambda x: LdB(-x)
-    
-    L = lambda t: LdB(width*t/5 + panMin)
-    R = lambda t: RdB(width*t/5 + panMin)
-    
-    # =-===========
-    s = Sine(duration=10e3)*Channels(1,0)
-    s[2.5e3:7.5e3] *= Pan(L, R)
-    s[7.5e3:] *= Repan(1, 0)
+    c = Constant(-100, 2.5e3) | Line(-100, 100, 5e3)
+    s = Sine(duration=10e3)*Pan(c)
     
     audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)

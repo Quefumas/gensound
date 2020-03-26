@@ -8,8 +8,9 @@ Created on Wed Sep 11 19:27:49 2019
 import numpy as np
 from playback import play_Audio
 from Signal import Signal
-from transforms import Channels
 from musicTheory import midC
+
+# TODO delete this file
 
 class Glis(Signal):
     def __init__(self, frequency=220, duration=3000):
@@ -23,8 +24,8 @@ class Glis(Signal):
             phase[i] = phase[i-1] + 1/self.sample_rate*freq(i/self.sample_rate)
         return phase
         
-    def generate(self):
-        
+    def generate(self, sample_rate):
+        self.sample_rate = sample_rate
         #phase = np.zeros(3*self.sample_rate)
         #phase[0:self.sample_rate] = np.linspace(0, 220, self.sample_rate, False)
         #phase[self.sample_rate:2*self.sample_rate] = 220 + np.linspace(0, 220, self.sample_rate, False) + 55*np.linspace(0,1,self.sample_rate,False)**2
@@ -44,10 +45,10 @@ def glisTest():
     f = lambda x: 220 if x < 1 else (330 if x > 4 else (220+110*(x-1)/3))
     f2 = lambda x: midC(6)-20 if x < 1 else (midC(1) if x > 4 else (midC(6)-20-(midC(6)-20-midC(1))*(x-1)/3))
     
-    signal = Glis(duration=5000, frequency=f)*Channels(1,0)
-    signal += Glis(duration=5000, frequency=f2)*Channels(0,1)
+    signal = Glis(duration=5000, frequency=f)
+    signal[1] = Glis(duration=5000, frequency=f2)
     
-    audio = signal.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.01)
+    audio = signal.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
     play_Audio(audio, is_wait=True)
 
 

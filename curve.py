@@ -93,7 +93,7 @@ class CompoundCurve(Curve):
         return result
     
     def endpoint(self):
-        return self.curves[-1].end()
+        return self.curves[-1].endpoint()
 
     def __getattr__(self, name):
         if name == "duration":

@@ -48,11 +48,17 @@ class Transform:
 
 class Shift(Transform):
     """ shifts the signal forward in time."""
-    def __init__(self, duration):
+    # TODO enable backword
+    def __init__(self, duration=None, samples=None):
+        # TODO perhaps infer duration/samples by float/int?
+        # Or maybe split into 2 classes, just to prevent confusion
+        assert isnumber(duration) + isnumber(samples) == 1, "too many/too few arguments to Shift()"
         self.duration = duration
+        self.samples = samples
     
     def realise(self, audio):
-        audio.push_forward(self.num_samples(audio.sample_rate))
+        samples = self.samples if isnumber(self.samples) else self.num_samples(audio.sample_rate)
+        audio.push_forward(samples)
 
 class Extend(Transform):
     """ adds silence after the signal. needed?
@@ -107,7 +113,7 @@ class Combine(Transform):
         sample_slice = samples_slice(self.time_slice, audio.sample_rate)
         
         # add channels in case of out-of-bounds channel subscript
-        max_channel = max(self.channel_slice.start, self.channel_slice.stop-1)
+        max_channel = max(0, self.channel_slice.start or 0, (self.channel_slice.stop or 0)-1)
         if max_channel >= audio.num_channels():
             audio.to_channels(max_channel+1)
             
@@ -276,20 +282,6 @@ class Mono(Transform):
     def realise(self, audio):
         audio.audio = np.sum(audio.audio, axis=0, keepdims=True)
 
-class Channels(Transform):
-    """ transforms mono to channels with the appropriate amps
-    """
-    # TODO reexamine
-    def __init__(self, *amps):
-        """ amps is a tuple, [-1,1] for each of the required channels """
-        # TODO maybe better to use variable number of args instead of tuple, looks nicer
-        self.amps = amps
-    
-    def realise(self, audio):
-        audio.from_mono(len(self.amps))
-        for (i,amp) in enumerate(self.amps):
-            audio.audio[i,:] *= amp
-    
 class Pan(Transform):
     """ applies arbitrary function to amplitudes of all channels
     """
@@ -408,7 +400,7 @@ class Convolution(Transform):
 class ADSR(Transform):
     """ applied ADSR envelope to signal
     """
-    
+    # TODO what if attack+decay+release > signal.duration?
     def __init__(self, attack, decay, sustain, release, hold=0): #hold=None?
         self.attack = attack
         self.hold = hold

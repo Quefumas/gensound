@@ -31,13 +31,16 @@ V curves controlling Gain, Amplitude
 V fix curve discontinuity
 V finish panning
 
-* parametrization
+V parametrization
 V controlled glissandos
 V tracks stuff
 V fix panning
 V ADSR
 * TODO fix streak
 * pan stereo
+* supply one example of custom panning scheme
+* Signal as Curve?
+* crossfades
 
 * negative shifts?
 

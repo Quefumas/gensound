@@ -8,7 +8,7 @@ Created on Sat Aug 17 23:28:31 2019
 import numpy as np
 
 from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
-from transforms import Fade, AmpFreq, Shift, Channels, Pan, Extend, \
+from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Downsample_rough, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
