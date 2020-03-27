@@ -13,6 +13,9 @@ from utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
                   num_samples, samples_slice
 
+# TODO top-class FIR/IIR/Filter?
+# that could include a useful function for debugging that generates the impulse response
+
 class Average_samples(Transform):
     """ averages each sample with its neighbors, possible to specify weights as well.
     effectively functions as a low pass filter, without the aliasing effects
@@ -97,4 +100,52 @@ class Butterworth(Transform):
         normal_cutoff = self.cutoff*2 / audio.sample_rate
         b, a = butter(order, normal_cutoff, btype='low', analog=False)
         audio.audio[:,:] = filtfilt(b, a, audio.audio)
+
+
+############
+
+class IIR_basic(Transform):
+    def __init__(self):
+        pass
+    
+    def realise(self, audio):
+        last = np.zeros_like(audio.audio[:,0])
+        
+        for i in range(audio.length()):
+            audio.audio[:,i] = 0.7*last + 0.3*audio.audio[:,i]
+            last = audio.audio[:,i]
+
+class IIR_general(Transform):
+    def __init__(self, a, b):
+        assert len(a) == len(b)
+        self.a = a
+        self.b = b
+    
+    def realise(self, audio):
+        x = np.pad(audio.audio, ((0,0),(len(self.a)-1,0)))
+        y = np.zeros_like(x)
+        
+        for i in range(len(self.a), x.shape[1]):
+            for m in range(len(self.a)):
+                y[:,i] += -self.a[m]*y[:,i-m] + self.b[m]*x[:,i-m]
+        
+        audio.audio[:,:] = y[:,len(self.a)-1:]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

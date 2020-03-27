@@ -8,6 +8,16 @@ Created on Thu Aug 22 20:44:57 2019
 timeit(setup="import numpy as np", number=10000, stmt="")
 ================ CORE ======================
 
+large-scale future goals:
+* make available a host of adjustable Filters and EQs
+* make them parametric as well
+* better support for FM synthesis, also other kinds of synthesis
+* simulate guitar amps, distortion and other effects
+* upsample/downsample
+* interfacing improved playback options
+? better musical logic support for intonations and melodies
+? drum patterns
+
 fundamental improvements to do:
 
 V find syntax for upsampling/slowing down/ etc.
@@ -16,12 +26,10 @@ V and to repeat signals
 V make signals/trnasforms empty skeletons
     so that one may reuse them, or define their own to be reused
     (make sure they store no audio data! apart from RAW)
-V slice signals
-V take back to mono etc.
-V translate fadeins etc into db
-V solve thing about float vs. int (and enable ints as floats all around)
-V signal addition code ignores transforms applied to sums?
 * keep track of all dangerous floats (when converting from time to samples)
+  perhaps maintain a convention that time is in floats, samples in ints
+  (that would mean that to slice samples we need to fill in the channels,
+  otherwise it will infer wrongly)
 no doubt we still need direct After function; putting signals in arrays is not always appropriate
 perhaps we should use + as after and & as mix?
 
@@ -37,15 +45,17 @@ V tracks stuff
 V fix panning
 V ADSR
 * TODO fix streak
-* pan stereo
-* supply one example of custom panning scheme
+* pan stereo (we can do a specialized transform for this, using a MultiCurve
+  for opening angle and general angle, but is this actually more convenient?
+  isn't doing it manually more natural?)
+V supply one example of custom panning scheme
 * Signal as Curve?
 * crossfades
 
 * negative shifts?
 
 V user-defined curves
-- user-defined panning schemes [futuristic tho]
+V user-defined panning schemes [futuristic tho]!!!!
 
 * crossfade for concat???
 Sine() | CF | Triangle() ???
@@ -122,6 +132,8 @@ suppose listener in middle of triangle, we can use complex number to give exact 
 does it mean we need to enable 2d curves??? or just combining them
 it would be easier to use polar coordinates instead of complex numbers tho
 
+# what happens if i do s[0]*=Pan()? how many channels do  i end up with??
+the above has undefined behavior and throws an error - for good reason.
 
 -===- Transforms --
 use '.' to apply transforms?
@@ -158,7 +170,6 @@ pan = line((0,0), (50,1e3), (50,3e3), (100,5e3))
     (though this would go against mergin signals and curves)
 
 * cumulative vs. absolute time durations - important considerations
-* looks kinda sick to do this alternating concat between values and functions
 * also need to do last value continuing to infinity.
   but that would make duration not clear.
   (wait: this depends on whether the param is freq or amplitude)

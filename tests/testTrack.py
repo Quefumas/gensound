@@ -12,7 +12,7 @@ from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Downsample_rough, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
-from filters import Average_samples, LowPassBasic, Butterworth
+from filters import Average_samples, LowPassBasic, Butterworth, IIR_basic, IIR_general
 from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
 from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 
@@ -55,12 +55,49 @@ def lowpass_FIR_test():
     #export_test(audio, lowpass_FIR_test)
 
 def Butterworth_test():
-    s = WAV(african)[10e3:20e3]
+    #s = WAV(african)[10e3:20e3]
+    c = Line(55,110, 3e3) | Constant(110,2e3)
+    c |= Line(110, 220, 3e3) | Constant(220, 2e3)
+    c |= Line(220, 440, 3e3) | Constant(440, 2e3)
+    c |= Line(440, 880, 3e3) | Constant(880, 2e3)
+    c |= Line(880, 2*880, 3e3) | Constant(2*880, 2e3)
+    s = Sine(frequency=c, duration=20e3)[0:2]
     s[1] *= Butterworth(cutoff=880)
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
-    #export_test(audio, lowpass_FIR_test)
+    #export_test(audio, Butterworth_test)
 
+def Butterworth_experiment():
+    s = WAV(african)[10e3:25e3]
+    s1 = s[0]*Butterworth(cutoff=880)
+    c = Line(-100, 100, 13e3)
+    s2 = s[1]*Pan(c)
+    t = s1[0:2] + s2
+    audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    # export_test(audio, Butterworth_experiment)
+
+def additive_complex_sound_test():
+    def s(f, duration):
+        return sum([(1/i**1.5)*Sine(frequency = f*i, duration=duration)*ADSR((0.01e3)*(i), 0.8, 0.5+(1/(i+2)), 0.02e3) for i in range(1, 20)])
+    
+    freqs = [midC(-3), midC(1), midC(-4), midC(4), midC(6), midC(2), midC(-1), midC(11)]*2
+    duration = 1e3
+    
+    t = Signal.concat(*[s(f, duration) for f in freqs])
+    
+    audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, additive_complex_sound_test)
+
+def syntactical_channel_rearrange_test():
+    s = WAV(african)[10e3:20e3]
+    s[0], s[1] = s[1], s[0]
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
+    
 def pan_stereo_test():
     s = WAV(african)[10e3:30e3]
     t = s[0]*Pan(Line(-100,50,20e3)) + s[1]*Pan(Line(0,100,20e3))
@@ -72,6 +109,22 @@ def pan_stereo_test():
     audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
     #export_test(audio, pan_stereo_test)
+
+def IIR_basic_test():
+    s = WAV(african)[10e3:20e3]
+    s[5e3:] *= IIR_basic() # y(n) = 0.3*x(n) + 0.7*y(n-1)
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    # play_Audio(audio)
+    export_test(audio, IIR_basic_test)
+
+def IIR_general_test():
+    s = WAV(african)[10e3:20e3]
+    s[3e3:] *= IIR_general([0,  -0.5,0,0],
+                           [0.25, 0.15,0.07,0.03])
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    # play_Audio(audio)
+    export_test(audio, IIR_general_test)
+
 
 def custom_pan_scheme_test():
     '''
@@ -237,7 +290,10 @@ def test_something():
     ...
 
 if __name__ == "__main__":
-    Butterworth_test()
+    #Butterworth_experiment()
+    #additive_complex_sound_test()
+    IIR_general_test()
+    # custom_pan_scheme_test()
     #%%%%%
 
 

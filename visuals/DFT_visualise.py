@@ -5,6 +5,38 @@ from analyze import DFT2
 from curve import Curve, Line, Logistic, SineCurve, Constant
 from filters import LowPassBasic
 
+
+def visualise_IIR(a, b, is_log=False):
+    assert len(a)==len(b)
+    x = [0]*128
+    x[len(a)] = 1
+    y = [0]*128
+    
+    for i in range(len(a), len(x)):
+        for m in range(len(a)):
+            y[i] += -a[m]*y[i-m] + b[m]*x[i-m]
+    
+    # import matplotlib.pyplot as plt
+    # plt.yscale('log')
+    # plt.plot(range(len(y)), y)
+    
+    # plt.show()
+    freqs = DFT2(y)
+    plot_frequencies([freqs], is_log=is_log)
+
+def plot_frequencies(freqs, is_log=False):
+    import matplotlib.pyplot as plt
+    plt.xticks(ticks=[0, len(freqs[0])//8, len(freqs[0])//4, 3*len(freqs[0])//8, len(freqs[0])//2],
+               labels=["0","fs/8","fs/4","3fs/8" ,"fs/2"])
+    plt.ylabel('magnitude')
+    if is_log:
+        plt.yscale('log')
+    
+    for mags in freqs:
+        plt.plot(range(len(mags)), mags)
+    
+    plt.show()
+
 def visualise_FIRs(*FIRs, is_log=False):
     points = []
     
@@ -75,7 +107,10 @@ def test_visualise_curve():
 
 if __name__ == "__main__":
     #test_visualise_curve()
-    test_visualise_windows()
+    # test_visualise_windows()
+    visualise_IIR([0, -0.25, -0.15,-0.07,-0.03],
+                  [0.6,0.2, 0,0,0],
+                  is_log=True)
 
 
 
