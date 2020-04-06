@@ -109,6 +109,14 @@ def sweep_test():
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
 
+def test_transform_chain():
+    s = WAV(african)[10e3:20e3]
+    t = Average_samples(5) * Fade(duration=0.5e3)
+    t *= Gain(Line(0,-10,3e3) | Line(-10, 0, 5e3))
+    s *= t
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
 def test_something():
     ...
 
@@ -116,7 +124,8 @@ if __name__ == "__main__":
     #Butterworth_experiment()
     #additive_complex_sound_test()
     #IIR_general_test()
-    sweep_test()
+    #sweep_test()
+    test_transform_chain()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
 

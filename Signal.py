@@ -11,7 +11,7 @@ import numpy as np
 
 from utils import isnumber, num_samples
 
-from transforms import Transform, Amplitude, Slice, Combine
+from transforms import Transform, TransformChain, Amplitude, Slice, Combine
 from curve import Curve
 from audio import Audio
 from playback import WAV_to_Audio
@@ -99,7 +99,10 @@ class Signal:
         
         s = self.copy() # TODO is this needed?
         # it is, so we can reuse the same base signal multiple times
-        s.transforms.append(transform)
+        if isinstance(transform, TransformChain):
+            s.transforms.extend(transform.transforms)
+        else:
+            s.transforms.append(transform)
         return s
     
     def _concat(self, other):

@@ -11,6 +11,7 @@ timeit(setup="import numpy as np", number=10000, stmt="")
 large-scale future goals:
 * make available a host of adjustable Filters and EQs
 * make them parametric as well
+* CF? or negative shift?
 * better support for FM synthesis, also other kinds of synthesis
 * simulate guitar amps, distortion and other effects
 * upsample/downsample
@@ -61,6 +62,8 @@ V user-defined panning schemes [futuristic tho]!!!!
 Sine() | CF | Triangle() ???
 
 
+sample where MyReverb = Reverb(dry=0.4, time=3)... etc
+
 V TODO: test why squares get negative all the time
 * TODO: Audio.mixdown vs. Signal.mixdown.
   Probably should change name of Audio.mixdown - it's just a preparation
@@ -74,6 +77,7 @@ V Panning
 V some problems when concatting two together
 * merge with Signal
 * for signal have duration irrelevant when frequency is a curve (since it has duration already)
+* instead of flatten use __float??
 
 = curves continuing to infinity issues:
 * for frequency, that would mean the signal duration can be specified to be
@@ -92,6 +96,7 @@ V some problems when concatting two together
     we do not want to force user to compute this, what could be better is 
     SineCurve(frequency=6, depth=3, baseline=330, duration=5e3) | CF | Constant(...)
     i.e. design a kind of cross-fade that makes these continuous
+    #####* or (better?) solution: use a Curve instead of 
 
 - Curve*Signal interpreted as Amplitude*Signal? [i.e. replacing float]
 
@@ -112,19 +117,64 @@ V some problems when concatting two together
 
 =============== Syntactical stuff =============
 
+====== Negative Shifts and CF ======
+* Shifted signals when mixed down should perhaps not be fully generated on their own
+  with the padded zeros; but rather placed into the mix properly, to save the memory
+  allocation of the padding.
+* negative shifted signals when concatted should coincide into the previous signal:
+  s = Sine(duration=3e3) | Square(duration=3e3)*Shift(-1e3)
+  if this goes back beyond the beginning of the signal, the entire mixdown
+  should be considered Shifted backwards
+* and the shifted property, should all Signals be allowed to have it?
+  can be it always safely ignored, except when realising Sequences? and Mixes?
+  also it must be conveyed to whatever Signal you're being transformed/mixed into
+* when using Sequence, have keyworded argument for BiTransform to be applied
+  in the middle (automatic overlap or automatic CF)
+* define class TransformChain which is array of transforms, we may multiply it
+  by Transforms, adding them to the list.
+  when a signal is multiplied by it, it breaks down and the transforms in the chain
+  are added individually.
+* define class BiTransform which accepts two Transforms/TransformChains, L and R
+  and may be concated on both sides to Signals only.
+* upon concat Signal | BiTransform, the L transform chain is applied to Signal,
+  and the last item in the sequence contains the TransformChain R
+* if BiTransform is right-concatted with Signal (by the above points this
+  should have been illegal, as it would have been first left-concatted into
+  a Signal and dissolved within it), it can also default to disppearing,
+  or alternatively ignoring L part. The only advantage for this is the syntactical
+  ease when concatting via for loop, so we may prepend each concatted signal
+  by a CF, even though we start empty.
+* when concatting Signal into Sequence, check to see if the last item
+  on the list is a TransformChain. if so, replace it by the concatted Signal
+  times that transform chain.
+* alternative implementation: leave the BiTransform as an item in Sequence,
+  and only upon realise() apply the transforms. pbbly better to stop in the middle
+  and break the BiTransform down, so that realise would only be called once
+  for each signal in Sequence.
+  the only advantage here is that when pretty-printing the signal tree,
+  we get to see the BiTransform.
+* how about more complex BiTransforms? that actually let both signals interact?
+  that would mean that on Sequence.realise() we would have to *look ahead*
+  before realising, or perhaps realise the first, then upon bumping into
+  the BiTrans we would skip it, realise whatever's afterwards, then come back
+  and apply L,R to these results AND let BiTrans concat on its own.
+  and this coould cause problems if the R signal has yet another bitransform
+  afterwards. i think we leave this for user custom designs.
+
+
 -===- Panning -===-
 (pan law should be class variable for Pan, so we can set it once)
 
 use cases:
 V take mono signal and pan it into several channels
-* apply amplitude on individual channels (this is covered already no?)
-* take stereo signal and make it span the space differently
+V apply amplitude on individual channels (this is covered already no?)
+V take stereo signal and make it span the space differently
     relatively easy to derive from the 1st note above
 
 mono -> multiple - how do we do it?
-* provide n curves to indicate particular gains/levels
+V provide n curves to indicate particular gains/levels
   but note that we can just expand mono to multi then apply individual envelops
-* pre-define a mapping R -> R^n, and then just give one function t->R
+V pre-define a mapping R -> R^n, and then just give one function t->R
 
 
 suppose listener in middle of triangle, we can use complex number to give exact source of sound
@@ -222,7 +272,7 @@ but it also seems natural to implement transforms by
 EQ and Compressor.
 
 
-- perhaps have transforms multipliable by each other to create chains,
+V perhaps have transforms multipliable by each other to create chains,
 which can then be added in bulk to a signal.
  the purpose is that the user can employ any order of multiplications to get
 the desired result

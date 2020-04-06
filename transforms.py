@@ -33,6 +33,24 @@ class Transform:
     def __str__(self):
         return str(type(self).__name__)
     
+    def __mul__(self, other):
+        if isinstance(other, Transform):
+            t = TransformChain()
+            
+            if isinstance(self, TransformChain):
+                t.transforms.extend(self.transforms)
+            else:
+                t.transforms.append(self)
+            
+            if isinstance(other, TransformChain):
+                t.transforms.extend(other.transforms)
+            else:
+                t.transforms.append(other)
+            
+            return t
+        
+        return NotImplemented
+    
     def num_samples(self, sample_rate):
         if not hasattr(self, "duration"):
             raise TypeError("transform.duration must be defined to support conversion to samples")
@@ -43,6 +61,14 @@ class Transform:
         this should change the object directly, don't return anything."""
         pass
 
+####### Basic Container ################
+
+class TransformChain(Transform):
+    """ This class lets you combine a set of transforms which will then be
+    applied in one go to a signal.
+    """
+    def __init__(self, *transforms):
+        self.transforms = list(transforms)
 
 ####### Basic shape stuff ##############
 
@@ -133,7 +159,7 @@ class Combine(Transform):
 class Fade(Transform):
     min_fade = -50
     
-    def __init__(self, is_in=True, duration=3000):
+    def __init__(self, is_in=True, duration=3e3):
         self.is_in = is_in
         self.duration = duration
     
