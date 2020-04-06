@@ -18,7 +18,7 @@ from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
 from filters import Average_samples
-from curve import Curve, Constant, Line, Logistic, SineCurve
+from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
 from playback import play_Audio, export_test
 
 from musicTheory import midC
@@ -574,6 +574,55 @@ def multichannel_test():
     audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
     #play_Audio(audio)
     export_test(audio, multichannel_test)
+
+
+
+def curve_continuity_test():
+    c = Line(220,330,4e3) | Constant(330, 4e3)
+    s = Sine(frequency=c, duration=8e3)
+    
+    c2 = Constant(220, 2e3) | Line(220, 330, 9e3) | Constant(330, 2e3)
+    s = Sine(frequency=c2, duration=18e3)
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    #export_test(audio, curve_continuity_test)
+
+def to_infinity_curve_test():
+    c = Line(-80,-10,10e3)
+    p = Line(-100, 100, 5e3)
+    #s = Sine(duration=20e3)*Gain(c)
+    s = Sine(duration=10e3)*Pan(p)
+    audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, to_infinity_curve_test)
+
+
+
+
+def syntactical_channel_rearrange_test():
+    s = WAV(african)[10e3:20e3]
+    s[0], s[1] = s[1], s[0]
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+
+    
+def pan_stereo_test():
+    s = WAV(african)[10e3:30e3]
+    t = s[0]*Pan(Line(-100,50,20e3)) + s[1]*Pan(Line(0,100,20e3))
+    
+    # stereo signal panned in space from (-100,0) to (50,100)
+    # the stereo field moves right gradually as well as expanding
+    # from an opening of 90 degrees to 45 degrees (with headphones)
+    Pan.panLaw = -3
+    audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    play_Audio(audio)
+    #export_test(audio, pan_stereo_test)
+
+
+
+
+
 
 
 
