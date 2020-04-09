@@ -127,7 +127,7 @@ class Combine(Transform):
     if the signal to push inside is too small, it will mean a silence gap,
     if too long, its remainder will be mixed into the continuation of the parent signal
     Should not be invoked by the user, rather it is used by
-    Signal.__getitem.
+    Signal.__setitem.
     """
     def __init__(self, channel_slice, time_slice, signal):
         self.channel_slice = channel_slice
@@ -187,7 +187,14 @@ class Gain(Transform):
     
     def realise(self, audio):
         # should we make this inherit from amplitude? like Triangle/Sine relation?
-        for (i, dB) in enumerate(self.dBs):
+        
+        # when given a single gain for multiple channels, apply it to all of them
+        if len(self.dBs) == 1 and audio.num_channels() > 1:
+            dBs = self.dBs * audio.num_channels()
+        else:
+            dBs = self.dBs
+        
+        for (i, dB) in enumerate(dBs):
             if isnumber(dB):
                 audio.audio[i,:] *= DB_to_Linear(dB)
             elif isinstance(dB, Curve):
@@ -210,7 +217,14 @@ class Amplitude(Transform):
     
     def realise(self, audio):
         # TODO do multiple channels at the same time?
-        for (i,amp) in enumerate(self.amps):
+        
+        # when given a single gain for multiple channels, apply it to all of them
+        if len(self.amps) == 1 and audio.num_channels() > 1:
+            amps = self.amps * audio.num_channels()
+        else:
+            amps = self.amps
+            
+        for (i,amp) in enumerate(amps):
             # TODO shouldn't this just affect a copy of audio????
             # above comment was previously for the line:
             # audio.audio = self.size*audio.audio

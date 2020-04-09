@@ -132,11 +132,83 @@ class IIR_general(Transform):
         audio.audio[:,:] = y[:,len(self.a)-1:]
 
 
+class IIR_OnePole(Transform):
+    """ Designed after Nigel Redmond
+    https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
+    
+    For low pass, with Fc being cutoff/sample_rate,
+    use b1 = e^{-2 pi Fc}
+    and a0 = 1-b1
+    
+    For highpass,
+    use b1 = -e^{-2 pi (0.5 - Fc)}
+    and a0 = 1+b1
+    
+    this version is to get your hands dirty; use the following classes for actual
+    convenient usage.
+    """
+    def __init__(self, a0, b1):
+        self.a0 = a0
+        self.b1 = b1
+    
+    def realise(self, audio):
+        i = 1
+        audio.audio[:,0] = audio.audio[:,0]*self.a0
+        
+        while i < audio.length():
+            audio.audio[:,i] = audio.audio[:,i]*self.a0 + audio.audio[:,i-1]*self.b1
+            i += 1
+
+class IIR_OnePole_LowPass(Transform):
+    """ Designed after Nigel Redmond
+    https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
+    
+    For low pass, with Fc being cutoff/sample_rate,
+    use b1 = e^{-2 pi Fc}
+    and a0 = 1-b1
+
+    """
+    def __init__(self, cutoff):
+        self.cutoff = cutoff
+    
+    def realise(self, audio):
+        Fc = self.cutoff / audio.sample_rate
+        b1 = np.e**(-2*np.pi*Fc)
+        a0 = 1 - b1
+        
+        audio.audio[:,0] = audio.audio[:,0]*a0
+        
+        i = 1
+        
+        while i < audio.length():
+            audio.audio[:,i] = audio.audio[:,i]*a0 + audio.audio[:,i-1]*b1
+            i += 1
 
 
+class IIR_OnePole_HighPass(Transform):
+    """ Designed after Nigel Redmond
+    https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
+    
+    For low pass, with Fc being cutoff/sample_rate,
+    use b1 = e^{-2 pi Fc}
+    and a0 = 1-b1
 
-
-
+    """
+    def __init__(self, cutoff):
+        self.cutoff = cutoff
+    
+    def realise(self, audio):
+        Fc = self.cutoff / audio.sample_rate
+        b1 = -np.e**(-2*np.pi*(0.5-Fc))
+        a0 = 1 + b1
+        # TODO this can be paramterized
+        audio.audio[:,0] = audio.audio[:,0]*a0
+        
+        i = 1
+        
+        while i < audio.length():
+            audio.audio[:,i] = audio.audio[:,i]*a0 + audio.audio[:,i-1]*b1
+            i += 1
 
 
 

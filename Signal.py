@@ -39,14 +39,10 @@ class Signal:
         """ returns Audio instance.
         parses the entire signal tree recursively
         """
+        audio = self.generate(sample_rate)
         
-        signal = self.generate(sample_rate)
-        
-        if not isinstance(signal, Audio):
-            audio = Audio(sample_rate)
-            audio.from_array(signal)
-        else:
-            audio = signal
+        if not isinstance(audio, Audio):
+            audio = Audio(sample_rate).from_array(audio)
     
         for transform in self.transforms:
             transform.realise(audio=audio)
@@ -274,6 +270,7 @@ class Signal:
         assert isinstance(args[1], Signal)
         # TODO deal with out-of-bound values for channels and time
         # TODO should copy self first?
+        # TODO use self.apply instead?
         self.transforms.append(Combine(*Signal.__subscripts(args[0]), args[1]))
     
     # def __getattr__(self, name):
@@ -337,7 +334,7 @@ class Silence(Signal):
     def generate(self, sample_rate):
         return np.zeros(self.num_samples(sample_rate), dtype=np.float64)
 
-class Step(Signal):
+class Step(Signal): # Impulse? DC?
     def __init__(self, duration=1):
         super().__init__()
         self.duration = duration

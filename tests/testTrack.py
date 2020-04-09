@@ -12,7 +12,8 @@ from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Downsample_rough, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
-from filters import Average_samples, LowPassBasic, Butterworth, IIR_basic, IIR_general
+from filters import Average_samples, LowPassBasic, Butterworth, IIR_basic, \
+                    IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
 from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
 from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 
@@ -103,6 +104,27 @@ def IIR_general_test():
     # play_Audio(audio)
     export_test(audio, IIR_general_test)
 
+def IIR_one_pole_test():
+    s = WAV(african)[10e3:20e3]
+    
+    Fc = 880/44100
+    b1 = np.e**(-2*np.pi*Fc)
+    s[:,:5e3] *= IIR_OnePole(1-b1, b1)
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, IIR_one_pole_test)
+
+def IIR_one_pole_filters_test():
+    s = WAV(african)[10e3:20e3]
+    
+    s[:5e3] *= IIR_OnePole_LowPass(880)
+    s[5e3:] *= IIR_OnePole_HighPass(440)
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    #play_Audio(audio)
+    export_test(audio, IIR_one_pole_filters_test)
+
 def sweep_test():
     s = SweepTest()
     s *= Butterworth(cutoff=440)
@@ -125,7 +147,7 @@ if __name__ == "__main__":
     #additive_complex_sound_test()
     #IIR_general_test()
     #sweep_test()
-    test_transform_chain()
+    IIR_one_pole_filters_test()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
 

@@ -52,6 +52,8 @@ class Audio:
         # TODO should we copy?
         # note that this is called practically everytime we generate() a signal!!!
         self.audio = self.audio.copy(order="C")
+        
+        return self
     
     def copy(self):
         """
