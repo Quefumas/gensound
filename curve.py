@@ -56,6 +56,11 @@ class Curve():
     # should this be done here or at compoundcurve? imitate signal
     
     def __or__(self, other):
+        # concat with number is casted to prolongation of the final value
+        # TODO this is one of the few points inconsistent with Signal!
+        if isnumber(other):
+            other = Constant(value=self.endpoint(), duration=other)
+        
         c = CompoundCurve()
         
         if isinstance(self, CompoundCurve):

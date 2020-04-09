@@ -240,6 +240,9 @@ behaves like an iterator/iterable?
 t = s[:,3e3:5e3]
 s[:, 3e3:5e3] *= Reverse()
 
+| float (concat with silence of float duration)
++ float (add DC/constant of amount float)
+
 what about order of operations?
 do we want concat or mix first?
 

@@ -75,16 +75,11 @@ class TransformChain(Transform):
 class Shift(Transform):
     """ shifts the signal forward in time."""
     # TODO enable backword
-    def __init__(self, duration=None, samples=None):
-        # TODO perhaps infer duration/samples by float/int?
-        # Or maybe split into 2 classes, just to prevent confusion
-        assert isnumber(duration) + isnumber(samples) == 1, "too many/too few arguments to Shift()"
+    def __init__(self, duration):
         self.duration = duration
-        self.samples = samples
     
     def realise(self, audio):
-        samples = self.samples if isnumber(self.samples) else self.num_samples(audio.sample_rate)
-        audio.push_forward(samples)
+        audio.push_forward(self.num_samples(audio.sample_rate))
 
 class Extend(Transform):
     """ adds silence after the signal. needed?

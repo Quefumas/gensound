@@ -31,7 +31,11 @@ Linear_to_DB = lambda x: 20*np.log(x)/np.log(10)
 
 # converts seconds to samples
 # later aliased as a Signal class function
-num_samples = lambda duration, sample_rate: int(duration*sample_rate/sec)
+# interprets self.duration as either samples or miliseconds
+# i.e. using ints will be affected by sample rate
+num_samples = lambda duration, sample_rate: duration \
+                                            if isinstance(duration, int) \
+                                            else int(duration*sample_rate/sec)
 # this is both for readability as well as for
 # bottlenecking non-safe conversions from durations into samples,
 # for better control later

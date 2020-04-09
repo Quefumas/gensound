@@ -64,7 +64,9 @@ class Signal:
         return num_samples(self.duration, sample_rate)
     
     def sample_times(self, sample_rate):
-        return np.linspace(start=0, stop=self.duration/1000, num=self.num_samples(sample_rate), endpoint=False)
+        stop_time = self.duration/1000 if isinstance(self.duration, float) \
+            else self.duration/sample_rate
+        return np.linspace(start=0, stop=stop_time, num=self.num_samples(sample_rate), endpoint=False)
     
         
     def copy(self):
@@ -123,8 +125,11 @@ class Signal:
         return s
     
     def _mix(self, other):
-        s = Mix()
+        # mixing with constant number is interpreted as DC
+        if isnumber(other):
+            other = other*DC(duration=self.duration)
         
+        s = Mix()
         if not self.transforms and isinstance(self, Mix):
             s.signals += self.signals
         else:
@@ -327,7 +332,7 @@ class Sequence(Signal):
 #### particular signals #########
 
 class Silence(Signal):
-    def __init__(self, duration=5000):
+    def __init__(self, duration=5e3):
         super().__init__()
         self.duration = duration
     
@@ -342,8 +347,10 @@ class Step(Signal): # Impulse? DC?
     def generate(self, sample_rate):
         return np.ones((self.num_samples(sample_rate),), dtype=np.float64)
 
+DC = Step
+
 class GreyNoise(Signal):
-    def __init__(self, duration=5000):
+    def __init__(self, duration=5e3):
         super().__init__()
         self.duration = duration
     
@@ -357,7 +364,7 @@ class GreyNoise(Signal):
 class Sine(Signal): # oscillator? pitch? phaser?
     wave = np.sin
     
-    def __init__(self, frequency=220, duration=5000):
+    def __init__(self, frequency=220, duration=5e3):
         super().__init__()
         self.frequency = frequency
         self.duration = duration
