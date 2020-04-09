@@ -143,6 +143,7 @@ class Audio:
     
     def push_forward(self, how_much):
         """ pads the beginning with zeros """
+         # TODO sister function which truncates beginning when shift < 0? for use in Combine
         if how_much < 0:
             return
         # pad with nothing before and after the channel dimension

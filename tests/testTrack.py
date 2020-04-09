@@ -147,6 +147,14 @@ def test_negative_shift():
     #export_test(audio, test_negative_shift)
     play_Audio(audio)
 
+def test_negative_shift_combine():
+    s = WAV(african)[10e3:20e3]
+    s[5e3:] = s[5e3:]*Shift(1e3)
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    export_test(audio, test_negative_shift_combine)
+    #play_Audio(audio)
+
+
 def test_something():
     ...
 
@@ -155,7 +163,7 @@ if __name__ == "__main__":
     #additive_complex_sound_test()
     #IIR_general_test()
     #sweep_test()
-    test_negative_shift()
+    test_negative_shift_combine()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
 

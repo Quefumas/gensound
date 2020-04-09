@@ -120,7 +120,10 @@ class Combine(Transform):
     """ given another Signal as input, realises it and pushes it back
     into the affected signal in the relevant place.
     if the signal to push inside is too small, it will mean a silence gap,
-    if too long, its remainder will be mixed into the continuation of the parent signal
+    if too long, its remainder will be mixed into the continuation of the parent signal.
+    TODO reevaluate this behaviour. perhaps when there is no specified end to the
+    time slice (for example signal[:,5e3:]), then we can extend. otherwise, maybe not.
+    also consider that the overflow may happen in the opposite direction (negative shift)
     Should not be invoked by the user, rather it is used by
     Signal.__setitem.
     """
@@ -130,23 +133,27 @@ class Combine(Transform):
         self.signal = signal # inserted Signal
     
     def realise(self, audio):
+        # prepare new audio and ensure shift can only be negative
+        new_audio = self.signal.realise(audio.sample_rate)
+        new_audio.push_forward(new_audio.shift)
+        
         # locating correct samples
         sample_slice = samples_slice(self.time_slice, audio.sample_rate)
+        start_sample = sample_slice.start if sample_slice.start is not None else 0
         
         # add channels to container in case of out-of-bounds Container channel subscript
         max_channel = max(0, self.channel_slice.start or 0, (self.channel_slice.stop or 0)-1)
         if max_channel >= audio.num_channels():
             audio.to_channels(max_channel+1)
-            
         
-        # preparing new audio
-        new_audio = self.signal.realise(audio.sample_rate)
-        # TODO audio.shift test this
-        # putting the new audio in
-        audio.audio[self.channel_slice, sample_slice] = 0 # TODO is this needed?
-        start_sample = sample_slice.start if sample_slice.start is not None else 0
+        # ensure container long enough in case of overflow
         audio.to_length(start_sample + new_audio.length())
-        audio.audio[self.channel_slice, start_sample:start_sample+new_audio.length()] += new_audio.audio
+        
+        # emptying the sliced area
+        audio.audio[self.channel_slice, sample_slice] = 0 # TODO is this needed?
+        # breakpoint()
+        # put inside; recall that new_audio.shift <= 0
+        audio.audio[self.channel_slice, start_sample:start_sample+new_audio.length()+new_audio.shift] += new_audio.audio[:,-new_audio.shift:]
 
 
 ######### Level/ampltidue Stuff ###################
