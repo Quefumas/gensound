@@ -130,6 +130,7 @@ class Signal:
             other = other*DC(duration=self.duration)
         
         s = Mix()
+        
         if not self.transforms and isinstance(self, Mix):
             s.signals += self.signals
         else:
@@ -322,10 +323,28 @@ class Sequence(Signal):
         self.sequence = list(sequence)
     
     def generate(self, sample_rate):
+        # TODO before we start generating, this could be the time
+        # to loop over self.sequence, and if there are any Binary transforms
+        # (i.e. CrossFade), we retrieve from it two transform chains
+        # to apply to the signals before and after it
+        # on the one hand, this is a good opportunity since both signals
+        # are present, since if we apply the transforms when appending,
+        # there will be a moment when we have appended the CF but not the 
+        # second signal, leaving us in limbo.
+        # but on the other hand, the mixdown stage is perhaps a strange
+        # time to start appending transforms.
+        # also consider that it may be worthwhile to implement the Transform Chain
+        # class, in which case concating a CF will result in applying transforms
+        # to the existing last signal, and putting in the next slots some transforms
+        # in wait for the next.
+        # but for that it will also be necessary to make sure that 
+        # when the next signal is appended, the existing transforms are applied
+        # to it after all of its preexisting transforms
         audio = Audio(sample_rate)
         
         for signal in self.sequence:
-            audio.append(signal.realise(sample_rate))
+            audio.concat(signal.realise(sample_rate))
+            # TODO assymetric with Mix since we don't overload audio.concat
         
         return audio
 

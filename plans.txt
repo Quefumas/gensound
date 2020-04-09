@@ -69,6 +69,8 @@ V TODO: test why squares get negative all the time
   Probably should change name of Audio.mixdown - it's just a preparation
   for output of the already-mixed data. possibly should not even be called
   by Signal.mixdown.
+* reconsider audio.conform. perhaps should only conform channels.
+  only used in audio.mix, concat, and in the tentative strange multiply/convolve
 V TODO enable concating signal to 0 (supported already?), or to empty Signal()?
 enforce "no such thing as seconds" rule! but remember that frequency is measured in Hz...
 
@@ -160,7 +162,74 @@ V some problems when concatting two together
   and apply L,R to these results AND let BiTrans concat on its own.
   and this coould cause problems if the R signal has yet another bitransform
   afterwards. i think we leave this for user custom designs.
+* think about future placements in grid, i.e. filling up drum samples.
+  should we use an At/Shift function? or concat and compute the overlaps?
+  perhaps we can give everything a Shift and give an extra argument instructing
+  what to do with overlaps (could be "mix as is", or CF, or maybe something else
+  such as fade the first one out just in time for the appearance of the second?)
 
+implementation thoughts of audio.shift:
+* especially comes into play when conforming audios, mixing and concatting
+
+* reconsider audio.conform. maybe redefine it.
+
+* note that mix/concat signals reverts to audios so should be fine
+
+* when mixing 2 audios:
+  they are actually represented as:
+      (0,b) with shift a,
+      (0,d) with shift c.
+  and supposed to become:
+      (0,f) with shift e.
+  
+  we interpret them as ranges on the number axis:
+      (a,b+a), (c,d+c), (e,f+e)
+  we need then e = min(a,c)
+  and f+e = max(b+a, d+c),
+  therefore f = max(b+a, d+c) - e
+  
+  but in particular, if we wish to extend(a,b+a) to include the other,
+  we need it to first become (e, b+e)
+  by pre-padding by (a - e).
+  then into (e, f+e)
+  by post-padding by (f+e)-(b+a)
+  note that when d+c <= b+a, the above is just (b+a)-(b+a)=0
+  
+  (sanity check: total length is now indeed (a-e)+b+(f+e)-(b+a) = f)
+  
+  then finally, we add the 2nd one inside in the correct place,
+  which on the axis is c, and relatively it is c-e.
+  
+  pseudo-code:
+    # conforming
+    e = min(one.shift, two.shift)
+    f = max(one.shift+one.length(), two.shift+two.length())
+    one.prepad(one.shift-e)
+    one.postpad(f+e - (one.shift+one.length()))
+    one.shift = e
+    # mixing
+    one[:,two.shift-one.shift:] += two
+    
+ 
+ * when concatting:
+   can also revert to the previous case with some adaptation
+   or vice versa?
+   
+   if two.shift < 0:
+     if -two.shift > one.length:
+       diff = -two.shift - one.length
+       one.prepend(diff)
+       one.shift -= diff
+     first[:,two.shift:] += two[:,:-two.shift]
+     first.append(two[:,-two.shift:])
+   elif two.shift >= 0:
+     first.postpad(two.shift)
+     first.append(two)
+
+ * to use concat code for mix, first perform:
+     two.shift -= one.length
+   to use mix code to perform concat, first perform:
+     two.shift += one.length
 
 -===- Panning -===-
 (pan law should be class variable for Pan, so we can set it once)

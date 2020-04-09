@@ -23,6 +23,7 @@ class Audio:
     not the pretty facade.
     """
     def __init__(self, sample_rate):
+        self.shift = 0
         self.sample_rate = sample_rate
         self.audio = np.zeros((1, 0), dtype=np.float64)
     
@@ -79,6 +80,8 @@ class Audio:
     def duration(self):
         return self.length()/self.sample_rate
     
+    abs_start = lambda self: self.shift # in samples only
+    abs_end = lambda self: self.shift+self.length()
     
     ######### Unary manipulations #########
     
@@ -92,7 +95,7 @@ class Audio:
     
     """
     
-    def conform(self, other, is_append=False):
+    def conform(self, other):
         """
         reshapes self.audio so other.audio may be mixed into it.
         
@@ -107,6 +110,7 @@ class Audio:
         assert isinstance(other, Audio), "Audio.conform can only be used between Audios"
         assert other.is_mono() or self.is_mono or other.num_channels() == self.num_channels()
         
+        # conforming channels
         if other.is_mono():
             other.from_mono(self.num_channels())
             # TODO warning: this affects other.
@@ -114,10 +118,11 @@ class Audio:
         if self.is_mono():
             self.from_mono(other.num_channels())
         
-        if is_append:
-            self.extend(other.length())
-        else:
-            self.to_length(other.length())
+        # conforming lengths TODO better way?
+        start = min(self.abs_start(), other.abs_start())
+        end = max(self.abs_end(), other.abs_end())
+        self.push_forward(self.abs_start() - start)
+        self.to_length(end - start)
         
     
     
@@ -126,6 +131,7 @@ class Audio:
     def to_length(self, length):
         """ Ensures self.length is at least length, padding with zeros if needed.
         """
+        # TODO this and extend, do we need both?
         if self.length() >= length:
             return
         
@@ -137,11 +143,12 @@ class Audio:
     
     def push_forward(self, how_much):
         """ pads the beginning with zeros """
+        if how_much < 0:
+            return
         # pad with nothing before and after the channel dimension
         # pad with how_much before the time dimension, 0 after
         self.audio = np.pad(self.audio, ((0,0),(how_much,0)), mode="constant", constant_values=0.0)
-    
-    
+        self.shift -= how_much
     
     
     ### channel manipulations ###
@@ -172,17 +179,15 @@ class Audio:
     
     def mix(self, other):
         assert isinstance(other, Audio)
-            
+        
         self.conform(other)
-        self.audio[:,0:other.length()] += other.audio
-        # TODO delete the other Audio??? for safety and memory
-        return self
+        self.audio[:,other.abs_start()-self.abs_start():other.abs_start()-self.abs_start()+other.length()] += other.audio
     
-    def append(self, other):
+    def concat(self, other):
         assert isinstance(other, Audio)
-        self.conform(other, is_append=True)
-        self.audio[:,-other.length():] += other.audio
-        return self
+        
+        other.shift += self.length()
+        self.mix(other)
     
     
     
@@ -199,7 +204,7 @@ class Audio:
         else:
             return other.__add__(self)
     
-    def __add__(self, other):
+    def __add__(self, other): # do we want to overload this?
         return self.mix(other)
     
     def __mul__(self, other):
@@ -208,7 +213,7 @@ class Audio:
         if isinstance(other, np.ndarray):
             assert len(other.shape) == 1, "can multiply Audio by np.ndarray only for one-dimensional arrays"
             if other.shape[0] > self.length():
-                other = other[0:self.length]
+                other = other[0:self.length()]
             self.audio[:,0:other.shape[0]] *= other
             return
             
@@ -216,7 +221,7 @@ class Audio:
         # for multiplying by a float, we multiply the signal instead
         # TODO also does not support with Audios with differing params
         self.conform(other)
-        self.audio[:,0:other.length()] *= other[:,:]
+        self.audio[:,other.abs_start()-self.abs_start():other.abs_start()-self.abs_start()+other.length()] *= other[:,:]
         return self
     
     

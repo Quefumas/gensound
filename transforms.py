@@ -79,7 +79,7 @@ class Shift(Transform):
         self.duration = duration
     
     def realise(self, audio):
-        audio.push_forward(self.num_samples(audio.sample_rate))
+        audio.shift += self.num_samples(audio.sample_rate)
 
 class Extend(Transform):
     """ adds silence after the signal. needed?
@@ -125,15 +125,15 @@ class Combine(Transform):
     Signal.__setitem.
     """
     def __init__(self, channel_slice, time_slice, signal):
-        self.channel_slice = channel_slice
+        self.channel_slice = channel_slice # slices of container Signal
         self.time_slice = time_slice
-        self.signal = signal
+        self.signal = signal # inserted Signal
     
     def realise(self, audio):
         # locating correct samples
         sample_slice = samples_slice(self.time_slice, audio.sample_rate)
         
-        # add channels in case of out-of-bounds channel subscript
+        # add channels to container in case of out-of-bounds Container channel subscript
         max_channel = max(0, self.channel_slice.start or 0, (self.channel_slice.stop or 0)-1)
         if max_channel >= audio.num_channels():
             audio.to_channels(max_channel+1)
@@ -141,7 +141,7 @@ class Combine(Transform):
         
         # preparing new audio
         new_audio = self.signal.realise(audio.sample_rate)
-        
+        # TODO audio.shift test this
         # putting the new audio in
         audio.audio[self.channel_slice, sample_slice] = 0 # TODO is this needed?
         start_sample = sample_slice.start if sample_slice.start is not None else 0
