@@ -14,12 +14,14 @@ from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Mono, ADSR, CrossFade
 from filters import Average_samples, LowPassBasic, Butterworth, IIR_basic, \
                     IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
+from amplifiers import GuitarAmp_Test
 from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
 from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 
 from musicTheory import midC, semitone
 
 african = "../data/african_sketches_1.wav"
+gtrcln = "../data/guitar_clean.wav"
 
 ### for testing filters
 
@@ -163,6 +165,13 @@ def crossfade_bitransform_syntax_test():
     # now with linear amp fade, not db linear fade
     #export_test(audio, crossfade_bitransform_syntax_test)
 
+def guitar_amp_test():
+    s = WAV(gtrcln)*Gain(20)*GuitarAmp_Test(harshness=10,cutoff=4000)
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    #y = 1/(1+e^(-harshness*x) - 0.5, now with cutoff
+    export_test(audio, guitar_amp_test)
+
 def test_something():
     ...
 
@@ -171,7 +180,7 @@ if __name__ == "__main__":
     #additive_complex_sound_test()
     #IIR_general_test()
     #sweep_test()
-    crossfade_bitransform_syntax_test()
+    guitar_amp_test()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
 
