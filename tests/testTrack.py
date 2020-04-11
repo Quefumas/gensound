@@ -11,7 +11,7 @@ from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Ste
 from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Downsample_rough, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
-                       Mono, ADSR
+                       Mono, ADSR, CrossFade
 from filters import Average_samples, LowPassBasic, Butterworth, IIR_basic, \
                     IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
 from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
@@ -155,6 +155,14 @@ def test_negative_shift_combine():
     #play_Audio(audio)
 
 
+def crossfade_bitransform_syntax_test():
+    s = WAV(african)[10e3:20e3]
+    s = s[:5e3] | CrossFade(duration=0.5e3) | s[5e3:]
+    
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    # now with linear amp fade, not db linear fade
+    #export_test(audio, crossfade_bitransform_syntax_test)
+
 def test_something():
     ...
 
@@ -163,7 +171,7 @@ if __name__ == "__main__":
     #additive_complex_sound_test()
     #IIR_general_test()
     #sweep_test()
-    test_negative_shift_combine()
+    crossfade_bitransform_syntax_test()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
 

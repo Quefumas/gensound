@@ -61,41 +61,36 @@ class Transform:
         this should change the object directly, don't return anything."""
         pass
 
-####### Basic Container ################
+####### High-level transforms ################
 
 class TransformChain(Transform):
     """ This class lets you combine a set of transforms which will then be
     applied in one go to a signal.
+    
+    realise() is not implemented, since when this is applied to a signal,
+    all transforms are applied individually and there is no need for this anymore.
+    
+    TODO consider realising them together as well; possibly this will look nicer
+    when printing the signal tree.
     """
     def __init__(self, *transforms):
         self.transforms = list(transforms)
 
-####### Basic shape stuff ##############
 
-class Shift(Transform):
-    """ shifts the signal forward in time."""
-    # TODO enable backword
-    def __init__(self, duration):
-        self.duration = duration
+class BiTransform(Transform):
+    """ Bi-directional transform, which may only (?) be used in concatenation
+    in between two signals. This is basically a container of two TransformChains,
+    It applies the first to the left signal and the second to the right.
     
-    def realise(self, audio):
-        audio.shift += self.num_samples(audio.sample_rate)
+    Again, no overriding of realise() since this is to be broken up when 
+    undergoing the first concatenation (from the left).
+    """
+    def __init__(self, L, R):
+        assert isinstance(L, Transform) and isinstance(R, Transform)
+        self.L = L
+        self.R = R
 
-class Extend(Transform):
-    """ adds silence after the signal. needed?
-    """
-    def __init__(self, duration):
-        self.duration = duration
-    
-    def realise(self, audio):
-        audio.extend(self.num_samples(audio.sample_rate))
-
-class Reverse(Transform):
-    """
-    reverses the signal
-    """
-    def realise(self, audio):
-        audio.audio[:,:] = audio.audio[:,::-1]
+####### Slicing Stuff ################
 
 class Slice(Transform):
     """ returns only a specified part of the signal.
@@ -151,9 +146,37 @@ class Combine(Transform):
         
         # emptying the sliced area
         audio.audio[self.channel_slice, sample_slice] = 0 # TODO is this needed?
-        # breakpoint()
+        
         # put inside; recall that new_audio.shift <= 0
         audio.audio[self.channel_slice, start_sample:start_sample+new_audio.length()+new_audio.shift] += new_audio.audio[:,-new_audio.shift:]
+
+
+####### Basic shape stuff ##############
+
+class Shift(Transform):
+    """ shifts the signal forward in time."""
+    # TODO enable backword
+    def __init__(self, duration):
+        self.duration = duration
+    
+    def realise(self, audio):
+        audio.shift += self.num_samples(audio.sample_rate)
+
+class Extend(Transform):
+    """ adds silence after the signal. needed?
+    """
+    def __init__(self, duration):
+        self.duration = duration
+    
+    def realise(self, audio):
+        audio.extend(self.num_samples(audio.sample_rate))
+
+class Reverse(Transform):
+    """
+    reverses the signal
+    """
+    def realise(self, audio):
+        audio.audio[:,:] = audio.audio[:,::-1]
 
 
 ######### Level/ampltidue Stuff ###################
@@ -167,17 +190,27 @@ class Fade(Transform):
     
     def realise(self, audio):
         amp = DB_to_Linear(np.linspace(Fade.min_fade, 0, self.num_samples(audio.sample_rate)))
+        #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
         
-        if not self.is_in:
-            amp[:] = amp[::-1]
+        if self.is_in:
+            audio.audio[:,:len(amp)] *= amp
+        else:
+            audio.audio[:,-len(amp):] *= amp[::-1]
         
         # TODO in case of fade out, if amp is shorter or longer than audio,
         # care must be taken when multiplying!
-        audio *= amp
         # TODO TEST!!!!!!!!!!!!!
         # TODO I still hear a bump when the playback starts
+
+
+class CrossFade(BiTransform):
+    def __init__(self, duration):
+        L = Fade(is_in=False, duration=duration)
+        R = Fade(duration=duration)*Shift(-duration)
+        super().__init__(L, R)
+        # needs a lot of tweaking of fade curves and db vs. linear stuff
 
 
 class Gain(Transform):

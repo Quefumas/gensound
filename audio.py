@@ -80,6 +80,10 @@ class Audio:
     def duration(self):
         return self.length()/self.sample_rate
     
+    @property
+    def shape(self): # TODO consider doing others like this
+        return self.audio.shape
+    
     abs_start = lambda self: self.shift # in samples only
     abs_end = lambda self: self.shift+self.length()
     
@@ -209,6 +213,7 @@ class Audio:
         return self.mix(other)
     
     def __mul__(self, other):
+        print("convolution, should not happen")
         # TODO this should be reexamined and perhaps moved into Convolution or sth
         # also delegate to a non-overloaded function first
         if isinstance(other, np.ndarray):

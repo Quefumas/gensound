@@ -35,6 +35,7 @@ class Curve():
         the implementation here is catch-all, but usually much more efficient
         to override it for specific curves.
         """
+        # TODO itertools.accumulate?
         vals = self.flatten(sample_rate, inclusive=True)
         return np.asarray([sum(vals[0:i+1])*i/((i+1)*sample_rate) for i in range(len(vals))], dtype=np.float64)
     

@@ -11,7 +11,7 @@ import numpy as np
 
 from utils import isnumber, num_samples
 
-from transforms import Transform, TransformChain, Amplitude, Slice, Combine
+from transforms import Transform, TransformChain, Amplitude, Slice, Combine, BiTransform
 from curve import Curve
 from audio import Audio
 from playback import WAV_to_Audio
@@ -92,6 +92,11 @@ class Signal:
         return self*Amplitude(number)
     
     def _apply(self, transform):
+        assert not isinstance(transform, BiTransform), "can't apply BiTransform, use concat."
+        
+        if transform is None:
+            return self
+        
         if not isinstance(transform, Transform):
             return self._amplitude(transform)
         
@@ -104,6 +109,7 @@ class Signal:
         return s
     
     def _concat(self, other):
+        # TODO why is this before mix?
         # TODO consider enabling for negative other,
         # thus shifting a sequence forward(backward? Chinese) in time
         # TODO possibly better way to implement than using Silence
@@ -112,20 +118,33 @@ class Signal:
             
         s = Sequence()
         # use isinstance(self, Sequence) instead? more semantic
+        # TODO write this as overloading of Sequence operators instead?
         if not self.transforms and isinstance(self, Sequence):
             s.sequence += self.sequence
         else:
             s.sequence += [self]
         
+        if isinstance(other, BiTransform): # if concatting BiTransform
+            s.sequence[-1] = s.sequence[-1]._apply(other.L)
+            s.sequence += [other.R]
+            return s
+        
+        if isinstance(s.sequence[-1], Transform): # if coming out of BiTransform
+            t = s.sequence.pop()
+        else:
+            t = None
+        
         if not other.transforms and isinstance(other, Sequence):
+            other.sequence[0] = other.sequence[0]._apply(t)
             s.sequence += other.sequence
         else:
-            s.sequence += [other]
+            s.sequence += [other._apply(t)]
         
         return s
     
     def _mix(self, other):
         # mixing with constant number is interpreted as DC
+        # TODO use @singledispatchmethod for this?
         if isnumber(other):
             other = other*DC(duration=self.duration)
         
@@ -323,23 +342,6 @@ class Sequence(Signal):
         self.sequence = list(sequence)
     
     def generate(self, sample_rate):
-        # TODO before we start generating, this could be the time
-        # to loop over self.sequence, and if there are any Binary transforms
-        # (i.e. CrossFade), we retrieve from it two transform chains
-        # to apply to the signals before and after it
-        # on the one hand, this is a good opportunity since both signals
-        # are present, since if we apply the transforms when appending,
-        # there will be a moment when we have appended the CF but not the 
-        # second signal, leaving us in limbo.
-        # but on the other hand, the mixdown stage is perhaps a strange
-        # time to start appending transforms.
-        # also consider that it may be worthwhile to implement the Transform Chain
-        # class, in which case concating a CF will result in applying transforms
-        # to the existing last signal, and putting in the next slots some transforms
-        # in wait for the next.
-        # but for that it will also be necessary to make sure that 
-        # when the next signal is appended, the existing transforms are applied
-        # to it after all of its preexisting transforms
         audio = Audio(sample_rate)
         
         for signal in self.sequence:

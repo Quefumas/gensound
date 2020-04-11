@@ -9,9 +9,9 @@ timeit(setup="import numpy as np", number=10000, stmt="")
 ================ CORE ======================
 
 large-scale future goals:
-* make available a host of adjustable Filters and EQs
+. make available a host of adjustable Filters and EQs
 * make them parametric as well
-* CF? or negative shift?
+V CF, BiTransforms and negative shift
 * better support for FM synthesis, also other kinds of synthesis
 * simulate guitar amps, distortion and other effects
 * upsample/downsample
@@ -21,6 +21,7 @@ large-scale future goals:
 
 fundamental improvements to do:
 
+* fix fades
 V find syntax for upsampling/slowing down/ etc.
 V find how to put a signal after another signal
 V and to repeat signals
@@ -53,7 +54,7 @@ V supply one example of custom panning scheme
 * Signal as Curve?
 * crossfades
 
-* negative shifts?
+V negative shifts
 
 V user-defined curves
 V user-defined panning schemes [futuristic tho]!!!!
