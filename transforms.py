@@ -138,7 +138,7 @@ class Combine(Transform):
         
         # add channels to container in case of out-of-bounds Container channel subscript
         max_channel = max(0, self.channel_slice.start or 0, (self.channel_slice.stop or 0)-1)
-        if max_channel >= audio.num_channels():
+        if max_channel >= audio.num_channels:
             audio.to_channels(max_channel+1)
         
         # ensure container long enough in case of overflow
@@ -224,8 +224,8 @@ class Gain(Transform):
         # should we make this inherit from amplitude? like Triangle/Sine relation?
         
         # when given a single gain for multiple channels, apply it to all of them
-        if len(self.dBs) == 1 and audio.num_channels() > 1:
-            dBs = self.dBs * audio.num_channels()
+        if len(self.dBs) == 1 and audio.num_channels > 1:
+            dBs = self.dBs * audio.num_channels
         else:
             dBs = self.dBs
         
@@ -254,8 +254,8 @@ class Amplitude(Transform):
         # TODO do multiple channels at the same time?
         
         # when given a single gain for multiple channels, apply it to all of them
-        if len(self.amps) == 1 and audio.num_channels() > 1:
-            amps = self.amps * audio.num_channels()
+        if len(self.amps) == 1 and audio.num_channels > 1:
+            amps = self.amps * audio.num_channels
         else:
             amps = self.amps
             
@@ -389,7 +389,7 @@ class Pan(Transform):
     
     def realise(self, audio):
         # or maybe we can string some monos together and apply same panning for all?
-        assert audio.num_channels() == 1, "panning is from mono to multi"
+        assert audio.num_channels == 1, "panning is from mono to multi"
         
         if isnumber(self.pan):
             dBs = self.scheme(self.pan)

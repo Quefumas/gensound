@@ -66,12 +66,13 @@ class Audio:
     
     # always get the info from self.audio itself;
     # we manipulate it directly all the time
+    @property
     def num_channels(self):
         assert len(self.audio.shape) == 2
         return self.audio.shape[0]
     
     def is_mono(self):
-        return self.num_channels() == 1
+        return self.num_channels == 1
     
     def length(self):
         assert len(self.audio.shape) == 2
@@ -112,15 +113,15 @@ class Audio:
         """
         
         assert isinstance(other, Audio), "Audio.conform can only be used between Audios"
-        assert other.is_mono() or self.is_mono or other.num_channels() == self.num_channels()
+        assert other.is_mono() or self.is_mono or other.num_channels == self.num_channels
         
         # conforming channels
         if other.is_mono():
-            other.from_mono(self.num_channels())
+            other.from_mono(self.num_channels)
             # TODO warning: this affects other.
         
         if self.is_mono():
-            self.from_mono(other.num_channels())
+            self.from_mono(other.num_channels)
         
         # conforming lengths TODO better way?
         start = min(self.abs_start(), other.abs_start())
@@ -177,7 +178,7 @@ class Audio:
     def to_channels(self, num_channels):
         """ ensures there are at least num_channels
         """
-        shape = (num_channels-self.num_channels(), self.length())
+        shape = (num_channels-self.num_channels, self.length())
         self.audio = np.vstack((self.audio, np.zeros(shape, dtype=np.float64)))
     
     ######## binary operations ###########
@@ -286,15 +287,15 @@ class Audio:
         audio = Audio.stretch(audio, self.byte_width)
         audio = Audio.integrate(audio, self.byte_width)
         
-        self.buffer = np.zeros((self.length()*self.num_channels()),
+        self.buffer = np.zeros((self.length()*self.num_channels),
                                 dtype=ints_by_width[self.byte_width-1],
                                 order='C')
         # TODO note that byte_width, buffer etc. are modified by this function
         # for this class it may be fine, because this is where
         # all the processing acctually happens on
         # operation table
-        for i in range(self.num_channels()):
-            self.buffer[i::self.num_channels()] = audio[i]
+        for i in range(self.num_channels):
+            self.buffer[i::self.num_channels] = audio[i]
         return self
 
 

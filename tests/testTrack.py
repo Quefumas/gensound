@@ -14,7 +14,7 @@ from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Mono, ADSR, CrossFade
 from filters import Average_samples, LowPassBasic, Butterworth, IIR_basic, \
                     IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
-from amplifiers import GuitarAmp_Test
+from amplifiers import GuitarAmp_Test, OneImpulseReverb
 from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
 from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 
@@ -169,8 +169,13 @@ def guitar_amp_test():
     s = WAV(gtrcln)*Gain(20)*GuitarAmp_Test(harshness=10,cutoff=4000)
     
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
-    #y = 1/(1+e^(-harshness*x) - 0.5, now with cutoff
     export_test(audio, guitar_amp_test)
+
+def one_impulse_reverb_test():
+    s = WAV(african)[10e3:20e3]*OneImpulseReverb(mix=1.2, num=2000, curve="steep")
+    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
+    # play_Audio(audio)
+    export_test(audio, one_impulse_reverb_test)
 
 def test_something():
     ...
@@ -180,7 +185,7 @@ if __name__ == "__main__":
     #additive_complex_sound_test()
     #IIR_general_test()
     #sweep_test()
-    guitar_amp_test()
+    one_impulse_reverb_test()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
 

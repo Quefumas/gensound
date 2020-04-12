@@ -82,7 +82,7 @@ class LowPassBasic(Transform):
     def realise(self, audio):
         h = self.coefficients(audio.sample_rate)#[::-1] # its symmetric tho
         n = audio.length()
-        parallel = np.zeros((len(h), audio.num_channels(), audio.length()+len(h)-1), dtype=np.float64)
+        parallel = np.zeros((len(h), audio.num_channels, audio.length()+len(h)-1), dtype=np.float64)
         for i in range(len(h)):
             parallel[i,:,i:n+i] = h[i]*audio.audio
             
