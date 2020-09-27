@@ -118,6 +118,12 @@ V some problems when concatting two together
 
 
 
+Implicit durations?
+w[0,4e3:5e3] = Sine(frequency=1e3) # automatically stretches Sine to fill space
+
+
+play/file IO functionality as method under Audio?
+
 =============== Syntactical stuff =============
 
 ====== Negative Shifts and CF ======
@@ -269,6 +275,12 @@ In that case can't use amplitude as float
 preferably have as many of these done by syntax as possible.
 
 =-=== parametrization syntax =====
+
+? can we do piece-wide parametrization? for example make the ADSRs change with
+  time over many notes, by a curve that started well before the signals themselves.
+  the problem is this would require each signal to understand when it starts
+  in absolute time. this should be workable but needs care.
+
 
 things that would be paramterized:
 * Dbs/amplitudes

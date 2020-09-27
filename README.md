@@ -20,17 +20,27 @@ Core features:
 ## What Can It Do?
 
 ## Show Me How It Looks Like
-* Mix a Stereo WAV file to mono:
+* Load a WAV file into a `Signal` object:
 ```python
 from Signal import WAV
 
-wav = WAV(filename) # load stereo WAV file
+wav = WAV(filename)
+```
 
-wav = wav[0] + wav[1] # mixes L and R channels together
+* Generate audio stream from `Signal` object:
+```python
+audio = wav.mixdown(sample_rate=44100, byte_width=2)
+```
 
-audio = s.mixdown(sample_rate=44100, byte_width=2) # convert to byte samples
+* Playback or file export:
+```python
+play_Audio(audio)
+export_WAV("test.wav", audio)
+```
 
-play_Audio(audio) # play (alternatively, export)
+* Mix a Stereo signal to mono:
+```python
+wav = 0.5*wav[0] + 0.5*wav[1] # sums up L and R channels together, halving the amplitudes
 ```
 
 * Reverse L/R channels in stereo WAV file:
@@ -40,14 +50,9 @@ wav[0], wav[1] = wav[1], wav[0]
 
 * Add a 60Hz sine wave to the left channel of a WAV file, 4 seconds after the beginning:
 ```python
-from Signal import Sine, WAV
-
-wav = WAV(filename) # assumes 'filename' is a stereo WAV file
+from Signal import Sine
 
 wav[0,4e3:] += Sine(frequency=60, duration=2e3)*Gain(-9) # mix a sine wav to the L channel, starting at 4000ms
-
-audio = wav.mixdown(sample_rate=44100, byte_width=2)
-play_Audio(audio)
 ```
 
 * Play the R channel of a WAV file in reverse:
@@ -59,20 +64,16 @@ wav[0] *= Reverse()
 
 * Haas effect using slice notation - every second the R channel skips a sample, giving the illusion that the sound is coming from the left
 ```python
-srate = 44100
-wav[0] = wav[0,:srate] | wav[0,srate+1:2*srate] | wav[0,2*srate+1:] # TODO
+wav[0] = wav[0,:1e3] | wav[0,1e3:2e3]*Shift(1) | wav[0,2e3:3e3]*Shift(1) ... # TODO check
 ```
 
 * Imitate electric guitar amplifier and reverb effect:
 ```python
 from transforms import GuitarAmp_Test, OneImpulseReverb
 
-guitar = WAV(guitar_clean)
+guitar = WAV("guitar_clean.wav")
 
 guitar *= Gain(20)*GuitarAmp_Test(harshness=10, cutoff=4000)*OneImpulseReverb(mix=1.2, num=2000, curve="steep")
-
-audio = guitar.mixdown(sample_rate=44100, byte_width=2)
-export_WAV("guitar_distortion.wav", audio)
 ```
 
 ## Setup
@@ -83,17 +84,26 @@ export_WAV("guitar_distortion.wav", audio)
 
 ## Proper Explanations
 
-The library is built on two classes:
-* Signal - this represents a stream of multi-channeled samples, either raw (e.g. loaded from WAV file) or mathematically computable (e.g. a Sawtooth wave)
-* Transforms - this represents a process that can be applied to a Signal (for example, reverb, filtering, gain, reverse, slicing)
+The library is based on two core classes:
+* `Signal` - this represents a stream of multi-channeled samples, either raw (e.g. loaded from WAV file) or mathematically computable (e.g. a Sawtooth wave)
+* `Transforms` - this represents a process that can be applied to a Signal (for example, reverb, filtering, gain, reverse, slicing)
 
 With these two classes we can perform many operations, all of which return a new Signal object:
 * `Signal + Signal`: mix two signals together
 * `Signal | Signal`: concatenate two signals one after the other
 * `Signal**4`: repeat the signal 4 times
 * `Signal*Transform`: apply `Transform` to `Signal`
-* `Signal[0]`: obtain the first channel of Signal
-* `Signal[:,:4e3]`: obtain the first 4 seconds of Signal
+* `Signal[start_channel:end_channel,start_ms:end_ms]`: `Signal` sliced to a certain range of channels and time (in ms). The first slice expects integers; the second expects floats.
+* `Signal[start_channel:end_channel,start_sample:end_sample]`: When the second slice finds integers instead of floats, it is interpreted as a range over samples instead of milliseconds. Note that the duration of this signal changes according to the sample rate.
+* `Signal[start_channel:end_channel]`: when a single slice of ints is given, it is taken to mean the channels.
+* `Signal[start_ms:end_ms]`: if the slice is made up of floats, it is interpreted as timestamps, i.e.: `Signal[:,start_ms:end_ms]`.
+
+The slice notations may also be used for assignments:
+```python
+wav[4e3:4.5e3] = Sine(frequency=1e3, duration=0.5e3) # censor beep on seconds 4-4.5
+wav[0,6e3:] *= Reverb(...) # add effect to L channel starting from second 6
+```
+
 
 
 
