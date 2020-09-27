@@ -13,7 +13,7 @@ Core features:
 * Easy to use (based on NumPy syntax)
 * Offline sound generation
 * Flexible - it does not take much work to implement new audio or signal effects
-* Learner friendly - the inner workings are accessible and easily understood for those of us who are interested in music, sound, and DSP.
+* Educational - the inner workings are accessible and easily understood for those of us who are interested in music, sound, and DSP.
 * Supports parametrization and multiple channels
 * Supports user-defined custom panning schemes to serve any number of channels
 
@@ -85,10 +85,12 @@ guitar *= Gain(20)*GuitarAmp_Test(harshness=10, cutoff=4000)*OneImpulseReverb(mi
 ## Proper Explanations
 
 The library is based on two core classes:
-* `Signal` - this represents a stream of multi-channeled samples, either raw (e.g. loaded from WAV file) or mathematically computable (e.g. a Sawtooth wave)
+* `Signal` - this represents a stream of multi-channeled samples, either raw (e.g. loaded from WAV file) or mathematically computable (e.g. a Sawtooth wave). Behaves very much like a `numpy.ndarray`.
 * `Transforms` - this represents a process that can be applied to a Signal (for example, reverb, filtering, gain, reverse, slicing)
 
-With these two classes we can perform many operations, all of which return a new Signal object:
+Signals are envisioned as mathematical objects, and the library relies greatly on overloading of arithmetic operations on them, in conjunction with Transforms. All of the following expressions return a modified Signal object:
+* `amplitude*Signal`: change Signal's amplitude by a given factor
+* `-Signal`: inverts the signal
 * `Signal + Signal`: mix two signals together
 * `Signal | Signal`: concatenate two signals one after the other
 * `Signal**4`: repeat the signal 4 times
@@ -98,13 +100,21 @@ With these two classes we can perform many operations, all of which return a new
 * `Signal[start_channel:end_channel]`: when a single slice of ints is given, it is taken to mean the channels.
 * `Signal[start_ms:end_ms]`: if the slice is made up of floats, it is interpreted as timestamps, i.e.: `Signal[:,start_ms:end_ms]`.
 
-The slice notations may also be used for assignments:
+> The slice notations may also be used for assignments:
 ```python
 wav[4e3:4.5e3] = Sine(frequency=1e3, duration=0.5e3) # censor beep on seconds 4-4.5
 wav[0,6e3:] *= Reverb(...) # add effect to L channel starting from second 6
 ```
 
+> Note the convention that floats represent time as milliseconds, while integers represent number of samples.
 
+> The overloading of basic arithmetic operators means that we can generate complex signals in a Pythonic way:
+```python
+f = 220 # fundamental frequency
+sawtooth = (2/np.pi)*sum([((-1)**k/k)*Sine(frequency=k*f, duration=10e3) for k in range(1,11)]) # approximates a sawtooth wave by the first 10 harmonics
+```
+
+After creating a complex Signal object, containing various Signals to which various Transforms may be applied, use the `Signal.mixdown()` method to resolve the Signal into a third core type, `Audio`, which holds an actual stream of samples, which can then be output to disk or speakers. Gensound resolves the Signal by recursively resolving each of the Signals contained within, and applying the Transforms to the result sequentially. There is no need to go deeper into `Audio` objects for now; it's only needed when one wishes to add their custom Signals and Transforms.
 
 
 
