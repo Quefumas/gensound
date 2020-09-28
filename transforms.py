@@ -368,6 +368,7 @@ class Pan(Transform):
     panLaw = -6 # -3 seems appropriate for headphones
     
     # TODO faster computations
+    # TODO put the default stereo scheme as well as the pan law as package variables
     pan_shape = lambda x: np.log(x/Pan.width + 0.5)*(-Pan.panLaw / np.log(2)) # +0.1 to prevent log(0)
     LdB = lambda x: Pan.pan_shape(-x)
     RdB = lambda x: Pan.pan_shape(x)
