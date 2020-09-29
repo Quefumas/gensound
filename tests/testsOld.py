@@ -12,16 +12,16 @@ them later as examples.
 
 import numpy as np
 
-from Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
-from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
+from gensound.Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
+from gensound.transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Downsample_rough, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
-from filters import Average_samples
-from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
-from playback import play_Audio, export_test
+from gensound.filters import Average_samples
+from gensound.curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
+from gensound.playback import play_Audio, export_test
 
-from musicTheory import midC
+from gensound.musicTheory import midC
 
 african = "../data/african_sketches_1.wav"
 

@@ -6,9 +6,9 @@ Created on Sun Aug 18 21:01:16 2019
 """
 
 import numpy as np
-from curve import Curve, Line, Logistic, Constant
-from audio import Audio
-from utils import lambda_to_range, DB_to_Linear, \
+from gensound.curve import Curve, Line, Logistic, Constant
+from gensound.audio import Audio
+from gensound.utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
                   num_samples, samples_slice
 

@@ -9,12 +9,12 @@ import copy
 
 import numpy as np
 
-from utils import isnumber, num_samples
+from gensound.utils import isnumber, num_samples
 
-from transforms import Transform, TransformChain, Amplitude, Slice, Combine, BiTransform
-from curve import Curve
-from audio import Audio
-from playback import WAV_to_Audio
+from gensound.transforms import Transform, TransformChain, Amplitude, Slice, Combine, BiTransform
+from gensound.curve import Curve
+from gensound.audio import Audio
+from gensound.playback import WAV_to_Audio
 
 #CHANNEL_NAMES = {"L":0, "R":1}
 
@@ -80,7 +80,7 @@ class Signal:
         return Sequence(*args)
     
     @staticmethod
-    def mix(*args):
+    def mix(args):
         # we really want to use #reduce(, args) instead
         # but the question is what should be the 1st argument?
         return sum(args)
@@ -313,7 +313,7 @@ class Signal:
         # instead of getting into a loop (didn't go deep into that one)
         # 
         raise TypeError("May not iterate over Signal objects, as channel number is unknown prior to mixdown.")
-    
+
 #### other "high-level" signals ##############################3
 
 class Mix(Signal):

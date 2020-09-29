@@ -117,7 +117,8 @@ wav[1] = -wav[0] # now a stereo Signal with R being a phase inverted version of 
 The overloading of basic arithmetic operators means that we can generate complex signals in a Pythonic way:
 ```python
 f = 220 # fundamental frequency
-sawtooth = (2/np.pi)*sum([((-1)**k/k)*Sine(frequency=k*f, duration=10e3) for k in range(1,11)]) # approximates a sawtooth wave by the first 10 harmonics
+sawtooth = (2/np.pi)*sum([((-1)**k/k)*Sine(frequency=k*f, duration=10e3) for k in range(1,11)])
+# approximates a sawtooth wave by the first 10 harmonics
 ```
 
 After creating a complex Signal object, containing various Signals to which various Transforms may be applied, use the `Signal.mixdown()` method to resolve the Signal into a third core type, `Audio`, which holds an actual stream of samples, which can then be output to disk or speakers. Gensound resolves the Signal by recursively resolving each of the Signals contained within, and applying the Transforms to the result sequentially. There is no need to go deeper into `Audio` objects for now; it's only needed when one wishes to add their custom Signals and Transforms.

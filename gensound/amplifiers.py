@@ -6,8 +6,8 @@ Created on Sat Apr 11 13:32:27 2020
 """
 
 import numpy as np
-from transforms import Transform
-from filters import IIR_OnePole_LowPass
+from gensound.transforms import Transform
+from gensound.filters import IIR_OnePole_LowPass
 
 class GuitarAmp_Test(Transform):
     """ Works by applying a sigmoid to the signal, squashing it somewhat

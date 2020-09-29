@@ -30,8 +30,8 @@ def freq_to_pitch(freq):
     named_pitch = ["A","A#","B","C","C#","D","D#","E","F","F#","G","G#"][closest_pitch % 12]
     
     return named_pitch + str(octave) + (" " + ("+" if divergence > 0 else "") + str(int(round(divergence*100))) if round(divergence,2) != 0 else "")
-    
-    
+
+
 
 
 

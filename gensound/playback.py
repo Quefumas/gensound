@@ -19,7 +19,7 @@ import time
 
 import numpy as np
 import simpleaudio as sa
-from audio import Audio
+from gensound.audio import Audio
 
 def export_WAV(filename, audio):
     file = wave.open(filename, "wb")

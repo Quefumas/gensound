@@ -11,7 +11,7 @@ some may be instance functions, some may belong in utils.
 
 import numpy as np
 import copy
-from utils import ints_by_width
+from gensound.utils import ints_by_width
 
 class Audio:
     """Basically a wrapper for a numpy array, representing the signal.
@@ -188,6 +188,7 @@ class Audio:
         
         self.conform(other)
         self.audio[:,other.abs_start()-self.abs_start():other.abs_start()-self.abs_start()+other.length()] += other.audio
+        return self
     
     def concat(self, other):
         assert isinstance(other, Audio)

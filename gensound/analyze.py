@@ -6,9 +6,9 @@ Created on Thu Sep  5 19:04:56 2019
 """
 
 import numpy as np
-from audio import Audio
+from gensound.audio import Audio
 
-from musicTheory import freq_to_pitch
+from gensound.musicTheory import freq_to_pitch
 
 def RMS(audio, start, end):
     return (np.sum(audio.audio[:,start:end]**2) / (audio.num_channels*(end-start)))**0.5

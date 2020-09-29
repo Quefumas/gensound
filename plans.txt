@@ -118,6 +118,8 @@ V some problems when concatting two together
 
 
 
+Add sweepSine signal
+
 Implicit durations?
 w[0,4e3:5e3] = Sine(frequency=1e3) # automatically stretches Sine to fill space
 

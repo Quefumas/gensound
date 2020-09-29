@@ -7,7 +7,7 @@ Created on Tue Mar 10 18:34:24 2020
 
 import numpy as np
 
-from utils import num_samples, isnumber
+from gensound.utils import num_samples, isnumber
 
 # TODO add capabilities to adapt user-defined functions into curves on the fly
 # i.e. x= Curve(lambda k: ...), then passing the lambda into flatten etc.
