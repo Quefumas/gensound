@@ -156,6 +156,7 @@ class Combine(Transform):
 class Shift(Transform):
     """ shifts the signal forward in time."""
     # TODO enable backword
+    # TODO doesn't seem to work when its a forward shift for the first signal in the mix
     def __init__(self, duration):
         self.duration = duration
     

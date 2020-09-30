@@ -10,6 +10,7 @@ import copy
 import numpy as np
 
 from gensound.utils import isnumber, num_samples
+from gensound.musicTheory import read_freq
 
 from gensound.transforms import Transform, TransformChain, Amplitude, Slice, Combine, BiTransform
 from gensound.curve import Curve
@@ -387,7 +388,7 @@ class Sine(Signal): # oscillator? pitch? phaser?
     
     def __init__(self, frequency=220, duration=5e3):
         super().__init__()
-        self.frequency = frequency
+        self.frequency = read_freq(frequency)
         self.duration = duration
         # TODO if frequency is a curve then duration should be derived from it?
         # or ignored?

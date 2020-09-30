@@ -6,6 +6,7 @@ Created on Sat Aug 10 09:24:24 2019
 """
 
 import numpy as np
+from gensound.utils import isnumber
 
 midA = 440
 octave = 2
@@ -31,6 +32,33 @@ def freq_to_pitch(freq):
     
     return named_pitch + str(octave) + (" " + ("+" if divergence > 0 else "") + str(int(round(divergence*100))) if round(divergence,2) != 0 else "")
 
+def str_to_freq(f): # this is a hack, better use regex or something else
+    """ 'C##4+35' middle C## plus 35 cents
+    'A' A4 (octave implied)
+    """
+    cents = 0
+    if "+" in f:
+        cents = int(f.split("+")[-1])
+        f = f.split("+")[0]
+    elif "-" in f:
+        cents = - int(f.split("-")[-1])
+        f = f.split("-")[0]
+    
+    semi = {"C":0, "D":2, "E":4, "F":5, "G":7, "A":9, "B":11}[f[0]]
+    f = f[1:]
+    
+    while(len(f) > 0 and f[0] in ("#", "b")):
+        semi += 1 if f[0] == "#" else -1
+        f = f[1:]
+    
+    if len(f) > 0:
+        semi += 12*(int(f)-4) # octave
+    
+    return midC(semi+cents/100)
+        
+
+# TODO make this accessible and modifiable by user
+read_freq = lambda f: (f if isnumber(f) else str_to_freq(f))
 
 
 

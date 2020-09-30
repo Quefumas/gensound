@@ -126,6 +126,16 @@ w[0,4e3:5e3] = Sine(frequency=1e3) # automatically stretches Sine to fill space
 
 play/file IO functionality as method under Audio?
 
+when accepting frequency argument, allow strings of form "C4", mainly for ease
+also maybe "C" defaults to "C4", and "C4+23" lets you play with cents
+perhaps even let the user define package-wide custom interpretations for frequencies
+so they can decide how to input them themselves, or decide on intonation etc.
+
+Make Fade() be interpreted as in/out by the direction from which it is applied?!??!!
+on the one hand this is intuitive and useful.
+on the other hand this breaks commutativity property
+and thus contaminates a kind of purity in the existing syntax
+
 =============== Syntactical stuff =============
 
 ====== Negative Shifts and CF ======
