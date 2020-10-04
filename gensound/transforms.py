@@ -105,7 +105,7 @@ class Slice(Transform):
         self.time_slice = time_slice
     
     def realise(self, audio):
-        if audio.is_mono() and self.channel_slice.start == 0 and self.channel_slice.stop > 0:
+        if audio.is_mono and self.channel_slice.start == 0 and self.channel_slice.stop > 0:
             audio.from_mono(self.channel_slice.stop)
         audio.audio = audio.audio[self.channel_slice,
                                   samples_slice(self.time_slice, audio.sample_rate)]
@@ -142,20 +142,20 @@ class Combine(Transform):
             audio.to_channels(max_channel+1)
         
         # ensure container long enough in case of overflow
-        audio.to_length(start_sample + new_audio.length())
+        audio.to_length(start_sample + new_audio.length)
         
         # emptying the sliced area
         audio.audio[self.channel_slice, sample_slice] = 0 # TODO is this needed?
         
         # put inside; recall that new_audio.shift <= 0
-        audio.audio[self.channel_slice, start_sample:start_sample+new_audio.length()+new_audio.shift] += new_audio.audio[:,-new_audio.shift:]
+        audio.audio[self.channel_slice, start_sample:start_sample+new_audio.length+new_audio.shift] += new_audio.audio[:,-new_audio.shift:]
 
 
 ####### Basic shape stuff ##############
 
 class Shift(Transform):
     """ shifts the signal forward in time."""
-    # TODO enable backword
+    # TODO enable backward
     # TODO doesn't seem to work when its a forward shift for the first signal in the mix
     def __init__(self, duration):
         self.duration = duration
@@ -295,7 +295,7 @@ class AmpFreq(Transform):
         assert isinstance(audio, Audio) # TODO remove this after debug hopefully
         
         sin = np.sin(self.phase + self.frequency * \
-                     np.linspace(0, audio.duration(), audio.length(), False) * 2 * np.pi)
+                     np.linspace(0, audio.duration(), audio.length, False) * 2 * np.pi)
         audio *= (sin * self.size + (1-self.size))
         # remember [:] is necessary to retain changes
         

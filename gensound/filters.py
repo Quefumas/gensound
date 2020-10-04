@@ -81,8 +81,8 @@ class LowPassBasic(Transform):
     
     def realise(self, audio):
         h = self.coefficients(audio.sample_rate)#[::-1] # its symmetric tho
-        n = audio.length()
-        parallel = np.zeros((len(h), audio.num_channels, audio.length()+len(h)-1), dtype=np.float64)
+        n = audio.length
+        parallel = np.zeros((len(h), audio.num_channels, audio.length+len(h)-1), dtype=np.float64)
         for i in range(len(h)):
             parallel[i,:,i:n+i] = h[i]*audio.audio
             
@@ -111,7 +111,7 @@ class IIR_basic(Transform):
     def realise(self, audio):
         last = np.zeros_like(audio.audio[:,0])
         
-        for i in range(audio.length()):
+        for i in range(audio.length):
             audio.audio[:,i] = 0.7*last + 0.3*audio.audio[:,i]
             last = audio.audio[:,i]
 
@@ -155,7 +155,7 @@ class IIR_OnePole(Transform):
         i = 1
         audio.audio[:,0] = audio.audio[:,0]*self.a0
         
-        while i < audio.length():
+        while i < audio.length:
             audio.audio[:,i] = audio.audio[:,i]*self.a0 + audio.audio[:,i-1]*self.b1
             i += 1
 
@@ -180,7 +180,7 @@ class IIR_OnePole_LowPass(Transform):
         
         i = 1
         
-        while i < audio.length():
+        while i < audio.length:
             audio.audio[:,i] = audio.audio[:,i]*a0 + audio.audio[:,i-1]*b1
             i += 1
 
@@ -206,7 +206,7 @@ class IIR_OnePole_HighPass(Transform):
         
         i = 1
         
-        while i < audio.length():
+        while i < audio.length:
             audio.audio[:,i] = audio.audio[:,i]*a0 + audio.audio[:,i-1]*b1
             i += 1
 

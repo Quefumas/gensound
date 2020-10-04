@@ -25,6 +25,8 @@ class Audio:
     def __init__(self, sample_rate):
         self.shift = 0
         self.sample_rate = sample_rate
+        # TODO get rid of sample_rate argument and have optional audio argument
+        # that can be np.ndarray or other array or something
         self.audio = np.zeros((1, 0), dtype=np.float64)
     
     def ensure_2d(self):
@@ -71,22 +73,26 @@ class Audio:
         assert len(self.audio.shape) == 2
         return self.audio.shape[0]
     
+    @property
     def is_mono(self):
         return self.num_channels == 1
     
+    @property
     def length(self):
         assert len(self.audio.shape) == 2
         return self.audio.shape[1]
     
     def duration(self):
-        return self.length()/self.sample_rate
+        # TODO this appears to be the only method the uses self.sample_rate
+        # consider having it as an argument instead of instance variable
+        return self.length/self.sample_rate
     
     @property
     def shape(self): # TODO consider doing others like this
         return self.audio.shape
     
     abs_start = lambda self: self.shift # in samples only
-    abs_end = lambda self: self.shift+self.length()
+    abs_end = lambda self: self.shift+self.length
     
     ######### Unary manipulations #########
     
@@ -113,14 +119,14 @@ class Audio:
         """
         
         assert isinstance(other, Audio), "Audio.conform can only be used between Audios"
-        assert other.is_mono() or self.is_mono or other.num_channels == self.num_channels
+        assert other.is_mono or self.is_mono or other.num_channels == self.num_channels
         
         # conforming channels
-        if other.is_mono():
+        if other.is_mono:
             other.from_mono(self.num_channels)
             # TODO warning: this affects other.
         
-        if self.is_mono():
+        if self.is_mono:
             self.from_mono(other.num_channels)
         
         # conforming lengths TODO better way?
@@ -137,10 +143,10 @@ class Audio:
         """ Ensures self.length is at least length, padding with zeros if needed.
         """
         # TODO this and extend, do we need both?
-        if self.length() >= length:
+        if self.length >= length:
             return
         
-        self.extend(length - self.length())
+        self.extend(length - self.length)
     
     def extend(self, how_much):
         """ extends all available channels with zeros """
@@ -167,18 +173,18 @@ class Audio:
     def from_mono(self, num_channels):
         """ duplicates a mono channel into various channels.
         does not scale! """
-        assert self.is_mono(), "Can't call Audio.from_mono() for non-mono Audio."
+        assert self.is_mono, "Can't call Audio.from_mono() for non-mono Audio."
         if num_channels == 1:
             return
         self.audio = self.audio.copy() # TODO is this wasteful?
-        self.audio.resize((num_channels, self.length()), refcheck=False)
+        self.audio.resize((num_channels, self.length), refcheck=False)
         self.audio[:,:] = self.audio[0,:]
         assert self.ensure_2d()
     
     def to_channels(self, num_channels):
         """ ensures there are at least num_channels
         """
-        shape = (num_channels-self.num_channels, self.length())
+        shape = (num_channels-self.num_channels, self.length)
         self.audio = np.vstack((self.audio, np.zeros(shape, dtype=np.float64)))
     
     ######## binary operations ###########
@@ -187,13 +193,13 @@ class Audio:
         assert isinstance(other, Audio)
         
         self.conform(other)
-        self.audio[:,other.abs_start()-self.abs_start():other.abs_start()-self.abs_start()+other.length()] += other.audio
+        self.audio[:,other.abs_start()-self.abs_start():other.abs_start()-self.abs_start()+other.length] += other.audio
         return self
     
     def concat(self, other):
         assert isinstance(other, Audio)
         
-        other.shift += self.length()
+        other.shift += self.length
         self.mix(other)
     
     
@@ -220,8 +226,8 @@ class Audio:
         # also delegate to a non-overloaded function first
         if isinstance(other, np.ndarray):
             assert len(other.shape) == 1, "can multiply Audio by np.ndarray only for one-dimensional arrays"
-            if other.shape[0] > self.length():
-                other = other[0:self.length()]
+            if other.shape[0] > self.length:
+                other = other[0:self.length]
             self.audio[:,0:other.shape[0]] *= other
             return
             
@@ -229,7 +235,7 @@ class Audio:
         # for multiplying by a float, we multiply the signal instead
         # TODO also does not support with Audios with differing params
         self.conform(other)
-        self.audio[:,other.abs_start()-self.abs_start():other.abs_start()-self.abs_start()+other.length()] *= other[:,:]
+        self.audio[:,other.abs_start()-self.abs_start():other.abs_start()-self.abs_start()+other.length] *= other[:,:]
         return self
     
     
@@ -288,7 +294,7 @@ class Audio:
         audio = Audio.stretch(audio, self.byte_width)
         audio = Audio.integrate(audio, self.byte_width)
         
-        self.buffer = np.zeros((self.length()*self.num_channels),
+        self.buffer = np.zeros((self.length*self.num_channels),
                                 dtype=ints_by_width[self.byte_width-1],
                                 order='C')
         # TODO note that byte_width, buffer etc. are modified by this function

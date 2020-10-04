@@ -58,6 +58,8 @@ class Signal:
         as given, unless they exceed 1 in which case we shrink everything proportionally.
         """
         audio = self.realise(sample_rate)
+        audio.push_forward(audio.shift) # TODO what if shift is negative? bug or feature?
+        # in case the top-level signal has non-zero shift
         return audio.mixdown(byte_width, max_amplitude)
     
     #####################

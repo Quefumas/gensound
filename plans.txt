@@ -126,15 +126,29 @@ w[0,4e3:5e3] = Sine(frequency=1e3) # automatically stretches Sine to fill space
 
 play/file IO functionality as method under Audio?
 
-when accepting frequency argument, allow strings of form "C4", mainly for ease
+V when accepting frequency argument, allow strings of form "C4", mainly for ease
 also maybe "C" defaults to "C4", and "C4+23" lets you play with cents
-perhaps even let the user define package-wide custom interpretations for frequencies
+- perhaps even let the user define package-wide custom interpretations for frequencies
 so they can decide how to input them themselves, or decide on intonation etc.
+- perhaps make it comma-separable "C,E,G" jointly creates several Signals and then mixes them togetherr
 
 Make Fade() be interpreted as in/out by the direction from which it is applied?!??!!
 on the one hand this is intuitive and useful.
 on the other hand this breaks commutativity property
 and thus contaminates a kind of purity in the existing syntax
+though come to thing of it, multiplication never was commutative in the first place
+
+? how to implement "specialized" Transforms/Signals, e.g. we have a general-purpose FIR
+  where the user specifies the weights, and we wish to create a LowPass filter that
+  receives a cut-off frequency and computes the arguments to the FIR.
+  one way is to do:
+  def LowPass(cutoff): # masquerading as class (PEP 8: "Names that are visible to the user as public parts of the API should follow conventions that reflect usage rather than implementation.")
+      return FIR(...)
+
+  another way: <--- this should be it probably
+  class LowPass(FIR):
+      def __init__(self, cutoff):
+          super().__init__(compute weights...)
 
 =============== Syntactical stuff =============
 

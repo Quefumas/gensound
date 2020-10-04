@@ -26,7 +26,7 @@ def export_WAV(filename, audio):
     file.setnchannels(audio.num_channels)
     file.setsampwidth(audio.byte_width)
     file.setframerate(audio.sample_rate)
-    file.setnframes(audio.length())
+    file.setnframes(audio.length)
     
     file.writeframes(audio.buffer)
 
