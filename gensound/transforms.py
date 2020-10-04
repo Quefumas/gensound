@@ -8,9 +8,14 @@ Created on Sun Aug 18 21:01:16 2019
 import numpy as np
 from gensound.curve import Curve, Line, Logistic, Constant
 from gensound.audio import Audio
+from gensound.signals import WAV
 from gensound.utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
                   num_samples, samples_slice
+
+__all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "CrossFade",
+           "Gain", "AmpFreq", "Limiter", "Mono", "Pan", "Repan", "Downsample",
+           "Convolution", "ADSR"]
 
 class Transform:
     """ represents post-processing on some given signal.
@@ -357,6 +362,7 @@ class Mono(Transform):
     """
     def realise(self, audio):
         audio.audio = np.sum(audio.audio, axis=0, keepdims=True)
+        # TODO should we normalize the sum?
 
 class Pan(Transform):
     """ applies arbitrary function to amplitudes of all channels
@@ -366,7 +372,7 @@ class Pan(Transform):
     # i.e. np.log((x+hardR)/width) below
     
     # you can set Pan.panLaw once and for all; anytime before mixdown() js good
-    panLaw = -6 # -3 seems appropriate for headphones
+    panLaw = -3 # -3 seems appropriate for headphones
     
     # TODO faster computations
     # TODO put the default stereo scheme as well as the pan law as package variables
@@ -427,7 +433,7 @@ class Repan(Transform):
 
 ####### FILTERS #########
 
-class Downsample_rough(Transform):
+class Downsample(Transform):
     """ skips samples. can hear the effects of aliasing.
     suppose factor is 3, then this copies all 3k-th samples into
     the 3k+1-th, 3k+2-th places.
@@ -453,7 +459,7 @@ class Downsample_rough(Transform):
 
 
 ###### EXPERIMENTS ######
-
+'''
 class Convolution(Transform):
     """ is this the right name?
     squaring the signal, or multiplying by its own reverse
@@ -473,6 +479,35 @@ class Convolution(Transform):
             audio.audio[:,:] *= (self.add*np.sign(other) + other)
         else:
             audio.audio[:,:] *= (self.add + other)
+'''
+
+class Convolution(Transform):
+    def __init__(self, response):
+        assert isinstance(response, (Audio, np.ndarray, str)) # Audio, direct buffer, or filename
+        if isinstance(response, np.ndarray):
+            self.response = response # TODO cache this using hash
+        elif isinstance(response, Audio):
+            self.response = response.audio
+        else:
+            self.response = WAV(response).audio.audio # load file directly to Audio
+        # TODO only accepts mono response
+        
+        if len(self.response.shape) == 1: # ensure dimensionality. TODO too similar to Audio.ensure_2d!
+            self.response.resize((1, self.response.shape[0]))
+    
+    def realise(self, audio):
+        assert self.response.shape[0] in (audio.audio.shape[0], 1)
+        # self.response should be either mono or have the same number of channels as audio
+        
+        from scipy.signal import convolve, oaconvolve
+        
+        # TODO mode="same" possibly should be "full"
+        if self.response.shape[0] == 1: # apply same mono reverb to all channels
+            for i in range(audio.num_channels):
+                audio.audio[i,:] = convolve(audio.audio[i,:], self.response[0,:], mode="same")
+        else:
+            audio.audio[:,:] = convolve(audio.audio[:,:], self.response[:,:], mode="same")
+
 
 class ADSR(Transform):
     """ applied ADSR envelope to signal

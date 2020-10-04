@@ -12,9 +12,9 @@ them later as examples.
 
 import numpy as np
 
-from gensound.Signal import Signal, Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
+from gensound.Signal import Signal, Sine, Square, Triangle, Sawtooth, WhiteNoise, WAV, Step
 from gensound.transforms import Fade, AmpFreq, Shift, Pan, Extend, \
-                       Downsample_rough, Amplitude, \
+                       Downsample, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
 from gensound.filters import Average_samples
@@ -70,7 +70,7 @@ def WAV_test(filename=""):
     wav *= AmpFreq(frequency=0.06, size=0.3)
     wav *= Fade(is_in=True, duration=10)
     
-    wav += 0.03*GreyNoise(duration=20*1000)*AmpFreq(frequency=0.03, size=0.2)
+    wav += 0.03*WhiteNoise(duration=20*1000)*AmpFreq(frequency=0.03, size=0.2)
     wav += (0.06*0.7)*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3*1000)[0:2]
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
@@ -111,7 +111,7 @@ def step_test():
 
 def downsample_test(filename):
     wav = WAV(filename)
-    wav *= Downsample_rough(factor=5, phase=0)
+    wav *= Downsample(factor=5, phase=0)
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     
     play_Audio(audio, is_wait=True)
@@ -136,7 +136,7 @@ def dummy_reverb_test():
     #wav += WAV(african)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*Average_samples(1,1,1,1,1,1,1,1,1)
     
     wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*Average_samples(2*x+1) for x in range(5)])
-    wav += 0.6*WAV(african)*Downsample_rough(factor=5)*Average_samples(5)
+    wav += 0.6*WAV(african)*Downsample(factor=5)*Average_samples(5)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
@@ -145,14 +145,14 @@ def dummy_reverb_test():
 def repan_reverb_test():
     # TODO these aren't relevant for new pan
     wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*Average_samples(2*x+1)*Pan(*(1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
-    wav += 0.6*WAV(african)*Pan(0,None)*Downsample_rough(factor=5)*Average_samples(5)
+    wav += 0.6*WAV(african)*Pan(0,None)*Downsample(factor=5)*Average_samples(5)
     wav += 0.6*WAV(african)*Pan(None,1)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
 
 def reverse_test():
-    wav = WAV(african)*Reverse()*Downsample_rough(factor=5)*Average_samples(5)
+    wav = WAV(african)*Reverse()*Downsample(factor=5)*Average_samples(5)
     wav += WAV(african)*Shift(duration=150)*Average_samples(1,1,1,1,1,1,1,1,1)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.09)
@@ -322,7 +322,7 @@ def slice_set_test():
     s = WAV(african)
     # careful with 5e3, creates float slices
     
-    #s[5e3:18e3] = s[5e3:18e3]*Repan() + s[5e3:18e3]*Downsample_rough(5)*Gain(-3)
+    #s[5e3:18e3] = s[5e3:18e3]*Repan() + s[5e3:18e3]*Downsample(5)*Gain(-3)
     #s[5e3:18e3] *= Repan(1,0)
     s[5e3:18e3] = s[5e3:18e3]*Repan(1 ,None) + s[5e3:18e3]*Repan(None, 0)
     # TODO found a bug here? does it really keep both copies of the slice separate?
@@ -366,7 +366,7 @@ def messy_random_concat_test():
     s = L*Repan(0, None) + R*Repan(None, 1)
     
     t = sum([(1-8/10)*s*Shift(duration=100*x)*Average_samples(weights=2*x+1) for x in range(5)])
-    t += 0.6*s*Downsample_rough(factor=5)*Average_samples(weights=5)
+    t += 0.6*s*Downsample(factor=5)*Average_samples(weights=5)
     
     audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
@@ -409,7 +409,7 @@ def channel_slice_test():
     # t = s[1,1e3:7e3]
     # t = s[1e3:7e3]
     
-    #s[1] = 0.132*GreyNoise(duration=10e3)#*Gain(-20)
+    #s[1] = 0.132*WhiteNoise(duration=10e3)#*Gain(-20)
     
     #s[0,3e3:7e3] = s[1,2e3:6e3]
     #s[0,1e3:6e3] += 0.13*Sine(frequency=midC(8))
@@ -435,7 +435,7 @@ def test_gain_dB():
     play_Audio(audio)
 
 def test_filter_noise():
-    g = GreyNoise()
+    g = WhiteNoise()
     g *= Average_samples(0.04, 0.12, 0.2, 0.12, 0.04)
     #g *= Average_samples(5)
     audio = g.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)

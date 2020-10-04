@@ -127,7 +127,7 @@ After creating a complex Signal object, containing various Signals to which vari
 Meet the most useful signals:
 * `Sine`, `Triangle`, `Sawtooth`, `Square`: all have the same arguments `Sine(frequency, duration)`
 * `Step(duration)`: a step function with width `duration`
-* `GreyNoise(duration)`
+* `WhiteNoise(duration)`
 * `WAV(filename)`: at the moment this is the only format which is supported
 
 There are other kinds of Signals which are used internally by the library to represent Signals made up of mixes or concatenations of other Signals, but these are completely transparent in casual usage.

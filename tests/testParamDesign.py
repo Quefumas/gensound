@@ -9,7 +9,7 @@ import numpy as np
 
 from musicTheory import midC
 from Signal import Sine, Triangle
-from transforms import Average_samples, Downsample_rough
+from transforms import Average_samples, Downsample
 from curve import CompoundCurve, Curve, Constant, Line, Logistic, SineCurve
 from playback import play_WAV, play_Audio, export_test
 
@@ -50,7 +50,7 @@ def test_glis():
     c4 = Constant(midC(14), 6e3) | Line(midC(14), midC(10), 5e3) | Constant(midC(10), 2e3)
     
     c5 = SineCurve(frequency=10, depth=0.1, baseline=330, duration=5e3)
-    s = Triangle(frequency=c5, duration=12e3) * Downsample_rough(factor=10) * Average_samples(7)
+    s = Triangle(frequency=c5, duration=12e3) * Downsample(factor=10) * Average_samples(7)
     
     audio = s.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)

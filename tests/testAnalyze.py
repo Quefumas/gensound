@@ -9,7 +9,7 @@ import numpy as np
 
 from analyze import RMS, DFT, freq_report, iDFT, DFT2, iDFT2
 from audio import Audio
-from Signal import Sine, Square, Triangle, Sawtooth, GreyNoise, WAV, Step
+from Signal import Sine, Square, Triangle, Sawtooth, WhiteNoise, WAV, Step
 from transforms import Fade, AmpFreq, Shift, Pan
 from playback import WAV_to_Audio, play_Audio, export_WAV
 

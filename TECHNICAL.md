@@ -36,7 +36,7 @@ and upon `Mix.generate()`, calls `generate` for each of these, and returns the s
 for each of the arguments, concatenating them in order.
 Finally, The apply operation is performed simply
 by appending the transform to the `Signal.transforms` list.
-> The above 2 classes may be renamed to `_Mix`,`_Sequence`
+> Should they be renamed to `_Mix`,`_Sequence`?
 
 For transforms there is a similar class, `TransformChain`,
 which allows us to save a product of transforms, which will be later applied to a signal.
@@ -104,6 +104,9 @@ and is then fed into `Combine`.
 * When a long signal is placed into a short slice, it can spill into the rest of the audio.
 This is the desired behaviour.
 Preventing it is easy: just slice the inserted audio to be as long as the slice.
+* The static `Signal.__subscripts` deals with the channel/time slices,
+which includes converting float time slices to samples and deciding between channel/time
+when only one slice is given.
 
 > Could it be that using invisible Signals such as Mix and Sequence can accomplish
 > the same but in a cleaner way?
@@ -140,7 +143,7 @@ Information like byte width does not belong here; that is chosen when outputting
 
 * BiTransform
 
-## Curves and Parametrization
+## Curves and Parametrization, Custom Panning Schemes
 
 
 

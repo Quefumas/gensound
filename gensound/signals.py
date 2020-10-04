@@ -19,6 +19,10 @@ from gensound.playback import WAV_to_Audio
 
 #CHANNEL_NAMES = {"L":0, "R":1}
 
+
+__all__ = ["Signal", "Silence", "Step", "WhiteNoise", "Sine", "Triangle",
+           "Square", "Sawtooth", "Raw", "WAV"]
+
 class Signal:
     def __init__(self):
         self.transforms = []
@@ -373,13 +377,19 @@ class Step(Signal): # Impulse? DC?
 
 DC = Step
 
-class GreyNoise(Signal):
+## TODO step with frequency
+
+class WhiteNoise(Signal):
     def __init__(self, duration=5e3):
+        # TODO add seed argument?
         super().__init__()
         self.duration = duration
     
     def generate(self, sample_rate):
+        # TODO this may have non-zero DC!
         return 2*np.random.rand(self.num_samples(sample_rate)) - 1
+
+# TODO add grey, pink noise.
 
 
 #### single-pitched signals
@@ -438,6 +448,7 @@ class Raw(Signal):
     since this eventually goes to audio.from_Array, in which np.copy is called,
     this SHOULD not cause problems when using the same shell for different copies
     of the same original signal.
+    also what happens if self.audio already has a sample rate, and the two don't agree?
     """
 
 
