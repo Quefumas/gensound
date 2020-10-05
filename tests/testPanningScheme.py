@@ -9,7 +9,7 @@ import numpy as np
 
 from Signal import Signal, Sine, Square, Triangle, WAV
 from transforms import Fade, Shift, Pan, Extend, Repan, Gain
-from filters import Average_samples, LowPassBasic, Butterworth
+from filters import LowPassBasic, Butterworth
 from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
 from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 

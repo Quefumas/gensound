@@ -424,6 +424,7 @@ class Square(Sine):
 class Sawtooth(Sine):
     wave = lambda phase: (phase % (2*np.pi))/np.pi-1
 
+# TODO sweepsine
 
 ### raw audio signals
 

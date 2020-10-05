@@ -16,41 +16,64 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
 # TODO top-class FIR/IIR/Filter?
 # that could include a useful function for debugging that generates the impulse response
 
-class Average_samples(Transform):
-    """ averages each sample with its neighbors, possible to specify weights as well.
-    effectively functions as a low pass filter, without the aliasing effects
-    of downsample rough.
+
+######## FIRs
+
+class FIR(Transform):
+    """ Implements a general-purpose FIR. Subclasses of this can deal solely with
+    computing the desired coefficients by overriding FIR.coefficients,
+    leaving the actual application to FIR.realise.
+    The implementation here may change in the future, and is not guaranteed to be optimal.
+    Possibly several alternative implementations will be included, for learning,
+    testing and reference purposes. If more competitive implementation is required,
+    it is easy enough to extend.
     """
+    def __init__(self, *coefficients): # can override this if coefficients are independent of sample rate
+        total = sum(coefficients)
+        self.h = [c/total for c in coefficients]
+        
+    def coefficients(self, sample_rate): # override here if sample rate is needed
+        # and just ignore the arguments for init
+        return self.h
     
-    def __init__(self, *weights):
+    def _parallel_copies(self, audio):
+        """ Makes |h| copies of audio, shifting each by the proper amount
+        and multiplying by the appropriate coefficient, then summing.
         """
-        weights is int -> average #weights neighboring samples
-        weights is tuple -> average len(weights) neighboring samples,
-                            according to specified weights. will be normalized to 1.
-        TODO: on the edges this causes a small fade in fade out of length len(weights).
-        not necessarily a bug though.
-        """
-        if len(weights) == 1:
-            weights = tuple(1 for w in range(weights[0]))
+        h = self.coefficients(audio.sample_rate)
+        n = audio.length
+        parallel = np.zeros((len(h), audio.num_channels, n+len(h)-1), dtype=np.float64)
         
-        total = sum(weights)
-        weights = [w/total for w in weights]
-        self.weights = weights
+        for i in range(len(h)):
+            parallel[i,:,i:n+i] = h[i]*audio.audio
+            
+        audio.audio[:,:] = np.sum(parallel, axis=0)[:,:n] # TODO trims the end, how to handle this
     
-    def realise(self, audio):
-        res = np.zeros((audio.audio.shape[0], audio.audio.shape[1] + len(self.weights) - 1), dtype=np.float64)
+    def _standing_sum(self, audio):
+        """ Sums scaled copies of audio into a single ndarray.
+        """
+        h = self.coefficients(audio.sample_rate)
+        new_audio = np.zeros_like((audio.num_channels, audio.length+len(h)-1))
+        # could technically skip this first step
         
-        for i, weight in enumerate(self.weights):
-            res[:,i:audio.audio.shape[1]+i] += weight*audio.audio
+        for i in range(len(h)):
+            new_audio[:,i:audio.length+i] += h[i]*audio.audio
         
-        pos = int(np.floor((len(self.weights) - 1)/2))
-        # the index from which to start reading the averaged signal
-        # (as it is longer due to time delays)
-        
-        audio.audio[:,:] = res[:, pos:pos+audio.audio.shape[1]]
+        audio.audio[:,:] = new_audio[:,:audio.length] # trims the tail
+    
+    def realise(self, audio): # override if you have a particular implementation in mind
+        self._parallel_copies(audio)
+    
+    # TODO maybe add class method to facilitate diagnosis of FIR, frequency/phase responses etc.
 
+class MovingAverage(FIR):
+    """ Averager Low Pass FIR, oblivious to sample rate.
+    """
+    def __init__(self, width):
+        self.h = [1/width]*width
+    
 
-class LowPassBasic(Transform):
+class LowPassBasic(Transform): # TODO I hear a band pass, and a lousy one too
     def __init__(self, cutoff, width):
         self.cutoff = cutoff
         self.width = width # number of samples in FIR
@@ -89,7 +112,7 @@ class LowPassBasic(Transform):
         audio.audio[:,:] = np.sum(parallel, axis=0)[:,:n]
 
 
-class Butterworth(Transform):
+class Butterworth(Transform): # LowPass FIR
     def __init__(self, cutoff):
         self.cutoff = cutoff
     
@@ -102,7 +125,7 @@ class Butterworth(Transform):
         audio.audio[:,:] = filtfilt(b, a, audio.audio)
 
 
-############
+############ IIRs
 
 class IIR_basic(Transform):
     def __init__(self):
@@ -166,7 +189,8 @@ class IIR_OnePole_LowPass(Transform):
     For low pass, with Fc being cutoff/sample_rate,
     use b1 = e^{-2 pi Fc}
     and a0 = 1-b1
-
+    
+    6dB/octave
     """
     def __init__(self, cutoff):
         self.cutoff = cutoff
@@ -186,6 +210,8 @@ class IIR_OnePole_LowPass(Transform):
 
 
 class IIR_OnePole_HighPass(Transform):
+    # TODO has no effect at all, also on sweep sine.
+    # apparently a one-pole has not much use as a high-pass
     """ Designed after Nigel Redmond
     https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
     

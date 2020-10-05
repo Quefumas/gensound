@@ -64,12 +64,20 @@ Convolves the audio with the host signal, for example for convolutional reverb.
 
 * `ADSR(attack, decay, sustain, release, hold=0)`: applies ADSR envelope.
 
+* `filters.FIR(*coefficients)`: applies a Finite Impulse Response filter with the given coefficients.
+This is mostly for experimentation and as a superclass for more useful filters,
+that compute coefficients given the cutoff frequency and sample rate.
 
+* `filters.MovingAverage(width)`: a private case of FIR, having `width` equal coefficients.
+Functions as a low pass filter, but the actual cutoff frequency depends on
+the sample rate as well as the width.
+
+* `filters.Butterworth(cutoff)`: a low pass filter.
 
 > TODO should we include Repan, Mono, Amplitude, Reverse at all?
-> How to name AmpFreq, Average_samples
+> How to name AmpFreq
 
-> TODO add guitar amp, one impule reverb, average_samples, ampfreq, FIR, IIR, LPF, HPF for now
+> TODO add guitar amp, one impule reverb, ampfreq, IIR, LPF, HPF for now
 
 
 

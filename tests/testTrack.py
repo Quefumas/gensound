@@ -12,7 +12,7 @@ from transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Downsample, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR, CrossFade
-from filters import Average_samples, LowPassBasic, Butterworth, IIR_basic, \
+from filters import MovingAverage, LowPassBasic, Butterworth, IIR_basic, \
                     IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
 from amplifiers import GuitarAmp_Test, OneImpulseReverb
 from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
@@ -135,7 +135,7 @@ def sweep_test():
 
 def test_transform_chain():
     s = WAV(african)[10e3:20e3]
-    t = Average_samples(5) * Fade(duration=0.5e3)
+    t = MovingAverage(5) * Fade(duration=0.5e3)
     t *= Gain(Line(0,-10,3e3) | Line(-10, 0, 5e3))
     s *= t
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)

@@ -123,27 +123,8 @@ sawtooth = (2/np.pi)*sum([((-1)**k/k)*Sine(frequency=k*f, duration=10e3) for k i
 
 After creating a complex Signal object, containing various Signals to which various Transforms may be applied, use the `Signal.mixdown()` method to resolve the Signal into a third core type, `Audio`, which holds an actual stream of samples, which can then be output to disk or speakers. Gensound resolves the Signal by recursively resolving each of the Signals contained within, and applying the Transforms to the result sequentially. There is no need to go deeper into `Audio` objects for now; it's only needed when one wishes to add their custom Signals and Transforms.
 
-## Useful Signals
-Meet the most useful signals:
-* `Sine`, `Triangle`, `Sawtooth`, `Square`: all have the same arguments `Sine(frequency, duration)`
-* `Step(duration)`: a step function with width `duration`
-* `WhiteNoise(duration)`
-* `WAV(filename)`: at the moment this is the only format which is supported
-
-There are other kinds of Signals which are used internally by the library to represent Signals made up of mixes or concatenations of other Signals, but these are completely transparent in casual usage.
-
-## Useful Transforms
-All Transforms are applied to a Signal by right-multiplication: `Signal*Transform`, except for `Amplitude`, which allows left-multiplication using a special syntax shown below.
-* `Amplitude(amount)`: multiplies the amplitude of Signal by a numerical factor. It has an alias with a special syntax as well: `amount*Signal`, allowing for left-multiplication without invoking the Transform itself, since it is so useful and intuitive.
-* `Gain(dB)`: boosts or attenuates the level of the Signal according to dB (0dB - no change in volume).
-* `Reverse()`: reverses the Signal from end to beginning.
-* `Shift(time)`: shifts the signal's starting point by the given milliseconds (float) or samples (int), with respect to its expected starting point. This may be thought of as concatenating silence to the start of the Signal. However, it accepts negative arguments as well!
-* `Fade(is_in, duration)`: to be used for fade-in/out of the Signal
-* `AmpFreq`
-* `Pan`
-* `ADSR`
-* `Average_samples` TODO rename to `FIR`? make this an alias of FIR?
-
+## Common Signals & Transforms
+See the [Reference](REFERENCE.md) for a list of useful signals and transforms.
 
 ## Extreme Examples
 

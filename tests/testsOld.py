@@ -17,7 +17,7 @@ from gensound.transforms import Fade, AmpFreq, Shift, Pan, Extend, \
                        Downsample, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
-from gensound.filters import Average_samples
+from gensound.filters import MovingAverage, FIR
 from gensound.curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
 from gensound.playback import play_Audio, export_test
 
@@ -119,12 +119,12 @@ def downsample_test(filename):
 
 def averagesample_test(filename):
     wav = WAV(filename)
-    #wav *= Average_samples(5,4,3,2,1,2,3,4,5)
-    wav *= Average_samples(1,1,1,1,1,1,1,1,1)
-    #wav *= Average_samples(25,16,9,4,1,4,9,16,25)
-    #wav *= Average_samples(1,0,0,0,0,0,0,0,1)
-    #wav *= Average_samples(1,-1,1,-1,1,-1,1,-1,1)
-    #wav *= Average_samples(-1,-1,-1,-1,10,-1,-1,-1,-1) # high pass!
+    #wav *= FIR(5,4,3,2,1,2,3,4,5)
+    wav *= FIR(1,1,1,1,1,1,1,1,1)
+    #wav *= FIR(25,16,9,4,1,4,9,16,25)
+    #wav *= FIR(1,0,0,0,0,0,0,0,1)
+    #wav *= FIR(1,-1,1,-1,1,-1,1,-1,1)
+    #wav *= FIR(-1,-1,-1,-1,10,-1,-1,-1,-1) # high pass!
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     
     play_Audio(audio, is_wait=True)
@@ -133,10 +133,10 @@ def dummy_reverb_test():
     #amp = lambda x: 
     #wav = WAV(african) + WAV(african)*Amplitude(amp)*Shift(duration=500)
     #wav = WAV(african)*AmpFreq(frequency=0.12, size=0.25)
-    #wav += WAV(african)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*Average_samples(1,1,1,1,1,1,1,1,1)
+    #wav += WAV(african)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*FIR(1,1,1,1,1,1,1,1,1)
     
-    wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*Average_samples(2*x+1) for x in range(5)])
-    wav += 0.6*WAV(african)*Downsample(factor=5)*Average_samples(5)
+    wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*MovingAverage(2*x+1) for x in range(5)])
+    wav += 0.6*WAV(african)*Downsample(factor=5)*MovingAverage(5)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
@@ -144,16 +144,16 @@ def dummy_reverb_test():
 
 def repan_reverb_test():
     # TODO these aren't relevant for new pan
-    wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*Average_samples(2*x+1)*Pan(*(1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
-    wav += 0.6*WAV(african)*Pan(0,None)*Downsample(factor=5)*Average_samples(5)
+    wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*MovingAverage(2*x+1)*Pan(*(1,0.3)[::(1 if x%2==0 else -1)]) for x in range(5)])
+    wav += 0.6*WAV(african)*Pan(0,None)*Downsample(factor=5)*MovingAverage(5)
     wav += 0.6*WAV(african)*Pan(None,1)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
     play_Audio(audio, is_wait=True)
 
 def reverse_test():
-    wav = WAV(african)*Reverse()*Downsample(factor=5)*Average_samples(5)
-    wav += WAV(african)*Shift(duration=150)*Average_samples(1,1,1,1,1,1,1,1,1)
+    wav = WAV(african)*Reverse()*Downsample(factor=5)*MovingAverage(5)
+    wav += WAV(african)*Shift(duration=150)*FIR(1,1,1,1,1,1,1,1,1)
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.09)
     play_Audio(audio, is_wait=True)
@@ -161,7 +161,7 @@ def reverse_test():
 
 
 def t1():
-    t = Triangle(frequency=midC(-1.5), duration=5000)*Average_samples(21)*AmpFreq(frequency=0.8, size=0.3)
+    t = Triangle(frequency=midC(-1.5), duration=5000)*MovingAverage(21)*AmpFreq(frequency=0.8, size=0.3)
     
     env = lambda n: (n/1000) if n < 1000 else (0.5+np.sin(2*np.pi*2*n/1000)/2)
     env = lambda n: (0.5+np.sin(2*np.pi*2*n)/2)
@@ -234,7 +234,7 @@ def nonmatching_samplings():
     play_Audio(audio, is_wait=True)
 
 def convolution_test():
-    signal = WAV(african)*Convolution(forward=False, add=0.3, is_both_ways=False)*Average_samples(11)
+    signal = WAV(african)*Convolution(forward=False, add=0.3, is_both_ways=False)*MovingAverage(11)
     signal -= 0.1*WAV(african)
     audio = signal.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio, is_wait=True)
@@ -273,7 +273,7 @@ def after_test_3():
     s += 0.8*Signal.concat(*[Sine(midC(p), b2) for p in p2])**6*Shift(000)
     s += 0.3*Signal.concat(*[Sine(midC(p), b3) for p in p3])**6
     s += 2*Signal.concat(*[Sine(midC(p), b4) for p in p4])**5
-    s *= Average_samples(11)
+    s *= MovingAverage(11)
     
     print(s)
     audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
@@ -307,7 +307,7 @@ def db_fade_test():
     
     
 def slice_test():
-    hihat = WAV(african)[:1061]*Average_samples(5)
+    hihat = WAV(african)[:1061]*MovingAverage(5)
     hihat **= 30
     
     part = WAV(african)[5*1061:5*1061+3*1061]
@@ -365,8 +365,8 @@ def messy_random_concat_test():
     
     s = L*Repan(0, None) + R*Repan(None, 1)
     
-    t = sum([(1-8/10)*s*Shift(duration=100*x)*Average_samples(weights=2*x+1) for x in range(5)])
-    t += 0.6*s*Downsample(factor=5)*Average_samples(weights=5)
+    t = sum([(1-8/10)*s*Shift(duration=100*x)*MovingAverage(width=2*x+1) for x in range(5)])
+    t += 0.6*s*Downsample(factor=5)*MovingAverage(width=5)
     
     audio = t.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
@@ -436,8 +436,8 @@ def test_gain_dB():
 
 def test_filter_noise():
     g = WhiteNoise()
-    g *= Average_samples(0.04, 0.12, 0.2, 0.12, 0.04)
-    #g *= Average_samples(5)
+    g *= FIR(0.04, 0.12, 0.2, 0.12, 0.04)
+    #g *= MovingAverage(5)
     audio = g.mixdown(sample_rate=11025, byte_width=2, max_amplitude=0.2)
     play_Audio(audio)
 
@@ -509,7 +509,7 @@ def test_ADSR():
     melody[1] = Signal.concat(*[ Square(frequency=midC(notes[(i+2)%(len(notes))]), duration=0.5e3)*
                              ADSR(attack=0.03e3, decay=0.1e3, sustain=0.8, release=0.02e3, hold=0)
                             for i in range(len(notes))])
-    melody *= Average_samples(5)
+    melody *= MovingAverage(5)
     audio = melody.mixdown(sample_rate=24000, byte_width=2, max_amplitude=0.2)
     #play_Audio(audio)
     export_test(audio, test_ADSR)

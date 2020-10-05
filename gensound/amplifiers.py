@@ -55,24 +55,12 @@ class GuitarAmp_Test(Transform):
 
 
 
-class OneImpulseReverb(Transform):
-    def __init__(self, mix=0.5, num=1000, curve="linear"):
-        self.mix = mix
-        self.num = num
-        self.curve = curve
-    
-    def realise(self, audio):
-        from scipy.signal import convolve
-        
-        # these are sensitive to sample rate!
-        if self.curve == "linear":
-            impulse = np.linspace(self.mix, 0, num=self.num)
-        elif self.curve == "steep":
-            impulse = 1/np.linspace(1, self.num, num=self.num)
-        
-        for i in range(audio.num_channels):
-            audio.audio[i,:] = convolve(audio.audio[i,:], impulse, mode="same")
-        
+
+
+
+
+
+ 
 
 
 

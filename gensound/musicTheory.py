@@ -58,7 +58,7 @@ def str_to_freq(f): # this is a hack, better use regex or something else
         
 
 # TODO make this accessible and modifiable by user
-read_freq = lambda f: (f if isnumber(f) else str_to_freq(f))
+read_freq = lambda f: (f if isnumber(f) else (str_to_freq(f) if isinstance(f, str) else f))
 
 
 

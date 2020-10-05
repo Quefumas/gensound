@@ -8,7 +8,6 @@ Created on Sun Aug 18 21:01:16 2019
 import numpy as np
 from gensound.curve import Curve, Line, Logistic, Constant
 from gensound.audio import Audio
-from gensound.signals import WAV
 from gensound.utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
                   num_samples, samples_slice
@@ -489,6 +488,7 @@ class Convolution(Transform):
         elif isinstance(response, Audio):
             self.response = response.audio
         else:
+            from gensound.signals import WAV
             self.response = WAV(response).audio.audio # load file directly to Audio
         # TODO only accepts mono response
         
