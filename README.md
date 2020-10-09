@@ -1,21 +1,24 @@
 # Gensound
-Audio processing and generation framework
+The Python way to Audio processing & synthesis.
+* Intuitive
+* Flexible
+* Lightweight
 
+Do you enjoy experimenting with audio?
+Learning about signal processing?
+Creating and manipulating sounds?
 
-This is a lightweight library designed for:
-* audio manipulation
-* audio synthesis
-* musical experiments
-* electronic composition
+Gensound is a lightweight library designed for:
+* Offline Audio Manipulation & Synthesis
+* Musical Experiments
+* Electronic Composition
 
 Core features:
-* Light-weight
-* Easy to use (based on NumPy syntax)
-* Offline sound generation
-* Flexible - it does not take much work to implement new audio or signal effects
-* Educational - the inner workings are accessible and easily understood for those of us who are interested in music, sound, and DSP.
-* Supports parametrization and multiple channels
-* Supports user-defined custom panning schemes to serve any number of channels
+* Familiar NumPy syntax is easy to learn and yields clarity, flexibility and conciseness
+* Easily extensible - combine new functionalities and effects with zero headache
+* Educational - perfect for learning about audio and signals
+* Customized panning schemes to enable complex placements of variable number of sound sources
+* Parametrization
 
 ## What Can It Do?
 
@@ -50,26 +53,27 @@ wav[0], wav[1] = wav[1], wav[0]
 
 * Add a 60Hz sine wave to the left channel of a WAV file, 4 seconds after the beginning:
 ```python
-from Signal import Sine
+from gensound import Sine
 
 wav[0,4e3:] += Sine(frequency=60, duration=2e3)*Gain(-9) # mix a sine wav to the L channel, starting at 4000ms
 ```
 
 * Play the R channel of a WAV file in reverse:
 ```python
-from transforms import Reverse
+from gensound import Reverse
 
 wav[0] *= Reverse()
 ```
 
-* Haas effect using slice notation - every second the R channel skips a sample, giving the illusion that the sound is coming from the left
+* Haas effect - delaying the L channel by several samples makes the sound appear to be coming from the right
 ```python
-wav[0] = wav[0,:1e3] | wav[0,1e3:2e3]*Shift(1) | wav[0,2e3:3e3]*Shift(1) ... # TODO check
+wav[0] *= Shift(80) # lisen with headphones! try changing the number of samples
 ```
 
 * Imitate electric guitar amplifier and reverb effect:
 ```python
-from transforms import GuitarAmp_Test, OneImpulseReverb
+from gensound.amplifiers import GuitarAmp_Test
+from gensound.effects import OneImpulseReverb
 
 guitar = WAV("guitar_clean.wav")
 
@@ -77,10 +81,10 @@ guitar *= Gain(20)*GuitarAmp_Test(harshness=10, cutoff=4000)*OneImpulseReverb(mi
 ```
 
 ## Setup
-* At the moment there is no automatic installation, simply download the files in the root directory (the child directories are not used). This will definitely change in the future.
-* Currently uses the cross-platform, low-dependency [SimpleAudio](https://github.com/hamiltron/py-simple-audio) for audio and WAV file I/O. This may change in the future as well.
-* Requires NumPy for a lot of arithmetic. Probably any non-ancient version will do. This will never change.
-* A few small features require SciPy as well. I aspire to make SciPy at least optional.
+* Install NumPy (any non-ancient version)
+* Install the cross-platform, low-dependency [SimpleAudio](https://github.com/hamiltron/py-simple-audio) for audio and WAV file I/O (this may change one day)
+* Download `gensound` directory
+* To test, download and run `testPackage.py` and enjoy some microtonal harmonies
 
 ## Proper Explanations
 
