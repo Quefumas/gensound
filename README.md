@@ -20,9 +20,7 @@ Core features:
 * Customized panning schemes to enable complex placements of variable number of sound sources
 * Parametrization
 
-## What Can It Do?
-
-## One-liners
+## Code Examples
 * Load a WAV file into a `Signal` object:
 ```python
 from Signal import WAV
@@ -46,16 +44,16 @@ export_WAV("test.wav", audio)
 wav = 0.5*wav[0] + 0.5*wav[1] # sums up L and R channels together, halving the amplitudes
 ```
 
-* Reverse L/R channels in stereo WAV file:
+* Switch L/R channels in stereo WAV file:
 ```python
 wav[0], wav[1] = wav[1], wav[0]
 ```
 
-* Add a 60Hz sine wave to the left channel of a WAV file, 4 seconds after the beginning:
+* Add a 440Hz sine wave to the left channel of a WAV file, 4 seconds after the beginning:
 ```python
 from gensound import Sine
 
-wav[0,4e3:] += Sine(frequency=60, duration=2e3)*Gain(-9) # mix a sine wav to the L channel, starting at 4000ms
+wav[0,4e3:] += Sine(frequency=440, duration=2e3)*Gain(-9) # mix a sine wav to the L channel, starting at 4000ms
 ```
 
 * Play the R channel of a WAV file in reverse:
@@ -78,6 +76,21 @@ from gensound.effects import OneImpulseReverb
 guitar = WAV("guitar_clean.wav")
 
 guitar *= Gain(20)*GuitarAmp_Test(harshness=10, cutoff=4000)*OneImpulseReverb(mix=1.2, num=2000, curve="steep")
+```
+
+* AutoPan both L/R channels with different frequency and depth
+```python
+from gensound.curve import SineCurve
+
+s = WAV(filename)[10e3:30e3] # pick 20 seconds of audio
+
+CurveL = SineCurve(frequency=0.2, depth=50, baseline=-50, duration=20e3)
+# L channel will move in a Sine pattern between -100 (Hard L) and 0 (C)
+
+CurveR = SineCurve(frequency=0.12, depth=100, baseline=0, duration=20e3)
+# R channel will move in a Sine pattern (different frequency) between -100 and 100
+    
+t = s[0]*Pan(CurveL) + s[1]*Pan(CurveR)
 ```
 
 ## Setup
@@ -104,13 +117,13 @@ Signals are envisioned as mathematical objects, and the library relies greatly o
 * `Signal[start_channel:end_channel]`: when a single slice of ints is given, it is taken to mean the channels.
 * `Signal[start_ms:end_ms]`: if the slice is made up of floats, it is interpreted as timestamps, i.e.: `Signal[:,start_ms:end_ms]`.
 
-> The slice notations may also be used for assignments:
+The slice notations may also be used for assignments:
 ```python
 wav[4e3:4.5e3] = Sine(frequency=1e3, duration=0.5e3) # censor beep on seconds 4-4.5
 wav[0,6e3:] *= Reverb(...) # add effect to L channel starting from second 6
 ```
 
-> Slice notation may also be used to increase the number of channels implicitly:
+Slice notation may also be used to increase the number of channels implicitly:
 ```python
 wav = WAV("mono_audio.wav") # mono Signal object
 wav[1] = -wav[0] # now a stereo Signal with R being a phase inverted version of L
@@ -127,16 +140,16 @@ sawtooth = (2/np.pi)*sum([((-1)**k/k)*Sine(frequency=k*f, duration=10e3) for k i
 
 After creating a complex Signal object, containing various Signals to which various Transforms may be applied, use the `Signal.mixdown()` method to resolve the Signal into a third core type, `Audio`, which holds an actual stream of samples, which can then be output to disk or speakers. Gensound resolves the Signal by recursively resolving each of the Signals contained within, and applying the Transforms to the result sequentially. There is no need to go deeper into `Audio` objects for now; it's only needed when one wishes to add their custom Signals and Transforms.
 
-## Common Signals & Transforms
-See the [Reference](REFERENCE.md) for a list of useful signals and transforms.
+## More
+See the [Reference](REFERENCE.md) for a growing list of useful signals and transforms.
+We also plan to upload more example code.
+To get a better understanding of the underlying code, the reader is invited to the [Technical Guide](TECHNICAL.md).
+If you are interested in contributing, check out [Contribution](CONTRIBUTING.md).
 
-## Extreme Examples
 
-
-## Advanced Topics
-Will cover:
+## Topics not yet covered
 * How to extend Signal and Transform to implement new effects
-* CrossFades and BiTransforms
+* Crossfades and BiTransforms
 * Curves
 * Custom Panning Schemes
 

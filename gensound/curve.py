@@ -204,7 +204,8 @@ class SineCurve(Curve):
         return self.depth*np.sin(2*np.pi*self.frequency*self.sample_times(sample_rate, inclusive=True) - np.pi/2) + self.depth + self.baseline*self.sample_times(sample_rate,inclusive=True)
     
     def endpoint(self):
-        raise NotImplementedError
+        return 0 # TODO may be troublesome since sample rate is needed
+        #raise NotImplementedError
     
 class Log(Curve):
     def __init__(self, max, duration, midpoint=-3):
