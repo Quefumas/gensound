@@ -13,7 +13,7 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
                   num_samples, samples_slice
 
 __all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "CrossFade",
-           "Gain", "AmpFreq", "Limiter", "Mono", "Pan", "Repan", "Downsample",
+           "Gain", "SineAM", "Limiter", "Mono", "Pan", "Repan", "Downsample",
            "Convolution", "ADSR"]
 
 class Transform:
@@ -283,7 +283,7 @@ class Amplitude(Transform):
             else:
                 raise TypeError("Unsupported amplitude type")
 
-class AmpFreq(Transform):
+class SineAM(Transform):
     """
     have the amplitude change according to a sine function over time continuously,
     with given width (size) and frequency

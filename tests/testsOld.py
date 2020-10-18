@@ -12,8 +12,8 @@ them later as examples.
 
 import numpy as np
 
-from gensound.Signal import Signal, Sine, Square, Triangle, Sawtooth, WhiteNoise, WAV, Step
-from gensound.transforms import Fade, AmpFreq, Shift, Pan, Extend, \
+from gensound.signals import Signal, Sine, Square, Triangle, Sawtooth, WhiteNoise, WAV, Step
+from gensound.transforms import Fade, SineAM, Shift, Pan, Extend, \
                        Downsample, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR
@@ -50,16 +50,16 @@ def only_signal_harmonics(f=220, seconds=10):
               ]
     
     t = sum([p[0]*Triangle(frequency=f*p[1], duration=seconds*1000)*\
-             AmpFreq(frequency=p[2], size=p[3])*\
+             SineAM(frequency=p[2], size=p[3])*\
              Fade(is_in=True, duration=3)*\
              Shift(duration=1*1000) for p in params])
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio)
 
 def simple_test(f=220, seconds=5):
-    t = 0.7*Sine(frequency=230, duration=seconds*1000)*AmpFreq(frequency=1, size=0.2)[0:2]
-    t[1] += Triangle(frequency=380, duration=seconds*1000)*AmpFreq(frequency=0.4, size=0.3)
-    t[0] += Square(frequency=300, duration=seconds*1000)*AmpFreq(frequency=0.7, size=0.2)
+    t = 0.7*Sine(frequency=230, duration=seconds*1000)*SineAM(frequency=1, size=0.2)[0:2]
+    t[1] += Triangle(frequency=380, duration=seconds*1000)*SineAM(frequency=0.4, size=0.3)
+    t[0] += Square(frequency=300, duration=seconds*1000)*SineAM(frequency=0.7, size=0.2)
     t *= Fade(is_in=True, duration=3*1000)
     #t *= Fade(is_in=False, duration=20)
     t *= Shift(duration=1*1000)
@@ -67,10 +67,10 @@ def simple_test(f=220, seconds=5):
 
 def WAV_test(filename=""):
     wav = WAV(filename)
-    wav *= AmpFreq(frequency=0.06, size=0.3)
+    wav *= SineAM(frequency=0.06, size=0.3)
     wav *= Fade(is_in=True, duration=10)
     
-    wav += 0.03*WhiteNoise(duration=20*1000)*AmpFreq(frequency=0.03, size=0.2)
+    wav += 0.03*WhiteNoise(duration=20*1000)*SineAM(frequency=0.03, size=0.2)
     wav += (0.06*0.7)*Triangle(frequency=230, duration=30)*Fade(is_in=True, duration=3*1000)[0:2]
     
     audio = wav.mixdown(sample_rate=44100, byte_width=2)
@@ -79,7 +79,7 @@ def WAV_test(filename=""):
     
     
 def timing_test():
-    t = 0.7*Sine(frequency=230, duration=3*1000)*AmpFreq(frequency=1, size=0.2)[0:2]
+    t = 0.7*Sine(frequency=230, duration=3*1000)*SineAM(frequency=1, size=0.2)[0:2]
     t += Square(frequency=250, duration=3*1000)*Shift(duration=3*1000)
     audio = t.mixdown(sample_rate=11025, byte_width=2)
     play_Audio(audio, is_wait=True)
@@ -87,7 +87,7 @@ def timing_test():
 
 def pan_test():
     seconds = 10
-    t = Sine(frequency=230, duration=seconds*1000)[0:2]#*AmpFreq(frequency=1, size=0.2)
+    t = Sine(frequency=230, duration=seconds*1000)[0:2]#*SineAM(frequency=1, size=0.2)
     
     top = seconds*11025
     
@@ -132,8 +132,8 @@ def averagesample_test(filename):
 def dummy_reverb_test():
     #amp = lambda x: 
     #wav = WAV(african) + WAV(african)*Amplitude(amp)*Shift(duration=500)
-    #wav = WAV(african)*AmpFreq(frequency=0.12, size=0.25)
-    #wav += WAV(african)*AmpFreq(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*FIR(1,1,1,1,1,1,1,1,1)
+    #wav = WAV(african)*SineAM(frequency=0.12, size=0.25)
+    #wav += WAV(african)*SineAM(frequency=0.12, size=0.25, phase=np.pi)*Shift(duration=500)*FIR(1,1,1,1,1,1,1,1,1)
     
     wav = sum([(1-8/10)*WAV(african)*Shift(duration=100*x)*MovingAverage(2*x+1) for x in range(5)])
     wav += 0.6*WAV(african)*Downsample(factor=5)*MovingAverage(5)
@@ -161,7 +161,7 @@ def reverse_test():
 
 
 def t1():
-    t = Triangle(frequency=midC(-1.5), duration=5000)*MovingAverage(21)*AmpFreq(frequency=0.8, size=0.3)
+    t = Triangle(frequency=midC(-1.5), duration=5000)*MovingAverage(21)*SineAM(frequency=0.8, size=0.3)
     
     env = lambda n: (n/1000) if n < 1000 else (0.5+np.sin(2*np.pi*2*n/1000)/2)
     env = lambda n: (0.5+np.sin(2*np.pi*2*n)/2)

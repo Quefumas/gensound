@@ -10,7 +10,7 @@ The core of the library can be summed up in the functionality of the following 3
 `Signal` and `Transform` are basically shells that implement these operations,
 and they are extended by the classes that will actually generate and process the audio.
 
-* `Audio` is basically a wrapper for an `numpy.ndarray` instance (instance variable `audio`),
+* `Audio` is more or less a wrapper for an `numpy.ndarray` instance (`Audio.audio`),
 and should be relatively invisible to common users.
 * `Signal` generates an `Audio` instance using the overridable `Signal.generate()`.
   There are 3 main operations involving `Signal` instances:
@@ -141,11 +141,21 @@ Information like byte width does not belong here; that is chosen when outputting
 > What happens/should happen when we try to concatenate into a part of a signal?
 
 
-* BiTransform
+In order to implement Crossfades, we use `BiTransform`, a special subclass of Transform,
+which may affect two signals concatenated together
+(as opposed to `Transform`, which may be applied to a single Signal).
+BiTransform holds two TransformChain instances, for the preceding and following signals.
+Upon Concatenation, i.e. `signal1 | CrossFade(duration=0.5e3) | signal2`,
+it applies one Fade to the left-concatenated signal, and another to the right.
+
+IIRC, this is possible event when omitting the second signal,
+i.e. the expression `signal1 | CrossFade(duration=0.5e3)` is valid,
+and will behave correctly even when concatenating the second signal later in the code.
+
 
 ## Curves and Parametrization, Custom Panning Schemes
 
-
+TODO
 
 
 

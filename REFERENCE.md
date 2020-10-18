@@ -75,9 +75,8 @@ the sample rate as well as the width.
 * `filters.Butterworth(cutoff)`: a low pass filter.
 
 > TODO should we include Repan, Mono, Amplitude, Reverse at all?
-> How to name AmpFreq
 
-> TODO add guitar amp, one impule reverb, ampfreq, IIR, LPF, HPF for now
+> TODO add guitar amp, one impule reverb, sine AM, IIR, LPF, HPF for now
 
 
 

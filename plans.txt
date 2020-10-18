@@ -150,6 +150,19 @@ though come to thing of it, multiplication never was commutative in the first pl
       def __init__(self, cutoff):
           super().__init__(compute weights...)
 
+? addition of FIRs/IIRs? so several may be computed at one go. if that really works that way
+
+
+* duration inferation between slice and signal?
+  i.e. wav[0, 4e3:5e3] = Sine("A4") # infers duration = 1e3
+  should probably be done when used above, not at mix time
+
+
+* add chord/sequence features to easy frequency notation (e.b. "Ab,C,Eb" or "Ab C Eb")
+
+* infer end phases between concatenated pitched signals (would that be a feature or a bug?)
+
+
 =============== Syntactical stuff =============
 
 ====== Negative Shifts and CF ======
