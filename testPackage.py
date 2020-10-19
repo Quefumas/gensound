@@ -6,7 +6,6 @@ Created on Tue Sep 29 20:11:46 2020
 """
 
 from gensound import Sine, Step, Extend, Shift, mix, midC, play_Audio, export_WAV
-#from gensound.filters import IIR_OnePole
 
 def chords():
     s = Sine(frequency=midC(-3), duration=5e3)

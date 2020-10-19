@@ -21,11 +21,11 @@ Core features:
 * Parametrization
 
 ## Code Examples
-* Load a WAV file into a `Signal` object:
+* Load a WAV into a `Signal` object from filename:
 ```python
-from Signal import WAV
+from gensound import WAV, kushaura
 
-wav = WAV(filename)
+wav = WAV(kushaura) # load sample WAV
 ```
 
 * Generate audio stream from `Signal` object:
@@ -82,7 +82,7 @@ guitar *= Gain(20)*GuitarAmp_Test(harshness=10, cutoff=4000)*OneImpulseReverb(mi
 ```python
 from gensound.curve import SineCurve
 
-s = WAV(filename)[10e3:30e3] # pick 20 seconds of audio
+s = WAV(kushaura)[10e3:30e3] # pick 20 seconds of audio
 
 CurveL = SineCurve(frequency=0.2, depth=50, baseline=-50, duration=20e3)
 # L channel will move in a Sine pattern between -100 (Hard L) and 0 (C)
