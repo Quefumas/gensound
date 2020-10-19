@@ -11,5 +11,13 @@ mix = Signal.mix
 concat = Signal.concat
 
 
+
+import os
+
+kushaura = os.path.join(os.path.dirname(__file__), "data/Kushaura_sketch.wav")
+
+
+
+
 # TODO perhaps expose everything inside signals.py and transforms.py,
 # leaving amplifiers/filters/effects to be dragged out of their individual files

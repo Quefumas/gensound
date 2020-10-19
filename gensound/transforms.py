@@ -6,6 +6,7 @@ Created on Sun Aug 18 21:01:16 2019
 """
 
 import numpy as np
+from gensound.settings import _supported
 from gensound.curve import Curve, Line, Logistic, Constant
 from gensound.audio import Audio
 from gensound.utils import lambda_to_range, DB_to_Linear, \
@@ -483,6 +484,8 @@ class Convolution(Transform):
 class Convolution(Transform):
     def __init__(self, response):
         assert isinstance(response, (Audio, np.ndarray, str)) # Audio, direct buffer, or filename
+        assert "scipy" in _supported, "Convolution: SciPy not supported"
+        
         if isinstance(response, np.ndarray):
             self.response = response # TODO cache this using hash
         elif isinstance(response, Audio):
@@ -502,6 +505,7 @@ class Convolution(Transform):
         from scipy.signal import convolve, oaconvolve
         
         # TODO mode="same" possibly should be "full"
+        # TODO How does/should this behave when convolving stereo with stereo?
         if self.response.shape[0] == 1: # apply same mono reverb to all channels
             for i in range(audio.num_channels):
                 audio.audio[i,:] = convolve(audio.audio[i,:], self.response[0,:], mode="same")

@@ -6,6 +6,7 @@ Created on Wed Mar 25 15:42:08 2020
 """
 
 import numpy as np
+from gensound.settings import _supported
 from gensound.curve import Curve, Line, Logistic, Constant
 from gensound.audio import Audio
 from gensound.transforms import Transform
@@ -112,17 +113,6 @@ class LowPassBasic(Transform): # TODO I hear a band pass, and a lousy one too
         audio.audio[:,:] = np.sum(parallel, axis=0)[:,:n]
 
 
-class Butterworth(Transform): # LowPass FIR
-    def __init__(self, cutoff):
-        self.cutoff = cutoff
-    
-    def realise(self, audio):
-        from scipy.signal import butter,filtfilt
-        order = 2
-        
-        normal_cutoff = self.cutoff*2 / audio.sample_rate
-        b, a = butter(order, normal_cutoff, btype='low', analog=False)
-        audio.audio[:,:] = filtfilt(b, a, audio.audio)
 
 
 ############ IIRs
@@ -198,6 +188,18 @@ class OnePoleHPF(IIR):
 
 
 
+class Butterworth(Transform): # LowPass
+    def __init__(self, cutoff):
+        assert "scipy" in _supported, "SciPy required for Butterworth"
+        self.cutoff = cutoff
+    
+    def realise(self, audio):
+        from scipy.signal import butter,filtfilt
+        order = 2
+        
+        normal_cutoff = self.cutoff*2 / audio.sample_rate
+        b, a = butter(order, normal_cutoff, btype='low', analog=False)
+        audio.audio[:,:] = filtfilt(b, a, audio.audio)
 
 
 

@@ -1,4 +1,5 @@
 .spyproject/
 __pycache__/
-data/
+/data/
 output/
+debug/
