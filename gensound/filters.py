@@ -127,63 +127,36 @@ class Butterworth(Transform): # LowPass FIR
 
 ############ IIRs
 
-class IIR_basic(Transform):
-    def __init__(self):
-        pass
+class IIR(Transform):
+    """ General-purpose IIR implementation. Subclasses can deal solely with coefficient selection,
+    without worrying about the implementation. Override __init__ or coefficients,
+    depending on whether or not the sample rate is relevant (typically is).
+    """
+    def __init__(self, feedforward, feedback): # override this if coefficients are independent of sample rate
+        """ Expects two iterables. Feedback[0] is typically 1."""
+        self.b = [c/feedback[0] for c in feedforward]
+        self.a = [c/feedback[0] for c in feedback]
     
-    def realise(self, audio):
-        last = np.zeros_like(audio.audio[:,0])
-        
-        for i in range(audio.length):
-            audio.audio[:,i] = 0.7*last + 0.3*audio.audio[:,i]
-            last = audio.audio[:,i]
-
-class IIR_general(Transform):
-    def __init__(self, a, b):
-        assert len(a) == len(b)
-        self.a = a
-        self.b = b
+    def coefficients(self, sample_rate): # override this if sample rate is needed
+        return (self.b, self.a)
     
-    def realise(self, audio):
-        x = np.pad(audio.audio, ((0,0),(len(self.a)-1,0)))
+    def realise(self, audio): # naive implementation
+        # TODO at least the feed-forward coefficients can be computed en masse
+        b, a = self.coefficients(audio.sample_rate)
+        x = np.pad(audio.audio, ((0,0),(len(a)-1,0))) # max(len(a),len(b))-1
         y = np.zeros_like(x)
         
-        for i in range(len(self.a), x.shape[1]):
-            for m in range(len(self.a)):
-                y[:,i] += -self.a[m]*y[:,i-m] + self.b[m]*x[:,i-m]
+        for i in range(len(a), x.shape[1]):
+            for n in range(len(b)):
+                y[:,i] += b[n]*x[:,i-n]
+                
+            for m in range(1, len(a)):
+                y[:,i] -= a[m]*y[:,i-m]
         
-        audio.audio[:,:] = y[:,len(self.a)-1:]
+        audio.audio[:,:] = y[:,:audio.length]
 
-
-class IIR_OnePole(Transform):
-    """ Designed after Nigel Redmond
-    https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
-    
-    For low pass, with Fc being cutoff/sample_rate,
-    use b1 = e^{-2 pi Fc}
-    and a0 = 1-b1
-    
-    For highpass,
-    use b1 = -e^{-2 pi (0.5 - Fc)}
-    and a0 = 1+b1
-    
-    this version is to get your hands dirty; use the following classes for actual
-    convenient usage.
-    """
-    def __init__(self, a0, b1):
-        self.a0 = a0
-        self.b1 = b1
-    
-    def realise(self, audio):
-        i = 1
-        audio.audio[:,0] = audio.audio[:,0]*self.a0
-        
-        while i < audio.length:
-            audio.audio[:,i] = audio.audio[:,i]*self.a0 + audio.audio[:,i-1]*self.b1
-            i += 1
-
-class IIR_OnePole_LowPass(Transform):
-    """ Designed after Nigel Redmond
+class OnePoleLPF(IIR):
+    """ Designed after Nigel Redmond.
     https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
     
     For low pass, with Fc being cutoff/sample_rate,
@@ -195,46 +168,32 @@ class IIR_OnePole_LowPass(Transform):
     def __init__(self, cutoff):
         self.cutoff = cutoff
     
-    def realise(self, audio):
-        Fc = self.cutoff / audio.sample_rate
-        b1 = np.e**(-2*np.pi*Fc)
-        a0 = 1 - b1
-        
-        audio.audio[:,0] = audio.audio[:,0]*a0
-        
-        i = 1
-        
-        while i < audio.length:
-            audio.audio[:,i] = audio.audio[:,i]*a0 + audio.audio[:,i-1]*b1
-            i += 1
+    def coefficients(self, sample_rate):
+        Fc = self.cutoff / sample_rate
+        a = (1, -np.e**(-2*np.pi*Fc))
+        b = (1 - a[1], )
+        return (b, a)
 
 
-class IIR_OnePole_HighPass(Transform):
-    # TODO has no effect at all, also on sweep sine.
-    # apparently a one-pole has not much use as a high-pass
-    """ Designed after Nigel Redmond
+class OnePoleHPF(IIR):
+    """ Designed after Nigel Redmond.
     https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
     
-    For low pass, with Fc being cutoff/sample_rate,
-    use b1 = e^{-2 pi Fc}
-    and a0 = 1-b1
-
+    Not very effective for not very high cutoffs.
+    
+    b1 = - e^{-2 pi (0.5-Fc)}
+    a0 = 1+b1
+    
+    6dB/octave
     """
     def __init__(self, cutoff):
         self.cutoff = cutoff
     
-    def realise(self, audio):
-        Fc = self.cutoff / audio.sample_rate
-        b1 = -np.e**(-2*np.pi*(0.5-Fc))
-        a0 = 1 + b1
-        # TODO this can be paramterized
-        audio.audio[:,0] = audio.audio[:,0]*a0
-        
-        i = 1
-        
-        while i < audio.length:
-            audio.audio[:,i] = audio.audio[:,i]*a0 + audio.audio[:,i-1]*b1
-            i += 1
+    def coefficients(self, sample_rate):
+        Fc = self.cutoff / sample_rate
+        a = (1, np.e**(-2*np.pi*(0.5-Fc)))
+        b = (1 + a[1], )
+        return (b, a)
 
 
 
