@@ -304,6 +304,15 @@ class Audio:
         for i in range(self.num_channels):
             self.buffer[i::self.num_channels] = audio[i]
         return self
+    
+    ####### post-mixdown ########
+    def play(self, is_wait=True):
+        from gensound.io import play_Audio
+        play_Audio(self, is_wait)
+    
+    def to_WAV(self, filename):
+        from gensound.io import export_WAV
+        export_WAV(filename, self)
 
 
 

@@ -15,7 +15,7 @@ from gensound.musicTheory import read_freq
 from gensound.transforms import Transform, TransformChain, Amplitude, Slice, Combine, BiTransform
 from gensound.curve import Curve
 from gensound.audio import Audio
-from gensound.playback import WAV_to_Audio
+from gensound.io import WAV_to_Audio
 
 #CHANNEL_NAMES = {"L":0, "R":1}
 

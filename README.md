@@ -35,8 +35,8 @@ audio = wav.mixdown(sample_rate=44100, byte_width=2)
 
 * Playback or file export:
 ```python
-play_Audio(audio)
-export_WAV("test.wav", audio)
+audio.play()
+audio.to_WAV("test.wav")
 ```
 
 * Mix a Stereo signal to mono:
@@ -49,18 +49,39 @@ wav = 0.5*wav[0] + 0.5*wav[1] # sums up L and R channels together, halving the a
 wav[0], wav[1] = wav[1], wav[0]
 ```
 
-* Add a 440Hz sine wave to the left channel of a WAV file, 4 seconds after the beginning:
+* Attenuate R channel by 3dB:
+```python
+wav[1] *= Gain(-3)
+```
+
+* Crop 5 seconds from the beginning:
+```python
+wav = wav[:,5e3:] # both channels, 5000 ms onwards
+```
+or even easier:
+```python
+wav = wav[5e3:] # channels omitted; 5e3 is float, automatically interpreted as ms
+```
+
+* Grab the first 1000 samples:
+```python
+wav = wav[:,:1000] # samples are in ints, so don't omit channel slice
+```
+
+* Add a 440Hz sine wave to the L channel, 4 seconds after the beginning:
 ```python
 from gensound import Sine
 
-wav[0,4e3:] += Sine(frequency=440, duration=2e3)*Gain(-9) # mix a sine wav to the L channel, starting at 4000ms
+wav[0,4e3:] += Sine(frequency=440, duration=2e3)*Gain(-9)
+wav[0,4e3:] += Sine(frequency="A4", duration=2e3)*Gain(-9) # or like this
 ```
 
 * Play the R channel of a WAV file in reverse:
 ```python
 from gensound import Reverse
 
-wav[0] *= Reverse()
+wav[0] *= Reverse() # use Reverse transform, or:
+wav = wav[:,::-1] # manually reverse the samples
 ```
 
 * Haas effect - delaying the L channel by several samples makes the sound appear to be coming from the right
