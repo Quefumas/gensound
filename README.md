@@ -39,6 +39,11 @@ audio.play()
 audio.to_WAV("test.wav")
 ```
 
+* Play file using different sample rate:
+```python
+WAV(kushaura).mixdown(32000, 2).play() # original sample rate 44.1 kHz
+```
+
 * Mix a Stereo signal to mono:
 ```python
 wav = 0.5*wav[0] + 0.5*wav[1] # sums up L and R channels together, halving the amplitudes
@@ -76,12 +81,12 @@ wav[0,4e3:] += Sine(frequency=440, duration=2e3)*Gain(-9)
 wav[0,4e3:] += Sine(frequency="A4", duration=2e3)*Gain(-9) # or like this
 ```
 
-* Play the R channel of a WAV file in reverse:
+* Reverse the R channel only:
 ```python
 from gensound import Reverse
 
-wav[0] *= Reverse() # use Reverse transform, or:
-wav = wav[:,::-1] # manually reverse the samples
+wav[1] *= Reverse() # use Reverse transform, or:
+wav = wav[1,::-1] # manually reverse the samples
 ```
 
 * Haas effect - delaying the L channel by several samples makes the sound appear to be coming from the right
@@ -123,8 +128,8 @@ t = s[0]*Pan(CurveL) + s[1]*Pan(CurveR)
 ## Proper Explanations
 
 The library is based on two core classes:
-* `Signal` - this represents a stream of multi-channeled samples, either raw (e.g. loaded from WAV file) or mathematically computable (e.g. a Sawtooth wave). Behaves very much like a `numpy.ndarray`.
-* `Transforms` - this represents a process that can be applied to a Signal (for example, reverb, filtering, gain, reverse, slicing)
+* `Signal` - a stream of multi-channeled samples, either raw (e.g. loaded from WAV file) or mathematically computable (e.g. a Sawtooth wave). Behaves very much like a `numpy.ndarray`.
+* `Transform` - a process that can be applied to a Signal (for example, reverb, filtering, gain, reverse, slicing)
 
 Signals are envisioned as mathematical objects, and the library relies greatly on overloading of arithmetic operations on them, in conjunction with Transforms. All of the following expressions return a modified Signal object:
 * `amplitude*Signal`: change Signal's amplitude by a given factor
@@ -171,7 +176,7 @@ If you are interested in contributing, check out [Contribution](CONTRIBUTING.md)
 ## Topics not yet covered
 * How to extend Signal and Transform to implement new effects
 * Crossfades and BiTransforms
-* Curves
+* Curves and parametrization
 * Custom Panning Schemes
 
 

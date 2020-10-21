@@ -80,6 +80,8 @@ class Signal:
         """
         creates an identical signal object.
         """
+        # TODO perhaps deepcopy should be overridden to be thinner and faster,
+        # since it is performed often
         return copy.deepcopy(self)
     
     @staticmethod
@@ -429,18 +431,28 @@ class Sawtooth(Sine):
 ### raw audio signals
 
 class Raw(Signal):
+    cache = {}
     """
     Keep track of when the audio is copied;
     we should probably use a view until we start applying transforms.
     I.e. this object should only keep a view, and on generate it should copy.
     """
-    def __init__(self, audio):
+    def __init__(self, audio=None):
         super().__init__()
-        self.audio = audio
+        
+        if audio != None:
+            if not hasattr(self, "key"):
+                self.key = len(Raw.cache)
+            
+            if self._key() not in Raw.cache:
+                Raw.cache[self._key()] = audio
+        
+    def _key(self):
+        return type(self).__name__ + ":" + str(self.key)
     
     def generate(self, sample_rate):
         #return np.copy(self.audio.audio)
-        return self.audio.audio
+        return Raw.cache[self._key()].audio
     """
     TODO
     ####think about this more. here we're copying the audio data,
@@ -468,11 +480,12 @@ class WAV(Raw):
     """
     
     def __init__(self, filename):
-        if filename in WAV.cache:
-            audio = WAV.cache[filename].copy()
-        else:
+        self.key = filename
+        
+        audio = None
+        
+        if self._key() not in Raw.cache:
             audio = WAV_to_Audio(filename)
-            WAV.cache[filename] = audio
         
         # TODO copy again? so the cache will be eternally independent?
         super().__init__(audio)
