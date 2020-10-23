@@ -1,26 +1,28 @@
 # Gensound
-The Python way to Audio processing & synthesis.
-* Intuitive
-* Flexible
-* Lightweight
+The Python way to audio processing & synthesis. 
 
-Do you enjoy experimenting with audio?
-Learning about signal processing?
-Creating and manipulating sounds?
-
-Gensound is a lightweight library designed for:
-* Offline Audio Manipulation & Synthesis
-* Musical Experiments
-* Electronic Composition
+An intuitive, flexible and lightweight library for:
+* Experimenting with audio and signal processing
+* Creating and manipulating sounds
+* Electronic composition
 
 Core features:
-* Familiar NumPy syntax is easy to learn and yields clarity, flexibility and conciseness
-* Easily extensible - combine new functionalities and effects with zero headache
-* Educational - perfect for learning about audio and signals
-* Customized panning schemes to enable complex placements of variable number of sound sources
+* Platform independent
+* Very intuitive syntax
+* Easy to create new effects or experiments and combine them with existing features
+* Great for learning about audio and signals
+* Multi-channel audio for customizable placement of sound sources
 * Parametrization
+* And more to come!
 
-## Code Examples
+## Setup
+
+1. Install using `pip install gensound`.
+This will install NumPy and [SimpleAudio](https://github.com/hamiltron/py-simple-audio), if needed.
+
+2. Run the examples below (or some of the example files in the repository).
+
+## Show Me the Code
 * Load a WAV into a `Signal` object from filename:
 ```python
 from gensound import WAV, kushaura
@@ -124,20 +126,16 @@ CurveR = SineCurve(frequency=0.12, depth=100, baseline=0, duration=20e3)
 t = s[0]*Pan(CurveL) + s[1]*Pan(CurveR)
 ```
 
-## Setup
-* Install NumPy (any non-ancient version)
-* Install the cross-platform, low-dependency [SimpleAudio](https://github.com/hamiltron/py-simple-audio) for audio and WAV file I/O (this may change one day)
-* Download `gensound` directory
-* To test, download and run `testPackage.py` and enjoy some microtonal harmonies
 
-## Proper Explanations
+## Syntax Summary
 
 The library is based on two core classes:
 * `Signal` - a stream of multi-channeled samples, either raw (e.g. loaded from WAV file) or mathematically computable (e.g. a Sawtooth wave). Behaves very much like a `numpy.ndarray`.
 * `Transform` - a process that can be applied to a Signal (for example, reverb, filtering, gain, reverse, slicing)
 
-Signals are envisioned as mathematical objects, and the library relies greatly on overloading of arithmetic operations on them, in conjunction with Transforms. All of the following expressions return a modified Signal object:
-* `amplitude*Signal`: change Signal's amplitude by a given factor
+Signals are envisioned as mathematical objects, and the library relies greatly on overloading of arithmetic operations on them, in conjunction with Transforms.
+All of the following expressions return a modified Signal object:
+* `amplitude*Signal`: change Signal's amplitude by a given factor (float)
 * `-Signal`: inverts the signal
 * `Signal + Signal`: mix two signals together
 * `Signal | Signal`: concatenate two signals one after the other

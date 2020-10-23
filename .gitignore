@@ -3,3 +3,6 @@ __pycache__/
 /data/
 output/
 debug/
+build/
+dist/
+gensound.egg-info/
