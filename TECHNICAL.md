@@ -60,7 +60,7 @@ which may be printed in human-readable form using `print()`.
 At this point, no audio has been generated at all!
 
 Once the mix tree, or top-level signal, is prepared,
-use the method `Signal.mixdown(self, sample_rate, byte_width, max_amplitude=1)` 
+use the method `Signal.mixdown(self, sample_rate, byte_width=2, max_amplitude=1)` 
 which returns an `Audio` instance of the result, which can be played back or exported as WAV.
 Mixdown is performed recursively, where the internal nodes (Mix/Sequence)
 call the `realise` methods of each of the descendents,

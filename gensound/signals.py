@@ -54,13 +54,17 @@ class Signal:
             
         return audio
     
-    def mixdown(self, sample_rate, byte_width, max_amplitude=1):
+    def mixdown(self, sample_rate, byte_width=2, max_amplitude=1):
         """
         0 < max_amplitude <= 1 implies stretching the amplitudes
         so they would hit absolute value of max_amplitude.
         otherwise, max_amplitude = None implies not to touch the amplitudes
         as given, unless they exceed 1 in which case we shrink everything proportionally.
+        TODO not sure this behaviour is optimal
         """
+        if byte_width != 2:
+            print("Unstable for byte widths other than 2; expect future support.")
+        
         audio = self.realise(sample_rate)
         audio.push_forward(audio.shift) # TODO what if shift is negative? bug or feature?
         # in case the top-level signal has non-zero shift

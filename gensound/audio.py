@@ -294,6 +294,9 @@ class Audio:
         audio = Audio.stretch(audio, self.byte_width)
         audio = Audio.integrate(audio, self.byte_width)
         
+        if self.byte_width == 1: # TODO this is just a patch
+            audio -= 127
+        
         self.buffer = np.zeros((self.length*self.num_channels),
                                 dtype=ints_by_width[self.byte_width-1],
                                 order='C')

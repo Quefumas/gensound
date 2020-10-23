@@ -30,7 +30,7 @@ wav = WAV(kushaura) # load sample WAV
 
 * Generate audio stream from `Signal` object:
 ```python
-audio = wav.mixdown(sample_rate=44100, byte_width=2)
+audio = wav.mixdown(sample_rate=44100)
 ```
 
 * Playback or file export:
@@ -41,7 +41,7 @@ audio.to_WAV("test.wav")
 
 * Play file using different sample rate:
 ```python
-WAV(kushaura).mixdown(32000, 2).play() # original sample rate 44.1 kHz
+WAV(kushaura).mixdown(32000).play() # original sample rate 44.1 kHz
 ```
 
 * Mix a Stereo signal to mono:
@@ -71,6 +71,11 @@ wav = wav[5e3:] # channels omitted; 5e3 is float, automatically interpreted as m
 * Grab the first 1000 samples:
 ```python
 wav = wav[:,:1000] # samples are in ints, so don't omit channel slice
+```
+
+* Repeat a signal 5 times:
+```python
+wav = wav**5
 ```
 
 * Add a 440Hz sine wave to the L channel, 4 seconds after the beginning:
