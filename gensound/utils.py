@@ -20,7 +20,6 @@ iscallable = lambda x: isinstance(x, Callable)
 sec = 1000
 
 
-ints_by_width = (np.int8, np.int16, np.int32, np.int64)
 sample_rates = (8000, 11025, 16000, 22050, 24000, 32000, 44100, 48000, 96000)
 
 DB_to_Linear = lambda x: 10**(x/20)
@@ -48,12 +47,94 @@ samples_slice = lambda slc, sample_rate: slice(
                                                 slc.step)
 
 
+########### 
+
+width_by_coding = {"uint8":1,
+                   "int16":2,
+                   "int24":3,
+                   "int32":4,
+                   "float32":4}
+
+def audio_to_bytes(audio, coding="int16"):
+    # audio is np.ndarray with dtype flot64
+    # strategy is to keep dealing with ndarray w/ multiple channels
+    # right until the end, where we shave off bytes and interlace etc.
+    assert coding in width_by_coding.keys()
+    
+    num_channels = audio.shape[0]
+    length = audio.shape[1]
+    byte_width = width_by_coding[coding]
+    
+    num_samples = num_channels * length
+    total_bytes = num_samples * byte_width
+    
+    audio = audio.copy(order="C") # leave caller Audio object unaffected
+    # Better to write everything 10 times than have a proliferation of
+    # partially intersecting subcases
+    
+    if coding == "uint8": # unsigned
+        audio = stretch(audio, byte_width)
+        audio += 128
+        audio = audio.astype(np.uint8)
+        
+        buffer = np.zeros(num_samples, dtype=np.uint8)
+        
+        for i in range(num_channels):
+            buffer[i::num_channels] = audio[i]
+            
+    elif coding == "int16":
+        audio = stretch(audio, byte_width)
+        audio = audio.astype(np.int16)
+        
+        buffer = np.zeros(num_samples, dtype=np.int16)
+        
+        for i in range(num_channels):
+            buffer[i::num_channels] = audio[i]
+            
+    elif coding == "int32": # same treatment as int16
+        audio = stretch(audio, byte_width)
+        audio = audio.astype(np.int32)
+        
+        buffer = np.zeros(num_samples, dtype=np.int32)
+        
+        for i in range(num_channels):
+            buffer[i::num_channels] = audio[i]
+        
+    elif coding == "int24": # no np.int24 so needs manual labor
+        audio = stretch(audio, 4) # stretch it to fit 4 bytes, later get rid of LSB
+        audio = audio.astype(np.int32)
+        
+        # TODO superfluous step, merge with the next step sometime
+        buffer_temp = np.zeros(num_samples, dtype=np.int32)
+        for i in range(num_channels):
+            buffer_temp[i::num_channels] = audio[i]
+        
+        buffer_temp = buffer_temp.tobytes()
+        
+        buffer = bytearray(total_bytes)
+        for i in range(num_samples): # take 3 MSBytes, little endian
+            buffer[i*3:i*3+3] = buffer_temp[i*4+1:i*4+4] # TODO this truncates, not rounds
+        
+    elif coding == "float32": # same byte width as int32 but float, different WAV format
+        # don't stretch, leave it in [-1,1]
+        audio = audio.astype(np.float32)
+        
+        buffer = np.zeros(num_samples, dtype=np.float32)
+        
+        for i in range(num_channels):
+            buffer[i::num_channels] = audio[i]
+    
+    return buffer
 
 
+def stretch(audio, byte_width):
+    """ stretches the samples to cover a range of width 2**bits,
+    so we can convert to ints later.
+    """
+    return audio * (2**(8*byte_width-1) - 1)
+    
 
-
-
-
+################
 
 def lambda_to_range(f):
     """ transforms function from convenient lambda format to something usable

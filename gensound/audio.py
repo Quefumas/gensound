@@ -11,7 +11,6 @@ some may be instance functions, some may belong in utils.
 
 import numpy as np
 import copy
-from gensound.utils import ints_by_width
 
 class Audio:
     """Basically a wrapper for a numpy array, representing the signal.
@@ -266,46 +265,32 @@ class Audio:
         max_amp = np.max(np.abs(audio))
         return audio * (max_amplitude / max_amp) if max_amp != 0 else audio
         
-    @staticmethod
-    def stretch(audio, byte_width):
-        """ stretches the samples to cover a range of width 2**bits,
-        so we can convert to ints later.
-        """
-        return audio * (2**(8*byte_width-1) - 1)
-    
-    @staticmethod
-    def integrate(audio, byte_width):
-        """
-        conversion from floats to integers
-        """
-        if byte_width not in (1,2):
-            print("byte width may not be supported. try 1 or 2.")
-        return audio.astype(ints_by_width[byte_width-1])
     
     def mixdown(self, byte_width, max_amplitude=1):
         """
         side effects are only the creation of self.byte_width and self.buffer.
         self.audio remains unaffected, and we use static methods for this end.
         """
+        assert byte_width < 3
+        # TODO convertsion (audio_to_bytes) supports 5 encodings,
+        # but only 4 are available to the user now as the argument
+        # (how do we tell between int32 and float 32? both have byte_width=4)
+        # furthermore, simpleaudio playback only supports uint8 and int16,
+        # and wave export supports all ints, but not float32,
+        # though that is easily fixed by manually setting wave_format byte to 03
+        
         
         self.byte_width = byte_width
         
         audio = Audio.fit(self.audio, max_amplitude)
-        audio = Audio.stretch(audio, self.byte_width)
-        audio = Audio.integrate(audio, self.byte_width)
         
-        if self.byte_width == 1: # TODO this is just a patch
-            audio -= 127
         
-        self.buffer = np.zeros((self.length*self.num_channels),
-                                dtype=ints_by_width[self.byte_width-1],
-                                order='C')
+        
+        from gensound.utils import audio_to_bytes
+        self.buffer = audio_to_bytes(audio, ["uint8","int16","int24","int32"][byte_width-1])
+        
         # TODO note that byte_width, buffer etc. are modified by this function
-        # for this class it may be fine, because this is where
-        # all the processing acctually happens on
-        # operation table
-        for i in range(self.num_channels):
-            self.buffer[i::self.num_channels] = audio[i]
+        
         return self
     
     ####### post-mixdown ########
