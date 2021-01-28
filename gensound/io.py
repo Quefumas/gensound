@@ -95,8 +95,8 @@ def play_WAV(filename="", is_wait=False):
 
 def WAV_to_Audio(filename=""):
     wav = sa.WaveObject.from_wave_file(filename)
-    # TODO type np.int16
-    buffer = np.frombuffer(wav.audio_data, np.int16).astype(np.float64)
+    # TODO support int24
+    buffer = np.frombuffer(wav.audio_data, [np.uint8,np.int16,None,np.int32][wav.bytes_per_sample-1]).astype(np.float64)
     
     buffer = np.reshape(buffer,
                         newshape=(wav.num_channels,
