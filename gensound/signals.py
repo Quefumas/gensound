@@ -398,7 +398,7 @@ class WhiteNoise(Signal):
 # TODO add grey, pink noise.
 
 
-#### single-pitched signals
+#### simple oscillators
 
 
 class Sine(Signal): # oscillator? pitch? phaser?
@@ -454,9 +454,13 @@ class Raw(Signal):
     def _key(self):
         return type(self).__name__ + ":" + str(self.key)
     
+    @property
+    def audio(self):
+        return Raw.cache[self._key()].audio
+    
     def generate(self, sample_rate):
         #return np.copy(self.audio.audio)
-        return Raw.cache[self._key()].audio
+        return self.audio
     """
     TODO
     ####think about this more. here we're copying the audio data,

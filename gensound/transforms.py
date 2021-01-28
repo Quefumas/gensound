@@ -482,8 +482,21 @@ class Convolution(Transform):
 '''
 
 class Convolution(Transform):
+    """ Convolves a Signal with given samples (self.response), which may be given
+    either as an Audio object, a WAV filename, or np.ndarray. It is internally
+    stored as the latter, though this may change.
+    
+    If response is mono, each channel of the signal is convolved individually.
+    If the signal is mono, it is convolved with each of the response channels
+    individually, yielding an output with the same number of channels as response.
+    If multi-channel output is undesirable, crop the response audio to one channel
+    before applying this transform.
+    If neither is mono, then the audio and response must have the same number of
+    channels, and they are convolved individually.
+    """
     def __init__(self, response):
         assert isinstance(response, (Audio, np.ndarray, str)) # Audio, direct buffer, or filename
+        # TODO: accept Signal as response?
         assert "scipy" in _supported, "Convolution: SciPy not supported"
         
         if isinstance(response, np.ndarray):
@@ -492,25 +505,33 @@ class Convolution(Transform):
             self.response = response.audio
         else:
             from gensound.signals import WAV
-            self.response = WAV(response).audio.audio # load file directly to Audio
-        # TODO only accepts mono response
+            self.response = WAV(response).audio # load file directly to Audio        
+        
+        # TODO consider converting self.response to Audio
         
         if len(self.response.shape) == 1: # ensure dimensionality. TODO too similar to Audio.ensure_2d!
             self.response.resize((1, self.response.shape[0]))
     
     def realise(self, audio):
-        assert self.response.shape[0] in (audio.audio.shape[0], 1)
+        assert self.response.shape[0] in (audio.audio.shape[0], 1) or audio.is_mono, \
+            "Convolution channel number mismatch: convolved audios must either " \
+            "match in channel number, or at least one must be mono."
         # self.response should be either mono or have the same number of channels as audio
         
         from scipy.signal import convolve, oaconvolve
         
+        # TODO this is too wordy
         # TODO mode="same" possibly should be "full"
-        # TODO How does/should this behave when convolving stereo with stereo?
         if self.response.shape[0] == 1: # apply same mono reverb to all channels
             for i in range(audio.num_channels):
                 audio.audio[i,:] = convolve(audio.audio[i,:], self.response[0,:], mode="same")
-        else:
-            audio.audio[:,:] = convolve(audio.audio[:,:], self.response[:,:], mode="same")
+        elif audio.is_mono: # input signal gains new channels
+            audio.from_mono(self.response.shape[0])
+            for i in range(self.response.shape[0]):
+                audio.audio[i,:] = convolve(audio.audio[i,:], self.response[i,:], mode="same")
+        else: # both audio and response non-mono, same number of channels
+            for i in range(self.response.shape[0]): # "Parallel Stereo"
+                audio.audio[i,:] = convolve(audio.audio[i,:], self.response[i,:], mode="same")
 
 
 class ADSR(Transform):
