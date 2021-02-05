@@ -14,7 +14,7 @@ large-scale future goals:
 V CF, BiTransforms and negative shift
 * better support for FM synthesis, also other kinds of synthesis
 * simulate guitar amps, distortion and other effects
-* upsample/downsample
+V upsample/downsample
 * interfacing improved playback options
 ? better musical logic support for intonations and melodies
 ? drum patterns
@@ -34,6 +34,12 @@ V make signals/trnasforms empty skeletons
   otherwise it will infer wrongly)
 no doubt we still need direct After function; putting signals in arrays is not always appropriate
 perhaps we should use + as after and & as mix?
+* specifying byte_width should be relevant only when exporting, not on mixdown.
+  this is because Audio objects don't need to carry along sound quality information,
+  except for sample rate.
+  Also consider that synthesizing a Signal, then bouncing it into Audio
+  and then into a Raw (for example in incremental composition) entails choosing
+  byte width just to ignore it again.
 
 next stages:
 V curves controlling Gain, Amplitude
@@ -52,7 +58,7 @@ V ADSR
   isn't doing it manually more natural?)
 V supply one example of custom panning scheme
 * Signal as Curve?
-* crossfades
+V crossfades
 
 V negative shifts
 
@@ -120,9 +126,6 @@ V some problems when concatting two together
 
 Add sweepSine signal
 
-Implicit durations?
-w[0,4e3:5e3] = Sine(frequency=1e3) # automatically stretches Sine to fill space
-
 
 play/file IO functionality as method under Audio?
 
@@ -152,18 +155,162 @@ though come to thing of it, multiplication never was commutative in the first pl
 
 ? addition of FIRs/IIRs? so several may be computed at one go. if that really works that way
 
-
-* duration inferation between slice and signal?
-  i.e. wav[0, 4e3:5e3] = Sine("A4") # infers duration = 1e3
-  should probably be done when used above, not at mix time
-
-
 * add chord/sequence features to easy frequency notation (e.b. "Ab,C,Eb" or "Ab C Eb")
 
 * infer end phases between concatenated pitched signals (would that be a feature or a bug?)
 
 
+
 =============== Syntactical stuff =============
+
+=== Fades ===
+
+* what would it take to infer type of Fade by direction of multiplication?
+    Fade*signal (fade in) vs. signal*Fade (fade out)
+    since the Fade has to know which it is, it must figure that out either
+    on applying or on realising.
+
+
+* set package-wide default fade length and shape?
+
+* Fade(curve="linear/exp/.../default")
+
+=== Signal - Number operations ===
+
+* add DC: sig + 4 
+* concat silence: sig | 4e3
+
+are these not implemented yet?
+
+=== Infer durations/phases/others ===
+
+* s[5e3:] += Sine(1e3) # even though LHS is long, this should only affect 1e3
+  (probably like this already)
+* s[5e3:5.5e3] += Sine(1e3) # TODO what happens here? what should happen?
+* s[5e3:] += Sine(freq) # TODO can I infer RHS duration from LHS slice?
+  # it is not trivial to even know LHS duration. what if it is given explicitly?
+  # infer in call time or mixdown?
+* very complicated inference (crazy idea):
+  s[5e3:10e3] = Sine(f1) | Sine(f2) | Sine(f3, duration=3e3)
+  # figures out RHS should amount to 5e3, 3e3 is already specified,
+  # divided the remaining 2e3 betweeen the first 2.
+  # as cool as this is, it's kind of a backwards way to write code;
+  # won't any sane (hah) developer prefer to give explicit duration,
+  # maybe using a constant or something?
+* Sine("G3 E4") # TODO automatically collapse to Sine("G3") + Sine("E4")?
+* Sine("G3, E4") # automatically interpret as melody (same duration for all?)
+  we can take this way further. Also why comma, space instead of +, | etc?
+  also this is troublesome for melodies as applying transform to this (think ADSR)
+  will only apply to the concatted, not necessarily as useful.
+* in general, omitting freq or duration argument will take the previous
+  value given to this argument anywhere in the code.
+  but that would be very bad style and shouldn't be encouraged.
+  would that be such a great advantage to have? not so sure.
+* Sine(440, 1e3) | Triangle(550, 1e3)
+  # this is pure concatenation of two oscillators,
+  # we would like (by default?) to have the ending phase of the first
+  # transferred to the second
+  what is the correct mechanism to do this?
+  - one way is when overloading "|" to see whether both are oscillators,
+    if so then grab the end phase from the 1st and copy to the 2nd.
+    note that if the 1st oscillator's duration is to be inferred,
+    that must happen prior to the phase being inferred.
+  - another way is when realise()ing Sequence,
+    where it would either copy the phase into the 2nd oscillator phase,
+    or we do it as an argument to osc's realise() (which sounds wrong).
+
+
+
+give each Signal or Transform the power to traverse the tree and decide for itself!
+
+=== Resampling ===
+* Should this be using a Transform? or be an Audio/Raw method instead?
+* Use cases:
+  - Loading WAVs with both 44.1kHz and 48kHz together, one of these will have to change.
+    This is for raw audio only.
+  - Slow/hasten synthesized signal, changing pitch. This sounds like fun, but
+    for generated signals we choose durations and frequencies ourselves,
+    so we can just change these parameters instead of doing lossy (and slow)
+    interpolation. OTOH, with resampling the syntax is so much shorter.
+  - Not sure in what way, but this can be combined with a curve that makes
+    the original signal slow down or hasten in a controlled, time-dependent way.
+    This would be super cool.
+* If applied as transform to Raw, how does it infer the original sample rate
+  for inferring the 1st argument? The Raw may have been already transformed
+  and thus lost its Raw properties.
+* Maybe we should always require 2 arguments?
+* Maybe just one argument which is the ratio actually?
+* Maybe also accept it as a method for Raw or Audio?
+* Or maybe as an argument to WAV, to resample on loading?
+* But wait - Audio always (?) has a sample rate, so by the time the Transform
+  is realise()d, it is *always* possible to infer the 1st argument.
+  Therefore there is never a reason to enable 2 arguments.
+  So we can write w = WAV(kushaura)*Resample(32000) and go on our way.
+
+Syntax jam:
+
+raw_sig *= Resample(32000) # Resamples to 32kHz from whatever the Raw data had
+                    # (recall that Raw has inherent original recommend sample rate)
+any_sig *= Resample(39000, 32000) # Resamples from supposed original sample rate into new one
+                    # none of these actually have to be real sample rates,
+                    # thought it won't make too much sense otherwise
+any_sig *= Resample(32k, 8k, gs.LINEAR_INTERPOLATION)
+any_sig *= Resample(32k, 8k, method="linear")
+any_sig *= Stretch(curve or constant) # if constant, this is identical to resample
+
+
+Further thoughts:
+* thinking about the sample rate carried along by Audio...
+* when we have Raw audio, it's normal for it to remember somehow its original
+  sample rate. but once we use mixdown, that should be completely ignored.
+* as for synthesized audio, it can only make sense for it to keep the mixdown rate.
+* that means that once audio is mixed-down, only the sample rate argument should be kept.
+* so what then about resample? we need to keep in mind the above 2 use-cases
+  and realise that they are actually quite different.
+  for the first (make sample rate conform), the user knows what the destination
+  sample rate should be, and they're going to use that for mixdown().
+  they don't necessarily care what the original file sample rate was.
+* for the second use-case, the name 'resample' is misleading:
+  resampling is a process we apply to a signal so it can be played back
+  in a different sample rate and still result in a similar output.
+  if we do time-stretch, we are actually not interested at all in what sample
+  rate difference this would mean, and we would actually prefer the Transform
+  to behave the same no matter what rate we use on mixdown.
+  In the suggested syntax Resample(dest_rate), suppose we eventually do mixdown
+  using dest_rate, then the Resample ended up doing nothing,
+  even though we wanted to use it to stretch.
+  so for this use case, what is interesting is only the rate of stretching,
+  or alternatively, the resulting duration of the signal.
+  and these should be the only possible arguments.
+* To sum up, this should be covered using 2 different functionalities,
+  one for Resampling Raws only, given a destination sample rate,
+  and one for Stretching any Signal, given rate or target duration.
+  Since they are used for different purposes and receive different arguments,
+  I suggest having separate names.
+
+* For the 2nd, Stretch could be adequate. Brainstorming for a moment:
+  stretch, haste/slow, fit, TimeStretch, Smear, Prolong, Speed, AtSpeed,
+  ToTime, ToDuration, Duration,
+* it is not out of the question to have different Transforms, one for
+  stretching by ratio, and one for fitting into particular time duration.
+* and a major question. should the 1st use case be implemented as
+  an Audio function or as a Transform?
+  Maybe not so difficult to answer: this operation should only ever be applied
+  to Raw signals, thus it would be very shitty as a Transform, as these
+  are inherently applicable to all Signals.
+  If it only makes sense for basically one Signal, we can't make it a Transform,
+  which also prohibits the use of the * operator.
+  So function it is.
+
+* one more note: even though we can give as argument the interpolation method used,
+  'linear', 'quadratic', 'nn' or whatever,
+  the actual default value should not (exactly) be 'quadratic' but rather
+  'default' - indicating to use package-wide setting, which defaults to quadratic,
+  but may be changed by a one-liner.
+  this may be more useful if we can also use this to let the user inject their own
+  interpolators.
+
+
 
 ====== Negative Shifts and CF ======
 * Shifted signals when mixed down should perhaps not be fully generated on their own

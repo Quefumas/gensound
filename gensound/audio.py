@@ -12,6 +12,8 @@ some may be instance functions, some may belong in utils.
 import numpy as np
 import copy
 
+from gensound.utils import sec
+
 class Audio:
     """Basically a wrapper for a numpy array, representing the signal.
     Shape is (tracks, samples), tracks being >= 1.
@@ -28,7 +30,7 @@ class Audio:
         # that can be np.ndarray or other array or something
         self.audio = np.zeros((1, 0), dtype=np.float64)
     
-    def ensure_2d(self):
+    def ensure_2d(self): # TODO should move to utils
         """ makes sure self.audio is 2-dimensional,
         since this is not obvious for mono signals.
         """
@@ -78,20 +80,26 @@ class Audio:
     
     @property
     def length(self):
+        """ Returns length in samples.
+        """
         assert len(self.audio.shape) == 2
         return self.audio.shape[1]
     
+    @property
     def duration(self):
+        """ Returns duration in ms.
+        """
         # TODO this appears to be the only method the uses self.sample_rate
         # consider having it as an argument instead of instance variable
-        return self.length/self.sample_rate
+        # reply: Audio always has sample rate, so this should always be available.
+        return self.length/self.sample_rate*sec
     
     @property
     def shape(self): # TODO consider doing others like this
         return self.audio.shape
     
-    abs_start = lambda self: self.shift # in samples only
-    abs_end = lambda self: self.shift+self.length
+    def abs_start(self): return self.shift # in samples only
+    def abs_end(self): return self.shift+self.length
     
     ######### Unary manipulations #########
     
@@ -294,6 +302,20 @@ class Audio:
         return self
     
     ####### post-mixdown ########
+    def _resample(self, sample_rate, method): # does this belong here?
+        """ Uses interpolation to change the sample rate of the audio
+        while retaining spectral content.
+        Don't use this directly; better use Raw().resample instead.
+        [TODO does this have to be a supported sample rate?]
+        """
+        if self.sample_rate == sample_rate:
+            return
+        from gensound.utils import get_interpolation
+        interpolate = get_interpolation(method)
+        factor = self.sample_rate / sample_rate
+        self.audio = interpolate(self.audio, np.arange(0, self.length-1, factor))
+        self.sample_rate = sample_rate
+    
     def play(self, is_wait=True):
         from gensound.io import play_Audio
         play_Audio(self, is_wait)

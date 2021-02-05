@@ -11,7 +11,7 @@ from gensound.curve import Curve, Line, Logistic, Constant
 from gensound.audio import Audio
 from gensound.utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
-                  num_samples, samples_slice
+                  num_samples, samples_slice, sec
 
 __all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "CrossFade",
            "Gain", "SineAM", "Limiter", "Mono", "Pan", "Repan", "Downsample",
@@ -211,7 +211,7 @@ class Fade(Transform):
         # TODO I still hear a bump when the playback starts
 
 
-class CrossFade(BiTransform):
+class CrossFade(BiTransform): # TODO rename to XFade?
     def __init__(self, duration):
         L = Fade(is_in=False, duration=duration)
         R = Fade(duration=duration)*Shift(-duration)
@@ -300,7 +300,7 @@ class SineAM(Transform):
         assert isinstance(audio, Audio) # TODO remove this after debug hopefully
         
         sin = np.sin(self.phase + self.frequency * \
-                     np.linspace(0, audio.duration(), audio.length, False) * 2 * np.pi)
+                     np.linspace(0, audio.duration/sec, audio.length, False) * 2 * np.pi)
         audio *= (sin * self.size + (1-self.size))
         # remember [:] is necessary to retain changes
         
@@ -433,6 +433,34 @@ class Repan(Transform):
 
 ####### FILTERS #########
 
+class Stretch(Transform):
+    """ Stretches audio by a certain factor, or to a desired duration,
+    using interpolation.
+    """
+    # TODO parametric stretch!
+    def __init__(self, rate=None, duration=None, method="quadratic"):
+        """ exactly one of factor, duration should be defined.
+        factor = ratio of speed up/slow down. (1=no difference, 2=twice as fast)
+        duration = stretch/shrink to this duration (milliseconds or samples)
+        """
+        self.rate = rate
+        self.duration = duration
+        self.method = method
+    
+    def realise(self, audio):
+        assert (self.rate is None) + (self.duration is None) == 1, "Stretch: exactly one of the arguments rate, duration, must be defined."
+        from gensound.utils import get_interpolation
+        interpolate = get_interpolation(self.method)
+        
+        if self.rate is None:
+            factor = audio.duration / self.duration
+        else:
+            factor = self.rate
+        
+        audio.audio = interpolate(audio.audio, np.arange(0, audio.length-1, factor))
+        
+
+
 class Downsample(Transform):
     """ skips samples. can hear the effects of aliasing.
     suppose factor is 3, then this copies all 3k-th samples into
@@ -549,7 +577,7 @@ class ADSR(Transform):
         env_start = Line(0, 1, self.attack) | Constant(1, self.hold)
         env_start |= Line(1, self.sustain, duration = self.decay)
         length_start = env_start.num_samples(audio.sample_rate)
-        # or maybe as one envelope by extrpolating from audio.duration()?
+        # or maybe as one envelope by extrpolating from audio.duration?
         env_end = Line(self.sustain, 0, duration=self.release)
         length_end = env_end.num_samples(audio.sample_rate)
         

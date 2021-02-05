@@ -110,7 +110,7 @@ class Signal:
         if transform is None:
             return self
         
-        if not isinstance(transform, Transform):
+        if not isinstance(transform, Transform): # TODO change to if isnumber(transform)
             return self._amplitude(transform)
         
         s = self.copy() # TODO is this needed?
@@ -405,6 +405,7 @@ class Sine(Signal): # oscillator? pitch? phaser?
     wave = np.sin
     
     def __init__(self, frequency=220, duration=5e3):
+        # TODO add initial phase argument (for completeness; also for potential phase inference)
         super().__init__()
         self.frequency = read_freq(frequency)
         self.duration = duration
@@ -451,16 +452,22 @@ class Raw(Signal):
             if self._key() not in Raw.cache:
                 Raw.cache[self._key()] = audio
         
-    def _key(self):
+    def _key(self): # TODO __key__ ?
         return type(self).__name__ + ":" + str(self.key)
+    
+    def resample(self, sample_rate=44100, method="quadratic"):
+        self.audio._resample(sample_rate, method)
+        return self # so the user can type WAV("a.wav").resample(44100)*Transform() etc.
+        ...
     
     @property
     def audio(self):
-        return Raw.cache[self._key()].audio
+        # return Audio object, not ndarray, to override sample raes TODO see if this makes sense overall
+        return Raw.cache[self._key()]#.audio
     
     def generate(self, sample_rate):
         #return np.copy(self.audio.audio)
-        return self.audio
+        return self.audio.audio
     """
     TODO
     ####think about this more. here we're copying the audio data,
