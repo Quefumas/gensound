@@ -30,20 +30,15 @@ from gensound import WAV, kushaura
 wav = WAV(kushaura) # load sample WAV
 ```
 
-* Generate audio stream from `Signal` object:
-```python
-audio = wav.mixdown(sample_rate=44100)
-```
-
 * Playback or file export:
 ```python
-audio.play()
-audio.to_WAV("test.wav")
+wav.play()
+wav.export("test.wav") # only WAV supported
 ```
 
 * Play file using different sample rate:
 ```python
-WAV(kushaura).mixdown(32000).play() # original sample rate 44.1 kHz
+WAV(kushaura).play(sample_rate=44100) # original sample rate 44.1 kHz
 ```
 
 * Mix a Stereo signal to mono:
@@ -96,9 +91,15 @@ wav[1] *= Reverse() # use Reverse transform, or:
 wav = wav[1,::-1] # manually reverse the samples
 ```
 
-* Haas effect - delaying the L channel by several samples makes the sound appear to be coming from the right
+* Haas effect - delaying the L channel by several samples makes the sound appear to be coming from the right:
 ```python
 wav[0] *= Shift(80) # lisen with headphones! try changing the number of samples
+```
+
+* Stretch effect - slowing down or speeding up the signal by stretching or shrinking it. This affects pitch as well:
+```python
+wav *= Stretch(rate=1.5) # plays the Signal 1.5 times as fast
+wav *= Stretch(duration=30e3) # alternative syntax: stretche or shrink the Signal into 30 seconds
 ```
 
 * Imitate electric guitar amplifier and reverb effect:
@@ -129,12 +130,14 @@ t = s[0]*Pan(CurveL) + s[1]*Pan(CurveR)
 
 ## Syntax Summary
 
-The library is based on two core classes:
+Meet the two core classes:
 * `Signal` - a stream of multi-channeled samples, either raw (e.g. loaded from WAV file) or mathematically computable (e.g. a Sawtooth wave). Behaves very much like a `numpy.ndarray`.
 * `Transform` - a process that can be applied to a Signal (for example, reverb, filtering, gain, reverse, slicing)
 
+**By combining Signals in various ways and applying Transforms to them, we can generate anything.**
+
 Signals are envisioned as mathematical objects, and the library relies greatly on overloading of arithmetic operations on them, in conjunction with Transforms.
-All of the following expressions return a modified Signal object:
+All of the following expressions return a new Signal object:
 * `amplitude*Signal`: change Signal's amplitude by a given factor (float)
 * `-Signal`: inverts the signal
 * `Signal + Signal`: mix two signals together
@@ -167,7 +170,8 @@ sawtooth = (2/np.pi)*sum([((-1)**k/k)*Sine(frequency=k*f, duration=10e3) for k i
 # approximates a sawtooth wave by the first 10 harmonics
 ```
 
-After creating a complex Signal object, containing various Signals to which various Transforms may be applied, use the `Signal.mixdown()` method to resolve the Signal into a third core type, `Audio`, which holds an actual stream of samples, which can then be output to disk or speakers. Gensound resolves the Signal by recursively resolving each of the Signals contained within, and applying the Transforms to the result sequentially. There is no need to go deeper into `Audio` objects for now; it's only needed when one wishes to add their custom Signals and Transforms.
+When performing playback or file export of a Signal,
+Gensound resolves the Signal tree recursively, combining the various Signals and applying the transforms.
 
 ## More
 See the [Reference](REFERENCE.md) for a growing list of useful signals and transforms.

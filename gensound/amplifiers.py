@@ -7,7 +7,7 @@ Created on Sat Apr 11 13:32:27 2020
 
 import numpy as np
 from gensound.transforms import Transform
-from gensound.filters import IIR_OnePole_LowPass
+from gensound.filters import OnePoleLPF
 
 class GuitarAmp_Test(Transform):
     """ Works by applying a sigmoid to the signal, squashing it somewhat
@@ -49,7 +49,7 @@ class GuitarAmp_Test(Transform):
         else:
             audio.audio[:,:] = (1/(1+np.e**(-self.harshness*audio.audio)) - 0.5)
         
-        lowpass = IIR_OnePole_LowPass(cutoff=self.cutoff)
+        lowpass = OnePoleLPF(cutoff=self.cutoff)
         lowpass.realise(audio)
         # TODO add cutoff
 

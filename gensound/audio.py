@@ -169,6 +169,19 @@ class Audio:
         self.audio = np.pad(self.audio, ((0,0),(how_much,0)), mode="constant", constant_values=0.0)
         self.shift -= how_much
     
+    def _resample(self, sample_rate, method):
+        """ Uses interpolation to change the sample rate of the audio
+        while retaining spectral content.
+        Don't use this directly; better use Raw().resample instead.
+        [TODO does this have to be a supported sample rate?]
+        """
+        if self.sample_rate == sample_rate:
+            return
+        from gensound.utils import get_interpolation
+        interpolate = get_interpolation(method)
+        factor = self.sample_rate / sample_rate
+        self.audio = interpolate(self.audio, np.arange(0, self.length-1, factor))
+        self.sample_rate = sample_rate
     
     ### channel manipulations ###
     
@@ -255,74 +268,71 @@ class Audio:
     """
     we have these as static since in Audio.mixdown(), we do not wish
     to affect self.audio.
+    
+    
+    TODO think more about this. fit() is probably desirable for playback,
+    but Audio.buffer property and everything related to conversion to bytes
+    should probably belong strictly in io.py.
+    
+    mixdown() shouldn't even exist.
+    we can keep fit() and call it when doing playback or export, since it makes
+    sense to have it around, like extend, resample etc.
+    But export should actually be called from Signal, and do the rest on its own.
     """
     
-    @staticmethod
-    def fit(audio, max_amplitude=1):
+    def fit(self, max_amplitude=1):
         """
         stretches/squashes the amplitude of the samples to be [-max_amplitude, +max_amplitude]
         for max_amplitude <= 1.
         
         for max_amplitude = None, leave things as they are.
+        
+        'destructive' function, called only when exporting or playing.s
         """
         assert max_amplitude is None or 0 < max_amplitude
         
         if max_amplitude == None:
-            return audio
+            return
         
-        max_amp = np.max(np.abs(audio))
-        return audio * (max_amplitude / max_amp) if max_amp != 0 else audio
+        max_amp = np.max(np.abs(self.audio))
         
-    
-    def mixdown(self, byte_width, max_amplitude=1):
-        """
-        side effects are only the creation of self.byte_width and self.buffer.
-        self.audio remains unaffected, and we use static methods for this end.
-        """
-        assert byte_width < 3
-        # TODO convertsion (audio_to_bytes) supports 5 encodings,
-        # but only 4 are available to the user now as the argument
-        # (how do we tell between int32 and float 32? both have byte_width=4)
-        # furthermore, simpleaudio playback only supports uint8 and int16,
-        # and wave export supports all ints, but not float32,
-        # though that is easily fixed by manually setting wave_format byte to 03
+        if max_amp == 0:
+            return
         
+        self.audio = self.audio * (max_amplitude / max_amp)
         
-        self.byte_width = byte_width
-        
-        audio = Audio.fit(self.audio, max_amplitude)
-        
-        
-        
-        from gensound.utils import audio_to_bytes
-        self.buffer = audio_to_bytes(audio, ["uint8","int16","int24","int32"][byte_width-1])
-        
-        # TODO note that byte_width, buffer etc. are modified by this function
-        
-        return self
     
     ####### post-mixdown ########
-    def _resample(self, sample_rate, method): # does this belong here?
-        """ Uses interpolation to change the sample rate of the audio
-        while retaining spectral content.
-        Don't use this directly; better use Raw().resample instead.
-        [TODO does this have to be a supported sample rate?]
-        """
-        if self.sample_rate == sample_rate:
-            return
-        from gensound.utils import get_interpolation
-        interpolate = get_interpolation(method)
-        factor = self.sample_rate / sample_rate
-        self.audio = interpolate(self.audio, np.arange(0, self.length-1, factor))
-        self.sample_rate = sample_rate
     
-    def play(self, is_wait=True):
+    def _prepare_buffer(self, byte_width=2, max_amplitude=1):
+        """ Attaches byte width to Audio object, and converts audio information
+        to bytes object. This is only done in preparation for output (file or playback).
+        """
+        from gensound.utils import audio_to_bytes
+        
+        self.push_forward(self.shift)
+        self.fit(max_amplitude)
+        
+        self.byte_width = byte_width
+        self.buffer = audio_to_bytes(self.audio, ["uint8","int16","int24","int32"][byte_width-1])
+        
+        
+    def play(self, byte_width=2, is_wait=True):
         from gensound.io import play_Audio
+        
+        self._prepare_buffer(byte_width)
         play_Audio(self, is_wait)
     
-    def to_WAV(self, filename):
+    def to_WAV(self, filename, byte_width=2):
         from gensound.io import export_WAV
+        
+        self._prepare_buffer(byte_width)
+        
+        # TODO disentangle export_WAV arguments so that they will be given
+        # seperately (or in a config dict) rather than in an Audio object,
+        # since the latter is not supposed to hold a buffer nor byte width
         export_WAV(filename, self)
+    
 
 
 

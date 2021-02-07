@@ -21,13 +21,11 @@ def chords():
     
     s[1] = s*Reverse()
     
-    a = s.mixdown(44100, 2, 0.3)
-    play_Audio(a, is_wait=True)
+    a = s.play(44100, 2, 0.3)
 
 def output_step():
     s = 0.5*Step(duration=1)*Extend(10)*Shift(1)
-    a = s.mixdown(48000, 2, 0.5)
-    export_WAV("step_test.wav", a)
+    s.export("step_test.wav", 48000, 2, 0.5)
 
 if __name__ == "__main__":
     chords()

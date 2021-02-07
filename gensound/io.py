@@ -63,7 +63,10 @@ class _IO_SA:
             play_obj.wait_done()
 
 
-def export_test(audio, func=None):
+def export_test(audio, func=None, byte_width=2, max_amplitude=1):
+    if not hasattr(audio, "buffer"):
+        audio._prepare_buffer(byte_width, max_amplitude)
+    
     assert inspect.stack()[1].function == func.__name__, "logging names don't match!!!"
     
     timestamp = time.strftime('%Y-%b-%d_%H%M', time.localtime())

@@ -3,22 +3,27 @@
 Created on Sat Aug 17 23:28:31 2019
 
 @author: Dror
+
+
+
+This is for internal purposes; many errors due to changing code!
+
 """
 
 import numpy as np
 
-from Signal import Signal, Sine, Square, Triangle, Sawtooth, WhiteNoise, WAV, Step
-from transforms import Fade, SineAM, Shift, Pan, Extend, \
+from gensound.signals import Signal, Sine, Square, Triangle, Sawtooth, WhiteNoise, WAV, Step
+from gensound.transforms import Fade, SineAM, Shift, Pan, Extend, \
                        Downsample, Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR, CrossFade
-from filters import MovingAverage, LowPassBasic, Butterworth, IIR_basic, \
-                    IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
-from amplifiers import GuitarAmp_Test, OneImpulseReverb
-from curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
-from playback import play_WAV, play_Audio, export_test # better than export_WAV for debugging
+# from gensound.filters import MovingAverage, LowPassBasic, Butterworth, IIR_basic, \
+#                     IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
+from gensound.amplifiers import GuitarAmp_Test
+from gensound.curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
+from gensound.io import play_WAV, play_Audio, export_test # better than export_WAV for debugging
 
-from musicTheory import midC, semitone
+from gensound.musicTheory import midC, semitone
 
 african = "../data/african_sketches_1.wav"
 gtrcln = "../data/guitar_clean.wav"
@@ -172,10 +177,10 @@ def guitar_amp_test():
     export_test(audio, guitar_amp_test)
 
 def one_impulse_reverb_test():
+    from gensound.effects import OneImpulseReverb
     s = WAV(african)[10e3:20e3]*OneImpulseReverb(mix=1.2, num=2000, curve="steep")
-    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
-    # play_Audio(audio)
-    export_test(audio, one_impulse_reverb_test)
+    s.play(44100, max_amplitude=0.2)
+    export_test(s.mixdown(44100), one_impulse_reverb_test)
 
 def test_something():
     ...
