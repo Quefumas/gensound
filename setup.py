@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='gensound',
-      version='0.1.1',
+      version='0.2',
       author='Dror Chawin',
       author_email='quefumas@gmail.com',
       description='Pythonic audio processing and synthesis library',
