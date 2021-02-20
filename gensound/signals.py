@@ -9,7 +9,7 @@ import copy
 
 import numpy as np
 
-from gensound.utils import isnumber, num_samples
+from gensound.utils import isnumber, iscallable, num_samples
 from gensound.musicTheory import read_freq
 
 from gensound.transforms import Transform, TransformChain, Amplitude, Slice, Combine, BiTransform
@@ -112,8 +112,13 @@ class Signal:
         if transform is None:
             return self
         
-        if not isinstance(transform, Transform): # TODO change to if isnumber(transform)
+        if isnumber(transform):
             return self._amplitude(transform)
+        
+        if iscallable(transform) and not isinstance(transform, Transform):
+            # if transform is a function receiving a signal and returning a signal,
+            # masquerading as a Transform. Use @transform decorator for those
+            return transform(self)
         
         s = self.copy() # TODO is this needed?
         # it is, so we can reuse the same base signal multiple times
@@ -161,6 +166,10 @@ class Signal:
         # mixing with constant number is interpreted as DC
         # TODO use @singledispatchmethod for this?
         if isnumber(other):
+            # TODO not all Signals define self.duration!
+            # This looks like a case for duration inference
+            # luckily this isn't actually a very useful feature
+            # (though it may be for Curve?)
             other = other*DC(duration=self.duration)
         
         s = Mix()
@@ -359,7 +368,17 @@ class Sequence(Signal):
     def generate(self, sample_rate):
         audio = Audio(sample_rate)
         
+        #### Phase Inference: TODO should this be here?
+        
+        phase = 0 # phase inference
+        
         for signal in self.sequence:
+            if isinstance(signal, Oscillator) and signal.phase is None:
+                signal._phase = phase
+                phase = (phase + signal.end_phase)%(2*np.pi) # phase inference
+            else:
+                phase = 0
+            
             audio.concat(signal.realise(sample_rate))
             # TODO assymetric with Mix since we don't overload audio.concat
         
@@ -403,37 +422,68 @@ class WhiteNoise(Signal):
 #### simple oscillators
 
 
-class Sine(Signal): # oscillator? pitch? phaser?
-    wave = np.sin
+class Oscillator(Signal): # virtual superclass
+    wave = lambda phase: 0 # phase -> amplitude; subclass should implement this
     
-    def __init__(self, frequency=220, duration=5e3):
-        # TODO add initial phase argument (for completeness; also for potential phase inference)
+    def __new__(cls, frequency=220, duration=5e3, phase=None):
+        # TODO maybe deal with *args, **kwds for more flexibility
+        # Here check if frequency is string also
+        
+        if isinstance(frequency, str):
+            frequency = read_freq(frequency)
+            # TODO frequency should be attached manually to the resulting object
+        
+        if frequency is None:
+            return Silence(duration)
+        
+        return super(Oscillator, cls).__new__(cls)
+        ...
+    
+    def __init__(self, frequency=220, duration=5e3, phase=None):
+        # TODO consider phase being either degrees (int) or radians (float)
+        # phase = None indicates try to infer from end of previous osc, or 0
         super().__init__()
-        self.frequency = read_freq(frequency)
+        self.frequency = read_freq(frequency) # TODO this should be dealt with in __new__
         self.duration = duration
+        self.phase = phase
         # TODO if frequency is a curve then duration should be derived from it?
         # or ignored?
         
+    @property
+    def end_phase(self): # for later phase inference
+        phase = self.phase or 0
+        return (phase + 2*np.pi * self.frequency * self.duration / 1000)%(2*np.pi)
+    
     def generate(self, sample_rate):
         # TODO currently the [:-1] after the integral is needed,
         # otherwise it would be one sample too long. perhaps there is more elegant solution,
         # maybe passing an argument telling it to lose the last sample,
         # or better, having CompoundCurve give the extra argument telling its
         # children NOT to lose the last sample
+        
+        if hasattr(self, "_phase") and self.phase is None: # phase inference
+            phase = self._phase
+        else:
+            phase = self.phase or 0
+        
         if isinstance(self.frequency, Curve):
-            return type(self).wave(2*np.pi * self.frequency.integral(sample_rate)[:-1])
-        return type(self).wave(2*np.pi * self.frequency * self.sample_times(sample_rate))
+            return type(self).wave(phase + 2*np.pi * self.frequency.integral(sample_rate)[:-1])
+        return type(self).wave(phase + 2*np.pi * self.frequency * self.sample_times(sample_rate))
+        
 
-class Triangle(Sine): # TODO start at 0, not 1
+class Sine(Oscillator): # oscillator? pitch? phaser?
+    wave = np.sin
+
+class Triangle(Oscillator): # TODO start at 0, not 1
     wave = lambda phase: 2*np.abs((phase % (2*np.pi) - np.pi))/np.pi - 1
     
-class Square(Sine):
+class Square(Oscillator):
     wave = lambda phase: ((phase % (2*np.pi) < np.pi)*2 - 1).astype(np.float64)
 
-class Sawtooth(Sine):
+class Sawtooth(Oscillator):
     wave = lambda phase: (phase % (2*np.pi))/np.pi-1
 
-# TODO sweepsine
+# TODO sweepsine, periodic impulse
 
 ### raw audio signals
 

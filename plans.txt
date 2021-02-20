@@ -34,7 +34,7 @@ V make signals/trnasforms empty skeletons
   otherwise it will infer wrongly)
 no doubt we still need direct After function; putting signals in arrays is not always appropriate
 perhaps we should use + as after and & as mix?
-* specifying byte_width should be relevant only when exporting, not on mixdown.
+V specifying byte_width should be relevant only when exporting, not on mixdown.
   this is because Audio objects don't need to carry along sound quality information,
   except for sample rate.
   Also consider that synthesizing a Signal, then bouncing it into Audio
@@ -159,7 +159,11 @@ though come to thing of it, multiplication never was commutative in the first pl
 
 * infer end phases between concatenated pitched signals (would that be a feature or a bug?)
 
+* consider: feeding "r"/None as frequency for Oscillator renders rest (useful for programming melodies)
 
+* maybe let Signal.concat accept list of Signals as well (instead of only multiple arguments)
+
+* consider allowing Audio float subscripts (does interpolation behind the scenes)
 
 =============== Syntactical stuff =============
 
@@ -218,7 +222,8 @@ are these not implemented yet?
   - another way is when realise()ing Sequence,
     where it would either copy the phase into the 2nd oscillator phase,
     or we do it as an argument to osc's realise() (which sounds wrong).
-
+* WAV(...) + 5
+  # if 5 is to be interpreted as DC, need to infer duration of WAV/whatever
 
 
 give each Signal or Transform the power to traverse the tree and decide for itself!

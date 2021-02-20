@@ -6,3 +6,5 @@ debug/
 build/
 dist/
 gensound.egg-info/
+compositions/
+dist_old/

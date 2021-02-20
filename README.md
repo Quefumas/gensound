@@ -38,7 +38,7 @@ wav.export("test.wav") # only WAV supported
 
 * Play file using different sample rate:
 ```python
-WAV(kushaura).play(sample_rate=44100) # original sample rate 44.1 kHz
+WAV(kushaura).play(sample_rate=32000) # original sample rate 44.1 kHz
 ```
 
 * Mix a Stereo signal to mono:
@@ -93,7 +93,7 @@ wav = wav[1,::-1] # manually reverse the samples
 
 * Haas effect - delaying the L channel by several samples makes the sound appear to be coming from the right:
 ```python
-wav[0] *= Shift(80) # lisen with headphones! try changing the number of samples
+wav[0] *= Shift(80) # listen with headphones! try changing the number of samples
 ```
 
 * Stretch effect - slowing down or speeding up the signal by stretching or shrinking it. This affects pitch as well:

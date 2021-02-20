@@ -478,7 +478,7 @@ class Downsample(Transform):
             raise NotImplementedError # TODO
     
     def realise(self, audio):
-        l = audio.audio.shape[1] #- self.phase
+        l = audio.length #- self.phase
         
         for i in range(1, self.factor):
             less = 0 != (l % self.factor) <= i

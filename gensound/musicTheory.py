@@ -36,6 +36,9 @@ def str_to_freq(f): # this is a hack, better use regex or something else
     """ 'C##4+35' middle C## plus 35 cents
     'A' A4 (octave implied)
     """
+    if f == "r":
+        return None
+    
     cents = 0
     if "+" in f:
         cents = int(f.split("+")[-1])
@@ -58,7 +61,14 @@ def str_to_freq(f): # this is a hack, better use regex or something else
         
 
 # TODO make this accessible and modifiable by user
-read_freq = lambda f: (f if isnumber(f) else (str_to_freq(f) if isinstance(f, str) else f))
+def read_freq(f):
+    if isnumber(f):
+        return f
+    
+    if isinstance(f, str):
+        return str_to_freq(f)
+    
+    return f # important for curves
 
 
 
