@@ -407,8 +407,11 @@ class Pan(Transform):
         audio.from_mono(len(dBs))
         
         for (i, dB) in enumerate(dBs):
-            audio.audio[i,:len(dB)] *= DB_to_Linear(dB)
-            audio.audio[i,len(dB):] *= DB_to_Linear(self.scheme(self.pan.endpoint())[i])
+            if isnumber(dB):
+                audio.audio[i,:] *= DB_to_Linear(dB)
+            else: # paramterization
+                audio.audio[i,:len(dB)] *= DB_to_Linear(dB)
+                audio.audio[i,len(dB):] *= DB_to_Linear(self.scheme(self.pan.endpoint())[i])
 
 class Repan(Transform):
     """ Allows switching between channels.

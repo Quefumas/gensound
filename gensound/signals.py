@@ -10,7 +10,7 @@ import copy
 import numpy as np
 
 from gensound.utils import isnumber, iscallable, num_samples
-from gensound.musicTheory import read_freq
+from gensound.musicTheory import parse_melody_to_signal, read_freq
 
 from gensound.transforms import Transform, TransformChain, Amplitude, Slice, Combine, BiTransform
 from gensound.curve import Curve
@@ -444,7 +444,10 @@ class Oscillator(Signal): # virtual superclass
         
         if isinstance(frequency, str):
             if " " in frequency:
-                return Signal.concat([cls(f, duration, phase) for f in frequency.split(" ")])
+                return Signal.concat([cls(note["frequency"],
+                                          int(duration*note["beats"]) if isinstance(duration, int) else float(duration*note["beats"]),
+                                          phase)
+                                      for note in parse_melody_to_signal(frequency)])
             else:
                 frequency = read_freq(frequency)
             #return cls(frequency, duration, phase)

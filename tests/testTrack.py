@@ -182,15 +182,51 @@ def one_impulse_reverb_test():
     s.play(44100, max_amplitude=0.2)
     export_test(s.mixdown(44100), one_impulse_reverb_test)
 
-def test_something():
-    ...
+
+def next_gen_parse_osc_melody_test():
+    from gensound import Square, Signal
+    sig = Square
+    
+    t = 0.5e3
+    
+    v1 = sig("C3 Eb F G F Eb "*10, duration=t)
+    v2 = sig("Eb4=3 Bb "*10, duration=t)
+    v3 = sig("G4=2 A D, "*10, duration=t)
+    
+    s = Signal()
+    s[0] = v2
+    s[1] = v3
+    s += 0.5*v1
+    export_test(s.mixdown(44100), next_gen_parse_osc_melody_test)
+    
+
+def chorale_example():
+    sig = Sine # Triangle? Square?
+    
+    beat = 0.5e3 # 120 bpm
+    fermata = 0.1 # make fermatas in the melody slightly longer
+    pause = 0.6 # and breathe for a moment before starting the next phrase
+    
+    s = sig(f"r D5 D=2 C#=1 B=2 A=1 D E=2 F#={2+fermata} r={pause} F#=1 F#=2 F#=1 E=2 F#=1 G F#=2 E={2+fermata} r={pause} "
+            f"D=1 E=2 F#=1 E=2 D=1 B C#=2 D={2+fermata} r={pause} A'=1 F#=2 D=1 E=2 G=1 F# E=2 D=3", beat)
+    a = sig(f"r A4 B=2 A=1 G=2 F#=1 F# B A A={2+fermata} r={pause} C#=1 B=2 B=1 B A A A D A A={2+fermata} r={pause} "
+            f"B=1 A=2 A=1 B A=0.5 G F#=1 B B A# B={2+fermata} r={pause} A=1 A=2 B=1 A=2 A=1 A B A A=3", beat)
+    t = sig(f"r F#4 F#=2 F#=1 D=2 D=1 D D C# D={2+fermata} r={pause} C#=1 D=2 D=1 D C# D E A, D C#={2+fermata} r={pause} "
+            f"F#=1 E=2 D=1 D C# D D G F# F#={2+fermata} r={pause} E=1 F#=2 F#=1 E=2 C#=1 A B C# D=3", beat)
+    b = sig(f"r D3 B D F# G B D B G A D,={2+fermata} r={pause} A#'=1 B=2 A=1 G# A F# C# D F# A={2+fermata} r={pause} "
+            f"B=1 C#=2 D=1 G, A B G E F# B,={2+fermata} r={pause} C#'=1 D C# B C# B A D G, A D,=3", beat)
+    
+    chorale = s*Pan(25) + b*Pan(-25) + t*Pan(80) + a*Pan(-80)
+    chorale.play() # can you spot the parallel octaves?
 
 if __name__ == "__main__":
     #Butterworth_experiment()
     #additive_complex_sound_test()
     #IIR_general_test()
     #sweep_test()
-    one_impulse_reverb_test()
+    #one_impulse_reverb_test()
+    #next_gen_parse_osc_melody_test()
+    chorale_example()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
 

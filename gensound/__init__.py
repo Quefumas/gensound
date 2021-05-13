@@ -17,7 +17,7 @@ concat = Signal.concat
 import os
 
 kushaura = os.path.join(os.path.dirname(__file__), "data/Kushaura_sketch.wav")
-
+test_wav = kushaura
 
 def transform(f): # decorator for functions masquerading as Transforms
         # TODO better names?
