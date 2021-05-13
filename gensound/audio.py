@@ -320,13 +320,13 @@ class Audio:
     def play(self, byte_width=2, is_wait=True):
         from gensound.io import play_Audio
         
-        self._prepare_buffer(byte_width)
+        self._prepare_buffer(byte_width) # TODO max amplitude
         play_Audio(self, is_wait)
     
-    def to_WAV(self, filename, byte_width=2):
+    def to_WAV(self, filename, byte_width=2, max_amplitude=1):
         from gensound.io import export_WAV
         
-        self._prepare_buffer(byte_width)
+        self._prepare_buffer(byte_width, max_amplitude)
         
         # TODO disentangle export_WAV arguments so that they will be given
         # seperately (or in a config dict) rather than in an Audio object,

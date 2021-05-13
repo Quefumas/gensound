@@ -69,7 +69,7 @@ class Signal:
         TODO not sure this behaviour is optimal
         """
         audio = self.realise(sample_rate)
-        audio.to_WAV(filename, byte_width)
+        audio.to_WAV(filename, byte_width, max_amplitude=max_amplitude)
         
     
     #####################
@@ -92,6 +92,16 @@ class Signal:
     
     @staticmethod
     def concat(*args):
+        """
+        If receives a single Signal, return it unchanged.
+        If receives a list/tuple of Signals, return a Sequence object containing them
+        If receives multiple arguments, return a Sequence containing them
+        """
+        if len(args) == 1:
+            if isinstance(args[0], Signal):
+                return args[0]
+            else: # assumes tuple/list/iterable
+                return Sequence(*args[0])
         return Sequence(*args)
     
     @staticmethod
@@ -133,6 +143,9 @@ class Signal:
         # TODO consider enabling for negative other,
         # thus shifting a sequence forward(backward? Chinese) in time
         # TODO possibly better way to implement than using Silence
+        if other is None:
+            return self
+        
         if isnumber(other):
             other = Silence(duration=other)
             
@@ -430,12 +443,23 @@ class Oscillator(Signal): # virtual superclass
         # Here check if frequency is string also
         
         if isinstance(frequency, str):
-            frequency = read_freq(frequency)
+            if " " in frequency:
+                return Signal.concat([cls(f, duration, phase) for f in frequency.split(" ")])
+            else:
+                frequency = read_freq(frequency)
+            #return cls(frequency, duration, phase)
             # TODO frequency should be attached manually to the resulting object
         
         if frequency is None:
             return Silence(duration)
         
+        if frequency == "":
+            return None
+        
+        #obj = super(Oscillator, cls).__new__(cls)
+        #obj.__init__(frequency, duration, phase)
+        #return obj
+        #return cls(frequency, duration, phase)
         return super(Oscillator, cls).__new__(cls)
         ...
     

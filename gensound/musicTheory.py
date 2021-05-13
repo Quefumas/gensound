@@ -36,7 +36,7 @@ def str_to_freq(f): # this is a hack, better use regex or something else
     """ 'C##4+35' middle C## plus 35 cents
     'A' A4 (octave implied)
     """
-    if f == "r":
+    if f in ("r",""):
         return None
     
     cents = 0
