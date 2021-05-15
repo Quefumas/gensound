@@ -134,9 +134,8 @@ def IIR_one_pole_filters_test():
 
 def sweep_test():
     s = SweepTest()
-    s *= Butterworth(cutoff=440)
-    audio = s.mixdown(sample_rate=44100, byte_width=2, max_amplitude=0.2)
-    play_Audio(audio)
+    #s *= Butterworth(cutoff=440)
+    audio = s.play(max_amplitude=0.2)
 
 def test_transform_chain():
     s = WAV(african)[10e3:20e3]
@@ -201,22 +200,26 @@ def next_gen_parse_osc_melody_test():
     
 
 def chorale_example():
-    sig = Sine # Triangle? Square?
+    sig = Triangle # Square?
     
     beat = 0.5e3 # 120 bpm
     fermata = 0.1 # make fermatas in the melody slightly longer
     pause = 0.6 # and breathe for a moment before starting the next phrase
     
-    s = sig(f"r D5 D=2 C#=1 B=2 A=1 D E=2 F#={2+fermata} r={pause} F#=1 F#=2 F#=1 E=2 F#=1 G F#=2 E={2+fermata} r={pause} "
-            f"D=1 E=2 F#=1 E=2 D=1 B C#=2 D={2+fermata} r={pause} A'=1 F#=2 D=1 E=2 G=1 F# E=2 D=3", beat)
-    a = sig(f"r A4 B=2 A=1 G=2 F#=1 F# B A A={2+fermata} r={pause} C#=1 B=2 B=1 B A A A D A A={2+fermata} r={pause} "
-            f"B=1 A=2 A=1 B A=0.5 G F#=1 B B A# B={2+fermata} r={pause} A=1 A=2 B=1 A=2 A=1 A B A A=3", beat)
-    t = sig(f"r F#4 F#=2 F#=1 D=2 D=1 D D C# D={2+fermata} r={pause} C#=1 D=2 D=1 D C# D E A, D C#={2+fermata} r={pause} "
-            f"F#=1 E=2 D=1 D C# D D G F# F#={2+fermata} r={pause} E=1 F#=2 F#=1 E=2 C#=1 A B C# D=3", beat)
-    b = sig(f"r D3 B D F# G B D B G A D,={2+fermata} r={pause} A#'=1 B=2 A=1 G# A F# C# D F# A={2+fermata} r={pause} "
-            f"B=1 C#=2 D=1 G, A B G E F# B,={2+fermata} r={pause} C#'=1 D C# B C# B A D G, A D,=3", beat)
+    s = sig(f"r D5 D=2 C#=1 B-13=2 A=1 D E=2 F#-13={2+fermata} r={pause} F#=1 F#=2 F#=1 E=2 F#-13=1 G F#-13=2 E={2+fermata} r={pause} "
+            f"D+16=1 E=2 F#-13=1 E=2 D+16=1 B-13 C#=2 D+9={2+fermata} r={pause} A'=1 F#-13=2 D+16=1 E=2 G=1 F#-13 E=2 D=3", beat)
+    a = sig(f"r A4 B-16=2 A+16=1 G=2 F#-13=1 F# B-13 A A={2+fermata} r={pause} C#=1 B=2 B=1 B A A A D A A={2+fermata} r={pause} "
+            f"B=1 A=2 A=1 B-13 A=0.5 G F#=1 B-13 B A#-13 B={2+fermata} r={pause} A=1 A=2 B=1 A=2 A=1 A B-13 A F#-13=3", beat)
+    t = sig(f"r F#4-13 F#=2 F#=1 D=2 D=1 D D C#-13 D={2+fermata} r={pause} C#=1 D+16=2 D+16=1 D C#-13 D E A, D C#-13={2+fermata} r={pause} "
+            f"F#=1 E=2 D=1 D C#-13 D+16 D G+5 F# F#={2+fermata} r={pause} E=1 F#-13=2 F#=1 E=2 C#-13=1 A B C#-13 D=3", beat)
+    b = sig(f"r D3 B-16 D F# G B-13 D B-16 G A D,={2+fermata} r={pause} A#'-13=1 B=2 A=1 G#-13 A F#-13 C#-13 D F#-13 A={2+fermata} r={pause} "
+            f"B=1 C#-13=2 D=1 G, A B G E F# B,={2+fermata} r={pause} C#'-13=1 D C# B C#-13 B A D G, A D,=3", beat)
     
     chorale = s*Pan(25) + b*Pan(-25) + t*Pan(80) + a*Pan(-80)
+    
+    from gensound.filters import MovingAverage
+    chorale *= MovingAverage(5)#*Reverse()
+    #export_test(chorale.mixdown(44100), chorale_example)
     chorale.play() # can you spot the parallel octaves?
 
 if __name__ == "__main__":
@@ -226,7 +229,7 @@ if __name__ == "__main__":
     #sweep_test()
     #one_impulse_reverb_test()
     #next_gen_parse_osc_melody_test()
-    chorale_example()
+    #chorale_example()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
 

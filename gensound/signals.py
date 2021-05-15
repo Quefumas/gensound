@@ -502,13 +502,13 @@ class Sine(Oscillator): # oscillator? pitch? phaser?
     wave = np.sin
 
 class Triangle(Oscillator): # TODO start at 0, not 1
-    wave = lambda phase: 2*np.abs((phase % (2*np.pi) - np.pi))/np.pi - 1
+    wave = lambda phase: 2*np.abs(((phase-0.5*np.pi) % (2*np.pi) - np.pi))/np.pi - 1
     
 class Square(Oscillator):
     wave = lambda phase: ((phase % (2*np.pi) < np.pi)*2 - 1).astype(np.float64)
 
 class Sawtooth(Oscillator):
-    wave = lambda phase: (phase % (2*np.pi))/np.pi-1
+    wave = lambda phase: ((phase+np.pi) % (2*np.pi))/np.pi-1
 
 # TODO sweepsine, periodic impulse
 
