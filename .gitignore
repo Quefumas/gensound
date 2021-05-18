@@ -8,3 +8,4 @@ dist/
 gensound.egg-info/
 compositions/
 dist_old/
+gensound/data/

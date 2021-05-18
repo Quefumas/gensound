@@ -526,7 +526,7 @@ class Raw(Signal):
         
         if audio != None:
             if not hasattr(self, "key"):
-                self.key = len(Raw.cache)
+                self.key = f"Raw_{len(Raw.cache)}"
             
             if self._key() not in Raw.cache:
                 Raw.cache[self._key()] = audio
@@ -535,6 +535,11 @@ class Raw(Signal):
         return type(self).__name__ + ":" + str(self.key)
     
     def resample(self, sample_rate=44100, method="quadratic"):
+        # TODO maybe copy resampled audio under new key which indicates the sample rate change
+        # but to do that we need to decide if we clear the previous version from cache,
+        # or what is the best way to let the user decide (e.g. what should be the default behavior?)
+        # another approach is to add "new_copy" arg to WAV, ensuring it gets a fresh key
+        # and reloads the WAV
         self.audio._resample(sample_rate, method)
         return self # so the user can type WAV("a.wav").resample(44100)*Transform() etc.
         ...
@@ -574,7 +579,10 @@ class WAV(Raw):
     """
     
     def __init__(self, filename):
-        self.key = filename
+        # TODO consider adding "new_copy"/"force_copy"/"unique"/"new" boolean arg
+        # would be implemented either by appending random nonce to key,
+        # or adding counter for number of copies of base key
+        self.key = f"WAV_{filename}"
         
         audio = None
         

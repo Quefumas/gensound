@@ -9,10 +9,12 @@ do we need all these functions as static?
 some may be instance functions, some may belong in utils.
 """
 
-import numpy as np
+import warnings
 import copy
 
-from gensound.utils import sec
+import numpy as np
+
+from gensound.utils import sec, sample_rates
 
 class Audio:
     """Basically a wrapper for a numpy array, representing the signal.
@@ -175,6 +177,10 @@ class Audio:
         Don't use this directly; better use Raw().resample instead.
         [TODO does this have to be a supported sample rate?]
         """
+        if sample_rate not in sample_rates:
+            warnings.warn("Resampling audio to sample rate which is not supported in playback. "
+                          "This is totally fine if you know what you're doing.")
+        
         if self.sample_rate == sample_rate:
             return
         from gensound.utils import get_interpolation
