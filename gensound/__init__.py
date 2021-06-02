@@ -5,7 +5,6 @@ import functools
 from .signals import *
 from .transforms import *
 from .audio import Audio
-from .io import play_Audio, export_WAV
 from .musicTheory import midC
 
 

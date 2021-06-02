@@ -329,16 +329,62 @@ class Audio:
         self._prepare_buffer(byte_width) # TODO max amplitude
         play_Audio(self, is_wait)
     
+    @staticmethod
+    def from_WAV(filename):
+        warnings.warn("Audio.from_WAV to be deprecated; use Audio.from_file instead.")
+        return Audio.from_file(filename, file_format="wav")
+    
+    @staticmethod
+    def from_file(filename, file_format=None): # 2nd argument to force format regardless of file name
+        ext = file_format or filename.split(".")[-1].lower()
+        
+        if ext in ("wav", "wave"):
+            from gensound.io import WAV_to_Audio
+            return WAV_to_Audio(filename)
+        
+        if ext in ("aiff", "aifc", "aif"):
+            from gensound.io import AIFF_to_Audio
+            return AIFF_to_Audio(filename)
+    
     def to_WAV(self, filename, byte_width=2, max_amplitude=1):
-        from gensound.io import export_WAV
+        warnings.warn("Audio.to_WAV to be deprecated; use Audio.export instead.")
+        self.export(filename, byte_width, max_amplitude, file_format="wav")
+    
+    def export(self, filename, byte_width=2, max_amplitude=1, file_format=None):
+        ext = file_format or filename.split(".")[-1].lower()
         
         self._prepare_buffer(byte_width, max_amplitude)
         
         # TODO disentangle export_WAV arguments so that they will be given
         # seperately (or in a config dict) rather than in an Audio object,
         # since the latter is not supposed to hold a buffer nor byte width
-        export_WAV(filename, self)
-    
+        
+        if ext in ("wav", "wave"):
+            from gensound.io import export_WAV
+            export_WAV(filename, self)
+        
+        if ext in ("aiff", "aifc", "aif"):
+            from gensound.io import export_AIFF
+            export_AIFF(filename, self)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

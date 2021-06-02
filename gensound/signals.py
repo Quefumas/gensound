@@ -15,7 +15,6 @@ from gensound.musicTheory import parse_melody_to_signal, read_freq
 from gensound.transforms import Transform, TransformChain, Amplitude, Slice, Combine, BiTransform
 from gensound.curve import Curve
 from gensound.audio import Audio
-from gensound.io import WAV_to_Audio
 
 #CHANNEL_NAMES = {"L":0, "R":1}
 
@@ -69,7 +68,7 @@ class Signal:
         TODO not sure this behaviour is optimal
         """
         audio = self.realise(sample_rate)
-        audio.to_WAV(filename, byte_width, max_amplitude=max_amplitude)
+        audio.export(filename, byte_width, max_amplitude=max_amplitude)
         
     
     #####################
@@ -587,7 +586,7 @@ class WAV(Raw):
         audio = None
         
         if self._key() not in Raw.cache:
-            audio = WAV_to_Audio(filename)
+            audio = Audio.from_file(filename)
         
         # TODO copy again? so the cache will be eternally independent?
         super().__init__(audio)
