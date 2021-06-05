@@ -20,6 +20,29 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
 
 ######## FIRs
 
+
+class Filter:
+    # https://stackoverflow.com/a/37841802
+    def plot_frequency_response(self, sample_rate):
+        def H(z):
+            b,a = self.coefficients(sample_rate)
+            num = sum([z**(len(b) - i - 1)*b[i] for i in range(len(b))])
+            denom = sum([z**(len(a) - i - 1)*a[i] for i in range(len(a))])
+            return num/denom
+    
+        #import numpy as np
+        import matplotlib.pyplot as plt
+    
+        w_range = np.linspace(0, np.pi, 1000)
+        vals = np.abs(H(np.exp(1j*w_range)))
+        #plt.xticks(w_range[::50]*sample_rate/2/np.pi)
+        plt.xscale('log')
+        plt.ylim(0, max(vals)*1.05)
+        plt.plot(w_range*sample_rate/2/np.pi, vals)
+        
+        #plt.show()
+
+
 class FIR(Transform):
     """ Implements a general-purpose FIR. Subclasses of this can deal solely with
     computing the desired coefficients by overriding FIR.coefficients,
@@ -74,50 +97,11 @@ class MovingAverage(FIR):
         self.h = [1/width]*width
     
 
-class LowPassBasic(Transform): # TODO I hear a band pass, and a lousy one too
-    def __init__(self, cutoff, width):
-        self.cutoff = cutoff
-        self.width = width # number of samples in FIR
-    
-    def coefficients(self, sample_rate):
-        n = np.linspace(start=-self.width/2, stop=self.width/2, num=self.width+1, endpoint=True)
-        omega = 2*np.pi*self.cutoff/sample_rate
-        h = np.sin(omega*n)/np.pi/n
-        h[int(self.width/2)] = omega/np.pi
-        
-        
-        blackman = [ 0.42 - 0.5*np.cos(2*np.pi*k/(self.width-1)) + 0.08*np.cos(4*np.pi*k/(self.width-1)) for k in range(self.width)]
-        
-        return h*n
-    
-    def realise2(self, audio):
-        h = self.coefficients(audio.sample_rate)[::-1] # its symmetric tho
-        
-        res = np.zeros_like(audio.audio, dtype=np.float64)        
-        padded = np.pad(audio.audio, ((0,0),(len(h)-1,0)))
-        
-        for i in range(audio.audio.shape[1]):
-            #TODO faster
-            res[:,i] = np.sum(h*padded[:,i:i+len(h)], axis=1)
-        
-        assert res.shape == audio.audio.shape, "FIR distorted audio shape!"
-        audio.audio[:,:] = res
-    
-    def realise(self, audio):
-        h = self.coefficients(audio.sample_rate)#[::-1] # its symmetric tho
-        n = audio.length
-        parallel = np.zeros((len(h), audio.num_channels, audio.length+len(h)-1), dtype=np.float64)
-        for i in range(len(h)):
-            parallel[i,:,i:n+i] = h[i]*audio.audio
-            
-        audio.audio[:,:] = np.sum(parallel, axis=0)[:,:n]
-
-
 
 
 ############ IIRs
 
-class IIR(Transform):
+class IIR(Transform, Filter):
     """ General-purpose IIR implementation. Subclasses can deal solely with coefficient selection,
     without worrying about the implementation. Override __init__ or coefficients,
     depending on whether or not the sample rate is relevant (typically is).
@@ -145,61 +129,77 @@ class IIR(Transform):
         
         audio.audio[:,:] = y[:,:audio.length]
 
-class OnePoleLPF(IIR):
-    """ Designed after Nigel Redmond.
-    https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
-    
-    For low pass, with Fc being cutoff/sample_rate,
-    use b1 = e^{-2 pi Fc}
-    and a0 = 1-b1
-    
-    6dB/octave
+class SimpleLPF(IIR):
+    """
+    McPherson
     """
     def __init__(self, cutoff):
         self.cutoff = cutoff
     
     def coefficients(self, sample_rate):
-        Fc = self.cutoff / sample_rate
-        a = (1, -np.e**(-2*np.pi*Fc))
-        b = (1 - a[1], )
-        return (b, a)
-
-
-class OnePoleHPF(IIR):
-    """ Designed after Nigel Redmond.
-    https://www.earlevel.com/main/2012/12/15/a-one-pole-filter/
-    
-    Not very effective for not very high cutoffs.
-    
-    b1 = - e^{-2 pi (0.5-Fc)}
-    a0 = 1+b1
-    
-    6dB/octave
-    """
-    def __init__(self, cutoff):
-        self.cutoff = cutoff
-    
-    def coefficients(self, sample_rate):
-        Fc = self.cutoff / sample_rate
-        a = (1, np.e**(-2*np.pi*(0.5-Fc)))
-        b = (1 + a[1], )
-        return (b, a)
-
-
-
-
-class Butterworth(Transform): # LowPass
-    def __init__(self, cutoff):
-        assert "scipy" in _supported, "SciPy required for Butterworth"
-        self.cutoff = cutoff
-    
-    def realise(self, audio):
-        from scipy.signal import butter,filtfilt
-        order = 2
+        Fc = 2*np.pi * self.cutoff / sample_rate
         
-        normal_cutoff = self.cutoff*2 / audio.sample_rate
-        b, a = butter(order, normal_cutoff, btype='low', analog=False)
-        audio.audio[:,:] = filtfilt(b, a, audio.audio)
+        # can also simplify instead of using beta
+        beta = (1 - np.tan(Fc/2)) / (1 + np.tan(Fc/2))
+        
+        a = (1, -beta)
+        b = ((1-beta)/2, (1-beta)/2)
+        return (b, a)
+
+
+class SimpleHPF(IIR):
+    """
+    McPherson
+    """
+    def __init__(self, cutoff):
+        self.cutoff = cutoff
+    
+    def coefficients(self, sample_rate):
+        Fc = 2*np.pi * self.cutoff / sample_rate
+        
+        beta = (1 - np.tan(Fc/2)) / (1 + np.tan(Fc/2))
+        
+        a = (1, -beta)
+        b = ((1+beta)/2, -(1+beta)/2)
+        return (b, a)
+
+
+
+class SimpleLowShelf(IIR):
+    """
+    McPherson
+    """
+    def __init__(self, cutoff, gain):
+        self.cutoff = cutoff
+        self.gain = gain
+    
+    def coefficients(self, sample_rate):
+        Fc = 2*np.pi * self.cutoff / sample_rate
+        
+        beta = (1 - np.tan(Fc/2)) / (1 + np.tan(Fc/2))
+        
+        a = (1, -beta)
+        b = ((1 + self.gain + (1-self.gain)*beta)/2, -(1 - self.gain + (1+self.gain)*beta)/2)
+        return (b, a)
+
+
+
+class SimpleHighShelf(IIR):
+    """
+    McPherson
+    """
+    def __init__(self, cutoff, gain):
+        self.cutoff = cutoff
+        self.gain = gain
+    
+    def coefficients(self, sample_rate):
+        Fc = 2*np.pi * self.cutoff / sample_rate
+        
+        beta = (1 - np.tan(Fc/2)) / (1 + np.tan(Fc/2))
+        
+        a = (1, -beta)
+        b = ((1 + self.gain + (self.gain-1)*beta)/2, (1 - self.gain - (1+self.gain)*beta)/2)
+        return (b, a)
 
 
 
