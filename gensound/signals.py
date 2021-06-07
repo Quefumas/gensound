@@ -55,20 +55,13 @@ class Signal:
     
     mixdown = realise # TODO consider keeping just 1
     
-    def play(self, sample_rate=44100, byte_width=2, max_amplitude=1):
+    def play(self, sample_rate=44100, **kwargs):
         audio = self.realise(sample_rate)
-        audio.play(byte_width)
+        audio.play(**kwargs)
     
-    def export(self, filename, sample_rate=44100, byte_width=2, max_amplitude=1):
-        """
-        0 < max_amplitude <= 1 implies stretching the amplitudes
-        so they would hit absolute value of max_amplitude.
-        otherwise, max_amplitude = None implies not to touch the amplitudes
-        as given, unless they exceed 1 in which case we shrink everything proportionally.
-        TODO not sure this behaviour is optimal
-        """
+    def export(self, filename, sample_rate=44100, **kwargs):
         audio = self.realise(sample_rate)
-        audio.export(filename, byte_width, max_amplitude=max_amplitude)
+        audio.export(filename, **kwargs)
         
     
     #####################

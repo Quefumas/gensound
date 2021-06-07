@@ -16,6 +16,14 @@ import numpy as np
 
 from gensound.utils import sec, sample_rates
 
+
+def warning_msg(message, category, filename, lineno, file=None, line=None):
+    return '%s: %s\n' % (category.__name__, message)
+
+warnings.formatwarning = warning_msg
+
+
+
 class Audio:
     """Basically a wrapper for a numpy array, representing the signal.
     Shape is (tracks, samples), tracks being >= 1.
@@ -286,31 +294,50 @@ class Audio:
     But export should actually be called from Signal, and do the rest on its own.
     """
     
-    def fit(self, max_amplitude=1):
+    def fit(self, max_amplitude):
         """
-        stretches/squashes the amplitude of the samples to be [-max_amplitude, +max_amplitude]
-        for max_amplitude <= 1.
+        If max_amplitude = None (default), ensure the signal lies within [-1,1],
+          shrinking it if necessary (with a warning).
         
-        for max_amplitude = None, leave things as they are.
+        If max_amplitude is a positive number, in which case ensure the signal lies within
+          [-max_amplitude, +max_amplitude].
         
-        'destructive' function, called only when exporting or playing.s
+        Finally, if max_amplitude = 0, don't touch anything.
+        
+        TODO do we need all 3 situations? is this the best interface for them?
+        
+        'destructive' function, called only when exporting or playing.
         """
-        assert max_amplitude is None or 0 < max_amplitude
+        assert max_amplitude is None or 0 <= max_amplitude
         
-        if max_amplitude == None:
+        if max_amplitude == 0:
+            warnings.warn("Setting max_amplitude to 0 may result in distorted audio or clipping.")
+            # leave signal peaks unchanged
             return
+        
+        if max_amplitude is not None and max_amplitude > 1:
+            warnings.warn("Supplying a value greater than 1 for max_amplitude will likely lead to distorted audio and clipping.")
         
         max_amp = np.max(np.abs(self.audio))
         
-        if max_amp == 0:
+        if max_amplitude is None and max_amp <= 1:
+            # fits within default range
             return
+        
+        # shrink/stretch to either max_amplitude or to 1
+        if max_amplitude is None:
+            warnings.warn(f"Output audio signal amplitude exceeds 1 (max abs. amplitude {max_amp:0.2f}). "
+                          "By default, the signal will be shrunk to fit range of [-1, 1] to prevent clipping. "
+                          "To prevent this behaviour, set the max_amplitude argument to zero, which leaves the signal untouched, "
+                          "or to any positive number, which will stretch/shrink it to match the given peak amplitude.")
+            max_amplitude = 1
         
         self.audio = self.audio * (max_amplitude / max_amp)
         
     
     ####### post-mixdown ########
     
-    def _prepare_buffer(self, byte_width=2, max_amplitude=1):
+    def _prepare_buffer(self, byte_width, max_amplitude):
         """ Attaches byte width to Audio object, and converts audio information
         to bytes object. This is only done in preparation for output (file or playback).
         """
@@ -323,10 +350,10 @@ class Audio:
         self.buffer = audio_to_bytes(self.audio, ["uint8","int16","int24","int32"][byte_width-1])
         
         
-    def play(self, byte_width=2, is_wait=True):
+    def play(self, byte_width=2, max_amplitude=None, is_wait=True):
         from gensound.io import play_Audio
         
-        self._prepare_buffer(byte_width) # TODO max amplitude
+        self._prepare_buffer(byte_width, max_amplitude) # TODO max amplitude
         play_Audio(self, is_wait)
     
     @staticmethod
@@ -350,7 +377,7 @@ class Audio:
         warnings.warn("Audio.to_WAV to be deprecated; use Audio.export instead.")
         self.export(filename, byte_width, max_amplitude, file_format="wav")
     
-    def export(self, filename, byte_width=2, max_amplitude=1, file_format=None):
+    def export(self, filename, byte_width=2, max_amplitude=None, file_format=None):
         ext = file_format or filename.split(".")[-1].lower()
         
         self._prepare_buffer(byte_width, max_amplitude)
