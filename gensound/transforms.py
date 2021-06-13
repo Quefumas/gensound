@@ -13,7 +13,7 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
                   num_samples, samples_slice, sec
 
-__all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "CrossFade",
+__all__ = ["Transform", "Shift", "Extend", "Reverse", "FadeIn", "FadeOut", "CrossFade",
            "Gain", "SineAM", "Limiter", "Mono", "Pan", "Repan", "Downsample",
            "Convolution", "ADSR"]
 
@@ -187,34 +187,64 @@ class Reverse(Transform):
 
 ######### Level/ampltidue Stuff ###################
 
-class Fade(Transform):
+class FadeIn(Transform):
     min_fade = -50
     
-    def __init__(self, is_in=True, duration=3e3):
-        self.is_in = is_in
+    def __init__(self, duration=3e3, curve="lin"):
+        self.curve = curve
         self.duration = duration
     
     def realise(self, audio):
-        amp = DB_to_Linear(np.linspace(Fade.min_fade, 0, self.num_samples(audio.sample_rate)))
-        #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
-        # perhaps the fade in should be nonlinear
-        # TODO subsciprability problem
-        
-        if self.is_in:
+        if self.curve == "lin":
+
+            assert (self.curve in ["lin", "poly"])
+            amp = DB_to_Linear(np.linspace(FadeIn.min_fade, 0, self.num_samples(audio.sample_rate)))
+            #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
+            # perhaps the fade in should be nonlinear
+            # TODO subsciprability problem
+            
             audio.audio[:,:len(amp)] *= amp
-        else:
+            
+            # TODO in case of fade out, if amp is shorter or longer than audio,
+            # care must be taken when multiplying!
+            # TODO TEST!!!!!!!!!!!!!
+            # TODO I still hear a bump when the playback starts
+
+        elif self.curve == "poly":
+            pass
+
+
+class FadeOut(Transform):
+    min_fade = -50
+    
+    def __init__(self, duration=3e3, curve="lin"):
+        self.curve = curve
+        self.duration = duration
+    
+    def realise(self, audio):
+        if self.curve == "lin":
+
+            assert (self.curve in ["lin", "poly"])
+            amp = DB_to_Linear(np.linspace(FadeOut.min_fade, 0, self.num_samples(audio.sample_rate)))
+            #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
+            # perhaps the fade in should be nonlinear
+            # TODO subsciprability problem
+
             audio.audio[:,-len(amp):] *= amp[::-1]
-        
-        # TODO in case of fade out, if amp is shorter or longer than audio,
-        # care must be taken when multiplying!
-        # TODO TEST!!!!!!!!!!!!!
-        # TODO I still hear a bump when the playback starts
+            
+            # TODO in case of fade out, if amp is shorter or longer than audio,
+            # care must be taken when multiplying!
+            # TODO TEST!!!!!!!!!!!!!
+            # TODO I still hear a bump when the playback starts
+
+        elif self.curve == "poly":
+            pass
 
 
 class CrossFade(BiTransform): # TODO rename to XFade?
     def __init__(self, duration):
-        L = Fade(is_in=False, duration=duration)
-        R = Fade(duration=duration)*Shift(-duration)
+        L = FadeOut(duration=duration)
+        R = FadeIn(duration=duration)*Shift(-duration)
         super().__init__(L, R)
         # needs a lot of tweaking of fade curves and db vs. linear stuff
 
