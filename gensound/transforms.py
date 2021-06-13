@@ -198,13 +198,9 @@ class FadeIn(Transform):
         assert (self.curve in ["lin", "poly"])
 
         if self.curve == "lin":
-
-            amp = DB_to_Linear(np.linspace(FadeIn.min_fade, 0, self.num_samples(audio.sample_rate)))
-            #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
+            amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
             # perhaps the fade in should be nonlinear
             # TODO subsciprability problem
-            
-            audio.audio[:,:len(amp)] *= amp
             
             # TODO in case of fade out, if amp is shorter or longer than audio,
             # care must be taken when multiplying!
@@ -212,8 +208,9 @@ class FadeIn(Transform):
             # TODO I still hear a bump when the playback starts
 
         elif self.curve == "poly":
-            pass
+            amp = DB_to_Linear(np.linspace(FadeIn.min_fade, 0, self.num_samples(audio.sample_rate)))
 
+        audio.audio[:,:len(amp)] *= amp
 
 class FadeOut(Transform):
     min_fade = -50
@@ -225,14 +222,11 @@ class FadeOut(Transform):
     def realise(self, audio):
         assert (self.curve in ["lin", "poly"])
         
-        if self.curve == "lin":
-
-            amp = DB_to_Linear(np.linspace(FadeOut.min_fade, 0, self.num_samples(audio.sample_rate)))
-            #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
+        if self.curve == "lin":            
+            amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
             # perhaps the fade in should be nonlinear
             # TODO subsciprability problem
 
-            audio.audio[:,-len(amp):] *= amp[::-1]
             
             # TODO in case of fade out, if amp is shorter or longer than audio,
             # care must be taken when multiplying!
@@ -240,8 +234,10 @@ class FadeOut(Transform):
             # TODO I still hear a bump when the playback starts
 
         elif self.curve == "poly":
-            pass
+            amp = DB_to_Linear(np.linspace(FadeOut.min_fade, 0, self.num_samples(audio.sample_rate)))
 
+
+        audio.audio[:,-len(amp):] *= amp[::-1]
 
 class CrossFade(BiTransform): # TODO rename to XFade?
     def __init__(self, duration):
