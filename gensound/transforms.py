@@ -13,7 +13,7 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
     isnumber, iscallable, \
     num_samples, samples_slice, sec
 
-__all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "CrossFade",
+__all__ = ["Transform", "Shift", "Extend", "Reverse", "FadeIn", "FadeOut", "CrossFade",
            "Gain", "SineAM", "Limiter", "Mono", "Pan", "Repan", "Downsample",
            "Convolution", "ADSR"]
 
@@ -207,7 +207,7 @@ class Reverse(Transform):
 class FadeIn(Transform):
     min_fade = -50
 
-    def __init__(self, duration=3e3, curve="linear"):
+    def __init__(self, duration=3e3, curve="lin"):
         self.duration = duration
         self.curve = curve
 
@@ -237,7 +237,7 @@ class FadeIn(Transform):
 class FadeOut(Transform):
     min_fade = -50
 
-    def __init__(self, duration=3e3, curve="linear"):
+    def __init__(self, duration=3e3, curve="lin"):
         self.duration = duration
         self.curve = curve
 
