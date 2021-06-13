@@ -266,8 +266,8 @@ class FadeOut(Transform):
 
 class CrossFade(BiTransform):  # TODO rename to XFade?
     def __init__(self, duration):
-        L = Fade(is_in=False, duration=duration)
-        R = Fade(duration=duration)*Shift(-duration)
+        L = FadeOut(duration=duration)
+        R = FadeIn(duration=duration)*Shift(-duration)
         super().__init__(L, R)
         # needs a lot of tweaking of fade curves and db vs. linear stuff
 
