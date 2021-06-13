@@ -195,9 +195,10 @@ class FadeIn(Transform):
         self.duration = duration
     
     def realise(self, audio):
+        assert (self.curve in ["lin", "poly"])
+
         if self.curve == "lin":
 
-            assert (self.curve in ["lin", "poly"])
             amp = DB_to_Linear(np.linspace(FadeIn.min_fade, 0, self.num_samples(audio.sample_rate)))
             #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
             # perhaps the fade in should be nonlinear
@@ -222,9 +223,10 @@ class FadeOut(Transform):
         self.duration = duration
     
     def realise(self, audio):
+        assert (self.curve in ["lin", "poly"])
+        
         if self.curve == "lin":
 
-            assert (self.curve in ["lin", "poly"])
             amp = DB_to_Linear(np.linspace(FadeOut.min_fade, 0, self.num_samples(audio.sample_rate)))
             #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
             # perhaps the fade in should be nonlinear
