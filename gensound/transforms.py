@@ -187,12 +187,18 @@ class Reverse(Transform):
 
 ######### Level/ampltidue Stuff ###################
 
-class FadeIn(Transform):
+class Fade(Transform):
     min_fade = -50
     
-    def __init__(self, duration=3e3, curve="lin"):
+    def __init__(self, duration, curve):
         self.curve = curve
         self.duration = duration
+    
+class FadeIn(Fade):
+    
+    def __init__(self, duration, curve):
+        super().__init__(duration, curve)
+       
     
     def realise(self, audio):
         assert (self.curve in ["lin", "poly"])
