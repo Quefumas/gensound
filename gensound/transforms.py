@@ -190,7 +190,7 @@ class Reverse(Transform):
 class Fade(Transform):
     min_fade = -50
     
-    def __init__(self, duration, curve):
+    def __init__(self, duration = 3e3, curve="lin"):
         self.curve = curve
         self.duration = duration
     
