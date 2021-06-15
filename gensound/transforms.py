@@ -231,7 +231,7 @@ class FadeOut(Fade):
         super().__init__(duration, curve, is_in, degree)
 
 class CrossFade(BiTransform): # TODO rename to XFade?
-    def __init__(self, duration=None, curve="polynomial", degree=None):
+    def __init__(self, duration=None, curve="polynomial", degree=0.5):
         L = Fade(curve, degree, is_in=False, duration=duration)
         R = Fade(curve, degree, duration=duration)*Shift(-duration)
         super().__init__(L, R)
