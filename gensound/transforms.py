@@ -5,6 +5,7 @@ Created on Sun Aug 18 21:01:16 2019
 @author: Dror
 """
 
+from operator import is_
 import numpy as np
 from gensound.settings import _supported
 from gensound.curve import Curve, Line, Logistic, Constant
@@ -13,7 +14,7 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
                   num_samples, samples_slice, sec
 
-__all__ = ["Transform", "Shift", "Extend", "Reverse", "FadeIn", "FadeOut", "CrossFade",
+__all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "FadeIn", "FadeOut", "CrossFade",
            "Gain", "SineAM", "Limiter", "Mono", "Pan", "Repan", "Downsample",
            "Convolution", "ADSR"]
 
@@ -190,65 +191,48 @@ class Reverse(Transform):
 class Fade(Transform):
     min_fade = -50
     
-    def __init__(self, duration = 3e3, curve="lin"):
+    def __init__(self, duration=None, curve=None, is_in=True):
+        assert (curve in (None, "linear", "polynomial"))
+        if curve == None:
+            curve = "linear"
+        if duration == None:
+            duration = 3e3
+
         self.curve = curve
         self.duration = duration
-    
-class FadeIn(Fade):
-    
-    def __init__(self, duration, curve):
-        super().__init__(duration, curve)
-       
-    
+        self.is_in = is_in
+
     def realise(self, audio):
-        assert (self.curve in ["lin", "poly"])
-
-        if self.curve == "lin":
-            amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
-            # perhaps the fade in should be nonlinear
-            # TODO subsciprability problem
-            
-            # TODO in case of fade out, if amp is shorter or longer than audio,
-            # care must be taken when multiplying!
-            # TODO TEST!!!!!!!!!!!!!
-            # TODO I still hear a bump when the playback starts
-
-        elif self.curve == "poly":
-            amp = DB_to_Linear(np.linspace(FadeIn.min_fade, 0, self.num_samples(audio.sample_rate)))
-
-        audio.audio[:,:len(amp)] *= amp
-
-class FadeOut(Transform):
-    min_fade = -50
-    
-    def __init__(self, duration=3e3, curve="lin"):
-        self.curve = curve
-        self.duration = duration
-    
-    def realise(self, audio):
-        assert (self.curve in ["lin", "poly"])
+        curve_types = {
+            "linear": np.linspace(0, 1, self.num_samples(audio.sample_rate)),
+            "polynomial" : DB_to_Linear(np.linspace(Fade.min_fade, 0, self.num_samples(audio.sample_rate))),
+        }
         
-        if self.curve == "lin":            
-            amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
-            # perhaps the fade in should be nonlinear
-            # TODO subsciprability problem
+        amp = curve_types[self.curve]
 
-            
-            # TODO in case of fade out, if amp is shorter or longer than audio,
-            # care must be taken when multiplying!
-            # TODO TEST!!!!!!!!!!!!!
-            # TODO I still hear a bump when the playback starts
+        if self.is_in: audio.audio[:,:len(amp)] *= amp
+        if not self.is_in: audio.audio[:,-len(amp):] *= amp[::-1]
 
-        elif self.curve == "poly":
-            amp = DB_to_Linear(np.linspace(FadeOut.min_fade, 0, self.num_samples(audio.sample_rate)))
+        # perhaps the fade in should be nonlinear
+        # TODO subsciprability problem
+        
+        # TODO in case of fade out, if amp is shorter or longer than audio,
+        # care must be taken when multiplying!
+        # TODO TEST!!!!!!!!!!!!!
+        # TODO I still hear a bump when the playback starts
 
+class FadeIn(Fade):
+    def __init__(self, duration=None, curve=None, is_in=True):
+        super().__init__(duration, curve, is_in)
 
-        audio.audio[:,-len(amp):] *= amp[::-1]
+class FadeOut(Fade):
+    def __init__(self, duration=None, curve=None, is_in=False):
+        super().__init__(duration, curve, is_in)
 
 class CrossFade(BiTransform): # TODO rename to XFade?
     def __init__(self, duration):
-        L = FadeOut(duration=duration)
-        R = FadeIn(duration=duration)*Shift(-duration)
+        L = Fade(is_in=False, duration=duration)
+        R = Fade(duration=duration)*Shift(-duration)
         super().__init__(L, R)
         # needs a lot of tweaking of fade curves and db vs. linear stuff
 
