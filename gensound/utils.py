@@ -24,7 +24,6 @@ sample_rates = (8000, 11025, 16000, 22050, 24000, 32000, 44100, 48000, 88200, 96
 
 def DB_to_Linear(x): return 10**(x/20)
 def Linear_to_DB(x): return 20*np.log(x)/np.log(10)
-def make_polynomial(x,degree): return x**degree
 
 
 

@@ -11,7 +11,7 @@ from gensound.settings import _supported
 from gensound.curve import Curve, Line, Logistic, Constant
 from gensound.audio import Audio
 from gensound.utils import lambda_to_range, DB_to_Linear, \
-                  isnumber, iscallable, make_polynomial, \
+                  isnumber, iscallable, \
                   num_samples, samples_slice, sec
 
 __all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "FadeIn", "FadeOut", "CrossFade",
@@ -192,8 +192,8 @@ class Fade(Transform):
     min_fade = -50
     
     def __init__(self, duration=None, curve=None, is_in=True, degree=None):
-        assert (curve in (None, "linear", "polynomial"))
-        # defaults
+        assert curve in (None, "linear", "polynomial")
+        # default setting for backwards compatibility (allowing usage of both Fade() and FadeIn/FadeOut()
         if curve == None:
             curve = "linear"
         if duration == None:
@@ -209,8 +209,7 @@ class Fade(Transform):
     def realise(self, audio):
         curve_types = {
             "linear": np.linspace(0, 1, self.num_samples(audio.sample_rate)),
-            "curve2" : DB_to_Linear(np.linspace(Fade.min_fade, 0, self.num_samples(audio.sample_rate))),
-            "polynomial" : make_polynomial(np.linspace(0, 1, self.num_samples(audio.sample_rate)), self.degree)
+            "polynomial" : (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree,
         }
         
         amp = curve_types[self.curve]
@@ -235,9 +234,9 @@ class FadeOut(Fade):
         super().__init__(duration, curve, is_in, degree)
 
 class CrossFade(BiTransform): # TODO rename to XFade?
-    def __init__(self, duration, curve="polynomial"):
-        L = Fade(curve, is_in=False, duration=duration)
-        R = Fade(curve, duration=duration)*Shift(-duration)
+    def __init__(self, duration=None, curve="polynomial", degree=None):
+        L = Fade(curve, degree, is_in=False, duration=duration)
+        R = Fade(curve, degree, duration=duration)*Shift(-duration)
         super().__init__(L, R)
         # needs a lot of tweaking of fade curves and db vs. linear stuff
 
