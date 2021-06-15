@@ -11,7 +11,7 @@ from gensound.settings import _supported
 from gensound.curve import Curve, Line, Logistic, Constant
 from gensound.audio import Audio
 from gensound.utils import lambda_to_range, DB_to_Linear, \
-                  isnumber, iscallable, \
+                  isnumber, iscallable, make_polynomial, \
                   num_samples, samples_slice, sec
 
 __all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "FadeIn", "FadeOut", "CrossFade",
@@ -191,27 +191,32 @@ class Reverse(Transform):
 class Fade(Transform):
     min_fade = -50
     
-    def __init__(self, duration=None, curve=None, is_in=True):
+    def __init__(self, duration=None, curve=None, is_in=True, degree=None):
         assert (curve in (None, "linear", "polynomial"))
+        # defaults
         if curve == None:
             curve = "linear"
         if duration == None:
             duration = 3e3
-
+        if degree == None:
+            degree = 1
+        
         self.curve = curve
         self.duration = duration
         self.is_in = is_in
+        self.degree = degree
 
     def realise(self, audio):
         curve_types = {
             "linear": np.linspace(0, 1, self.num_samples(audio.sample_rate)),
-            "polynomial" : DB_to_Linear(np.linspace(Fade.min_fade, 0, self.num_samples(audio.sample_rate))),
+            "curve2" : DB_to_Linear(np.linspace(Fade.min_fade, 0, self.num_samples(audio.sample_rate))),
+            "polynomial" : make_polynomial(np.linspace(0, 1, self.num_samples(audio.sample_rate)), self.degree)
         }
         
         amp = curve_types[self.curve]
 
         if self.is_in: audio.audio[:,:len(amp)] *= amp
-        if not self.is_in: audio.audio[:,-len(amp):] *= amp[::-1]
+        if not self.is_in: audio.audio[:,-len(amp):] *=  amp[::-1]
 
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
@@ -222,17 +227,17 @@ class Fade(Transform):
         # TODO I still hear a bump when the playback starts
 
 class FadeIn(Fade):
-    def __init__(self, duration=None, curve=None, is_in=True):
-        super().__init__(duration, curve, is_in)
+    def __init__(self, duration=None, curve=None, is_in=True, degree=1):
+        super().__init__(duration, curve, is_in,degree)
 
 class FadeOut(Fade):
-    def __init__(self, duration=None, curve=None, is_in=False):
-        super().__init__(duration, curve, is_in)
+    def __init__(self, duration=None, curve=None, is_in=False, degree=1):
+        super().__init__(duration, curve, is_in, degree)
 
 class CrossFade(BiTransform): # TODO rename to XFade?
-    def __init__(self, duration):
-        L = Fade(is_in=False, duration=duration)
-        R = Fade(duration=duration)*Shift(-duration)
+    def __init__(self, duration, curve="polynomial"):
+        L = Fade(curve, is_in=False, duration=duration)
+        R = Fade(curve, duration=duration)*Shift(-duration)
         super().__init__(L, R)
         # needs a lot of tweaking of fade curves and db vs. linear stuff
 
