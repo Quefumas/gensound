@@ -207,13 +207,11 @@ class Fade(Transform):
         self.degree = degree
 
     def realise(self, audio):
-        curve_types = {
-            "linear": np.linspace(0, 1, self.num_samples(audio.sample_rate)),
-            "polynomial" : (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree,
-        }
+        #curve type handler
+        if self.curve == "linear": amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
+        if self.curve == "polynomial": amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree      
         
-        amp = curve_types[self.curve]
-
+        # fade in / out  handler
         if self.is_in: audio.audio[:,:len(amp)] *= amp
         if not self.is_in: audio.audio[:,-len(amp):] *=  amp[::-1]
 
