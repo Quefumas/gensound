@@ -5,7 +5,6 @@ Created on Sun Aug 18 21:01:16 2019
 @author: Dror
 """
 
-from operator import is_
 import numpy as np
 from gensound.settings import _supported
 from gensound.curve import Curve, Line, Logistic, Constant
