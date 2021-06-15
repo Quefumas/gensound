@@ -1,3 +1,4 @@
+./playground.py
 .spyproject/
 __pycache__/
 /data/
@@ -9,4 +10,3 @@ gensound.egg-info/
 compositions/
 dist_old/
 gensound/data/
-./playground.py
