@@ -187,19 +187,13 @@ class Reverse(Transform):
 
 ######### Level/ampltidue Stuff ###################
 
-class Fade(Transform):
-    min_fade = -50
-    
-    def __init__(self, duration=None, curve=None, is_in=True, degree=None):
-        assert curve in (None, "linear", "polynomial")
+class Fade(Transform):   
+    def __init__(self, duration=None, curve=None, is_in=True, degree=1):
+        assert curve in ("linear", "polynomial")
         # default setting for backwards compatibility (allowing usage of both Fade() and FadeIn/FadeOut()
-        if curve == None:
-            curve = "linear"
-        if duration == None:
-            duration = 3e3
-        if degree == None:
-            degree = 1
-        
+        if curve == None: curve = "linear"
+        if duration == None: duration = 3e3
+
         self.curve = curve
         self.duration = duration
         self.is_in = is_in
@@ -207,12 +201,14 @@ class Fade(Transform):
 
     def realise(self, audio):
         #curve type handler
-        if self.curve == "linear": amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
-        if self.curve == "polynomial": amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree      
+        if self.curve == "linear":
+            amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
+        elif self.curve == "polynomial":
+            amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree      
         
-        # fade in / out  handler
+        # fade in/out  handler
         if self.is_in: audio.audio[:,:len(amp)] *= amp
-        if not self.is_in: audio.audio[:,-len(amp):] *=  amp[::-1]
+        else: audio.audio[:,-len(amp):] *=  amp[::-1]
 
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
