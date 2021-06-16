@@ -208,7 +208,7 @@ class Fade(Transform):
         if self.is_in:
             audio.audio[:,:len(amp)] *= amp
         else:
-            audio.audio[:,-len(amp):] *=  amp[::-1]
+            audio.audio[:,-len(amp):] *= amp[::-1]
 
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
@@ -226,7 +226,7 @@ class FadeIn(Fade):
         super().__init__(True, *args, **kwargs)
 
 class FadeOut(Fade):
-    """ Shorthand for adding Fade out it to the signal. Fade sub-class.
+    """ Shorthand for adding Fade out to the signal. Fade sub-class.
 
     """
     def __init__(self, *args, **kwargs):
