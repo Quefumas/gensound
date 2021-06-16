@@ -187,23 +187,24 @@ class Reverse(Transform):
 
 ######### Level/ampltidue Stuff ###################
 
-class Fade(Transform):   
-    def __init__(self, is_in=True, duration=3e3, curve="linear",  degree=1):
-        assert curve in ("linear", "polynomial")
+class Fade(Transform):
+    """ Adds Fade In / Out to the signal with different curve presets
 
+    """
+    def __init__(self, is_in=True, duration=3e3, curve="linear",  degree=1):        
+        assert curve in ("linear", "polynomial")
         self.is_in = is_in
         self.duration = duration
         self.curve = curve
         self.degree = degree
 
     def realise(self, audio):
-        #curve type handler
         if self.curve == "linear":
             amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
         elif self.curve == "polynomial":
             amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree      
         
-        # fade in/out  handler
+        # fade in/out handler
         if self.is_in: 
             audio.audio[:,:len(amp)] *= amp
         else: 
@@ -218,10 +219,16 @@ class Fade(Transform):
         # TODO I still hear a bump when the playback starts
 
 class FadeIn(Fade):
+    """ Shorthand for adding Fade in to the signal. Fade sub-class.
+
+    """
     def __init__(self, duration=3e3, curve="linear", degree=1):
         super().__init__(True, duration, curve,  degree)
 
 class FadeOut(Fade):
+    """ Shorthand for adding Fade out it to the signal. Fade sub-class.
+
+    """
     def __init__(self, duration=3e3, curve="linear", degree=1):
         super().__init__(False, duration, curve, degree)
 
