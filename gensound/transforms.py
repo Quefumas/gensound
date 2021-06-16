@@ -191,7 +191,7 @@ class Fade(Transform):
     """ Adds Fade In / Out to the signal with different curve presets
 
     """
-    def __init__(self, is_in=True, duration=3e3, curve="linear",  degree=1):        
+    def __init__(self, is_in=True, duration=1e3, curve="linear", *,  degree=2):
         assert curve in ("linear", "polynomial")
         self.is_in = is_in
         self.duration = duration
@@ -205,9 +205,9 @@ class Fade(Transform):
             amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree
         
         # fade in/out handler
-        if self.is_in: 
+        if self.is_in:
             audio.audio[:,:len(amp)] *= amp
-        else: 
+        else:
             audio.audio[:,-len(amp):] *=  amp[::-1]
 
         # perhaps the fade in should be nonlinear
@@ -222,18 +222,19 @@ class FadeIn(Fade):
     """ Shorthand for adding Fade in to the signal. Fade sub-class.
 
     """
-    def __init__(self, duration=3e3, curve="linear", degree=1):
-        super().__init__(True, duration, curve,  degree)
+    def __init__(self, *args, **kwargs):
+        super().__init__(True, *args, **kwargs)
 
 class FadeOut(Fade):
     """ Shorthand for adding Fade out it to the signal. Fade sub-class.
 
     """
-    def __init__(self, duration=3e3, curve="linear", degree=1):
-        super().__init__(False, duration, curve, degree)
+    def __init__(self, *args, **kwargs):
+        super().__init__(False, *args, **kwargs)
+
 
 class CrossFade(BiTransform): # TODO rename to XFade?
-    def __init__(self, duration=3e3, curve="polynomial", degree=0.5):
+    def __init__(self, duration=1e3, curve="polynomial", degree=0.5):
         L = FadeIn(duration, curve, degree)
         R = FadeOut(duration, curve, degree)*Shift(-duration)
         super().__init__(L, R)
@@ -608,6 +609,7 @@ class ADSR(Transform):
         audio.audio[:,:length_start] *= env_start.flatten(audio.sample_rate)
         audio.audio[:,length_start:-length_end] *= self.sustain
         audio.audio[:,-length_end:] *= env_end.flatten(audio.sample_rate)
+
 
 
 
