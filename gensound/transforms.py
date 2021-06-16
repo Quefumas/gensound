@@ -188,15 +188,12 @@ class Reverse(Transform):
 ######### Level/ampltidue Stuff ###################
 
 class Fade(Transform):   
-    def __init__(self, duration=None, curve=None, is_in=True, degree=1):
+    def __init__(self, is_in=True, duration=3e3, curve="linear",  degree=1):
         assert curve in ("linear", "polynomial")
-        # default setting for backwards compatibility (allowing usage of both Fade() and FadeIn/FadeOut()
-        if curve == None: curve = "linear"
-        if duration == None: duration = 3e3
 
-        self.curve = curve
-        self.duration = duration
         self.is_in = is_in
+        self.duration = duration
+        self.curve = curve
         self.degree = degree
 
     def realise(self, audio):
@@ -207,8 +204,10 @@ class Fade(Transform):
             amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree      
         
         # fade in/out  handler
-        if self.is_in: audio.audio[:,:len(amp)] *= amp
-        else: audio.audio[:,-len(amp):] *=  amp[::-1]
+        if self.is_in: 
+            audio.audio[:,:len(amp)] *= amp
+        else: 
+            audio.audio[:,-len(amp):] *=  amp[::-1]
 
         # perhaps the fade in should be nonlinear
         # TODO subsciprability problem
@@ -219,17 +218,17 @@ class Fade(Transform):
         # TODO I still hear a bump when the playback starts
 
 class FadeIn(Fade):
-    def __init__(self, duration=None, curve=None, is_in=True, degree=1):
-        super().__init__(duration, curve, is_in,degree)
+    def __init__(self, duration=3e3, curve="linear", degree=1):
+        super().__init__(True, duration, curve,  degree)
 
 class FadeOut(Fade):
-    def __init__(self, duration=None, curve=None, is_in=False, degree=1):
-        super().__init__(duration, curve, is_in, degree)
+    def __init__(self, duration=3e3, curve="linear", degree=1):
+        super().__init__(False, duration, curve, degree)
 
 class CrossFade(BiTransform): # TODO rename to XFade?
-    def __init__(self, duration=None, curve="polynomial", degree=0.5):
-        L = Fade(curve, degree, is_in=False, duration=duration)
-        R = Fade(curve, degree, duration=duration)*Shift(-duration)
+    def __init__(self, duration=3e3, curve="polynomial", degree=0.5):
+        L = FadeIn(duration, curve, degree)
+        R = FadeOut(duration, curve, degree)*Shift(-duration)
         super().__init__(L, R)
         # needs a lot of tweaking of fade curves and db vs. linear stuff
 
