@@ -13,7 +13,7 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
                   num_samples, samples_slice, sec
 
-__all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "CrossFade",
+__all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "FadeIn", "FadeOut", "CrossFade",
            "Gain", "SineAM", "Limiter", "Mono", "Pan", "Repan", "Downsample",
            "Convolution", "ADSR"]
 
@@ -188,33 +188,55 @@ class Reverse(Transform):
 ######### Level/ampltidue Stuff ###################
 
 class Fade(Transform):
-    min_fade = -50
-    
-    def __init__(self, is_in=True, duration=3e3):
+    """ Adds Fade In / Out to the signal with different curve presets
+
+    """
+    def __init__(self, is_in=True, duration=1e3, curve="linear", *,  degree=2):
+        assert curve in ("linear", "polynomial")
         self.is_in = is_in
         self.duration = duration
-    
+        self.curve = curve
+        self.degree = degree
+
     def realise(self, audio):
-        amp = DB_to_Linear(np.linspace(Fade.min_fade, 0, self.num_samples(audio.sample_rate)))
-        #amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
-        # perhaps the fade in should be nonlinear
-        # TODO subsciprability problem
+        if self.curve == "linear":
+            amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
+        elif self.curve == "polynomial":
+            amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree
         
+        # fade in/out handler
         if self.is_in:
             audio.audio[:,:len(amp)] *= amp
         else:
             audio.audio[:,-len(amp):] *= amp[::-1]
+
+        # perhaps the fade in should be nonlinear
+        # TODO subsciprability problem
         
         # TODO in case of fade out, if amp is shorter or longer than audio,
         # care must be taken when multiplying!
         # TODO TEST!!!!!!!!!!!!!
         # TODO I still hear a bump when the playback starts
 
+class FadeIn(Fade):
+    """ Shorthand for adding Fade in to the signal. Fade sub-class.
+
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(True, *args, **kwargs)
+
+class FadeOut(Fade):
+    """ Shorthand for adding Fade out to the signal. Fade sub-class.
+
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(False, *args, **kwargs)
+
 
 class CrossFade(BiTransform): # TODO rename to XFade?
-    def __init__(self, duration):
-        L = Fade(is_in=False, duration=duration)
-        R = Fade(duration=duration)*Shift(-duration)
+    def __init__(self, duration=1e3, curve="polynomial", degree=0.5):
+        L = FadeIn(duration, curve, degree)
+        R = FadeOut(duration, curve, degree)*Shift(-duration)
         super().__init__(L, R)
         # needs a lot of tweaking of fade curves and db vs. linear stuff
 
