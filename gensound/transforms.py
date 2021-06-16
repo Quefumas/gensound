@@ -202,7 +202,7 @@ class Fade(Transform):
         if self.curve == "linear":
             amp = np.linspace(0, 1, self.num_samples(audio.sample_rate))
         elif self.curve == "polynomial":
-            amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree      
+            amp = (np.linspace(0, 1, self.num_samples(audio.sample_rate))) ** self.degree
         
         # fade in/out handler
         if self.is_in: 
@@ -608,7 +608,6 @@ class ADSR(Transform):
         audio.audio[:,:length_start] *= env_start.flatten(audio.sample_rate)
         audio.audio[:,length_start:-length_end] *= self.sustain
         audio.audio[:,-length_end:] *= env_end.flatten(audio.sample_rate)
-
 
 
 
