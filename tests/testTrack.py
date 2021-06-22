@@ -21,7 +21,7 @@ from gensound.transforms import Fade, SineAM, Shift, Pan, Extend, \
 #                     IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
 from gensound.amplifiers import GuitarAmp_Test
 from gensound.curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
-from gensound.io import play_WAV, play_Audio, export_test # better than export_WAV for debugging
+from gensound.io import export_test # better than export_WAV for debugging
 
 from gensound.musicTheory import midC, semitone
 
@@ -232,10 +232,7 @@ if __name__ == "__main__":
     #chorale_example()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
-
-
-
-
+    ...
 
 
 

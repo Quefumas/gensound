@@ -127,7 +127,8 @@ def parse_melody_to_signal(melody_str):
     
     sigs = []
     
-    for note in melody_str.split(" "):
+    
+    for note in melody_str.split():
         if len(note) == 0:
             continue
         

@@ -20,3 +20,26 @@ class OneImpulseReverb(Convolution):
         # TODO call super().__init__ instead?
         
 
+class Vibrato(Transform):
+    """ Vibrato
+    This Transform performs a vibrato effect on the audio, shifting the pitch up and down
+    according to a Sine pattern.
+    
+    frequency - this is the 'speed' of the vibrato in Hz
+    width - this is the vibrato width (maximal pitch shift), measured in semitones.
+    """
+    def __init__(self, frequency, width):
+        # width in semitones (will go that same amount both up and down, total width is twice that)
+        self.frequency = frequency
+        self.width = width
+    
+    def realise(self, audio):
+        width_samples = (2**(self.width/12) - 1)/(2*np.pi*self.frequency)*audio.sample_rate
+        
+        indices = np.arange(0, audio.length, 1, dtype=np.float64)
+        indices += width_samples*np.sin(2*np.pi/audio.sample_rate*self.frequency * indices)
+        indices[indices > audio.length-1] = audio.length - 1
+        audio.audio[:,:] = audio[:, indices[:]]
+
+
+

@@ -62,7 +62,11 @@ class Signal:
     def export(self, filename, sample_rate=44100, **kwargs):
         audio = self.realise(sample_rate)
         audio.export(filename, **kwargs)
-        
+    
+    def to_bytes(self, sample_rate=44100, **kwargs):
+        audio = self.realise(sample_rate)
+        audio._prepare_buffer(**kwargs)
+        return audio.buffer
     
     #####################
     def num_samples(self, sample_rate):

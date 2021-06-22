@@ -194,7 +194,7 @@ class Audio:
         from gensound.utils import get_interpolation
         interpolate = get_interpolation(method)
         factor = self.sample_rate / sample_rate
-        self.audio = interpolate(self.audio, np.arange(0, self.length-1, factor))
+        self.audio = interpolate(self.audio, np.arange(0, self.length-1, factor)) # TODO should it be self.length - 1? seems to say arange gives half-open range...
         self.sample_rate = sample_rate
     
     ### channel manipulations ###
@@ -274,7 +274,35 @@ class Audio:
     
     
     
+    #### test #####
+    # these are overloaded for two reasons:
+    # 1. brevity (now transforms can modify audio instead of audio.audio; be careful not to lose references though)
+    # 2. (more importantly) convenient syntax to access float indices of the audio!
+    # the floats handled below are sample numbers which are interpolated.
+    def __getitem__(self, key):
+        assert len(key) == 2, "Audio objects must be doubly-subscripted for channel and samples"
+        samples_key = key[1]
+        
+        if isinstance(samples_key, slice) and isinstance(samples_key.start, float):
+            raise NotImplementedError("Gensound decided against slicing audio with floats because it thought nobody would use that. Let us know?")
+            # slice of floats
+            #from gensound.utils import get_interpolation
+            #interpolate = get_interpolation('quadratic') # TODO use gensound settings for default
+            #return interpolate(self.audio[key[0],:], np.arange(samples_key.start or 0.0,
+            #                                                   samples_key.stop or self.length - 0.0,
+            #                                                   samples_key.step or 1.0))
+        
+        if isinstance(samples_key, (list, tuple, np.ndarray)) and isinstance(samples_key[0], float):
+            # iterable of floats
+            from gensound.utils import get_interpolation
+            interpolate = get_interpolation('quadratic') # TODO use gensound settings for default
+            return interpolate(self.audio[key[0],:], samples_key)
+            
+        
+        return self.audio.__getitem__(key)
     
+    def __setitem__(self, key, value):
+        return self.audio.__setitem__(key, value)
     
     
     

@@ -78,6 +78,7 @@ def first_order_interpolation(audio_array, indices):
 # for 2nd/3rd order this may be a drag, becauseof possible out of bounds indices
 
 def second_order_interpolation(audio_array, indices):
+    # TODO how to handle out of bounds indices (This can happen for example with Vibrato)
     if not isinstance(indices, (list, np.ndarray)):
         indices = [indices]
     

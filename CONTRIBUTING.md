@@ -1,22 +1,19 @@
 ## Contributing
 
-This project welcomes contribution.
-Here are some suggestions:
+Welcome to Gensound!
 
-* If you've used this code and have some constructive feedback,
-we would love to hear it.
-* If you've done something cool with this code or it helped you in some way,
-letting us know would fuel our motivation.
-* QAing various parts of the code (especially the syntax features) and reporting bugs.
-* Suggesting improvements to the code structure.
-* Helping with some of the known issues scattered in the code TODOs and in the issues list.
+You are invited to use the Discussions and/or Issues page to share your experience using Gensound,
+ask for help, offer ideas or report bugs.
+It would also be cool to see what stuff you come up with, so feel free to share just for fun.
 
-Also, please keep in mind that to maintain the "intuitive, flexible and lightweight"
-profile of this code, any modifications to the code will be examined quite closely,
-and will be accepted only when we are sufficiently confident that it will serve
-these purposes in the long run.
-That may mean that acceptance even of obvious features that are trivial to implement
-may be delayed until the implementation feels right
-(point in case, development of this code once halted for several months just
-because I couldn't make up my mind as to what would be the best operator
-to represent concatenation; but I hope that such a case won't repeat itself).
+If you want to participate in the development, the Issues page may have some pointers for places that need work.
+Feel free to ask there for clarifications, as I will do my best to be available and help find the best approach.
+However, take note that I work very hard to maintain high standards for the code in this library
+and for the interface with the user.
+This means that even simple pull request may be met with quite a lot of high-level discussion and stylistic corrections,
+so I hope you will not be discouraged.
+Also, it might happen that I'll hesitate to accept even perfectly implemented solutions,
+instead waiting for some time until I feel confident that this approach is the right way going forward.
+Whatever happens, know that your input and opinion is nevertheless appreciated
+and constitutes an important contribution to the development process.
+
