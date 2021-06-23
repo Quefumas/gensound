@@ -14,7 +14,7 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
                   num_samples, samples_slice, sec
 
 __all__ = ["Transform", "Shift", "Extend", "Reverse", "Fade", "FadeIn", "FadeOut", "CrossFade",
-           "Gain", "SineAM", "Limiter", "Mono", "Pan", "Repan", "Downsample",
+           "Gain", "SineAM", "Limiter", "Mono", "Pan", "Repan",
            "Convolution", "ADSR"]
 
 class Transform:
@@ -188,8 +188,8 @@ class Reverse(Transform):
 ######### Level/ampltidue Stuff ###################
 
 class Fade(Transform):
-    """ Adds Fade In / Out to the signal with different curve presets
-
+    """ Adds Fade In / Out to the signal with different curve presets.
+    This is the superclass of FadeIn and FadeOut; use those instead.
     """
     def __init__(self, is_in=True, duration=1e3, curve="linear", *,  degree=2):
         assert curve in ("linear", "polynomial")
@@ -210,23 +210,18 @@ class Fade(Transform):
         else:
             audio.audio[:,-len(amp):] *= amp[::-1]
 
-        # perhaps the fade in should be nonlinear
-        # TODO subsciprability problem
-        
         # TODO in case of fade out, if amp is shorter or longer than audio,
         # care must be taken when multiplying!
-        # TODO TEST!!!!!!!!!!!!!
-        # TODO I still hear a bump when the playback starts
 
 class FadeIn(Fade):
-    """ Shorthand for adding Fade in to the signal. Fade sub-class.
+    """ Apply fade in to the signal, for the required duration and curve type.
 
     """
     def __init__(self, *args, **kwargs):
         super().__init__(True, *args, **kwargs)
 
 class FadeOut(Fade):
-    """ Shorthand for adding Fade out to the signal. Fade sub-class.
+    """ Apply fade out to the signal, for the required duration and curve type.
 
     """
     def __init__(self, *args, **kwargs):
@@ -234,11 +229,20 @@ class FadeOut(Fade):
 
 
 class CrossFade(BiTransform): # TODO rename to XFade?
-    def __init__(self, duration=1e3, curve="polynomial", degree=0.5):
-        L = FadeIn(duration, curve, degree)
-        R = FadeOut(duration, curve, degree)*Shift(-duration)
+    def __init__(self, *args, **kwargs):
+        # different default values for crossfade, to ensure equal power
+        if "curve" not in kwargs:
+            kwargs["curve"] = "polynomial"
+        if "degree" not in kwargs:
+            kwargs["degree"] = 0.5
+        
+        if "duration" in kwargs:
+            args = (kwargs["duration"],) + args # hackish, maybe there's a better way
+            del kwargs["duration"]
+        
+        L = FadeOut(*args, **kwargs)
+        R = FadeIn(*args, **kwargs)*Shift(-args[0]) # args[0] is duration
         super().__init__(L, R)
-        # needs a lot of tweaking of fade curves and db vs. linear stuff
 
 
 class Gain(Transform):
@@ -454,61 +458,6 @@ class Repan(Transform):
             new_audio[i,:] = audio.audio[channel,:]
             
         audio.audio[:,:] = new_audio[:,:]
-
-
-####### FILTERS #########
-
-class Stretch(Transform):
-    """ Stretches audio by a certain factor, or to a desired duration,
-    using interpolation.
-    """
-    # TODO parametric stretch!
-    def __init__(self, rate=None, duration=None, method="quadratic"):
-        """ exactly one of factor, duration should be defined.
-        factor = ratio of speed up/slow down. (1=no difference, 2=twice as fast)
-        duration = stretch/shrink to this duration (milliseconds or samples)
-        """
-        self.rate = rate
-        self.duration = duration
-        self.method = method
-    
-    def realise(self, audio):
-        assert (self.rate is None) + (self.duration is None) == 1, "Stretch: exactly one of the arguments rate, duration, must be defined."
-        from gensound.utils import get_interpolation
-        interpolate = get_interpolation(self.method)
-        
-        if self.rate is None:
-            factor = audio.duration / self.duration
-        else:
-            factor = self.rate
-        
-        audio.audio = interpolate(audio.audio, np.arange(0, audio.length-1, factor))
-        
-
-
-class Downsample(Transform):
-    """ skips samples. can hear the effects of aliasing.
-    suppose factor is 3, then this copies all 3k-th samples into
-    the 3k+1-th, 3k+2-th places.
-    phase is supposed to let us choose 3k+1, 3k+2 as the main one for example
-    # can be interesting to put 4k on L and 4k+2 on R, see if there is stereo effect
-    """
-    
-    def __init__(self, factor=2, phase=0):
-        self.factor = factor
-        self.phase = phase
-        assert isinstance(phase, int) and 0 <= phase < factor
-        #assert phase == 0, "not implemented"
-        if phase != 0:
-            raise NotImplementedError # TODO
-    
-    def realise(self, audio):
-        l = audio.length #- self.phase
-        
-        for i in range(1, self.factor):
-            less = 0 != (l % self.factor) <= i
-            audio.audio[:,i::self.factor] = audio.audio[:,0:l + (-self.factor if less else 0):self.factor]
-            #audio.audio[:,i::self.factor] = audio.audio[:,self.phase:l + (-self.factor if less else 0):self.factor]
 
 
 ###### EXPERIMENTS ######

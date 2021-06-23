@@ -175,7 +175,7 @@ All of the following expressions return a new Signal object:
 The slice notations may also be used for assignments:
 ```python
 wav[4e3:4.5e3] = Sine(frequency=1e3, duration=0.5e3) # censor beep on seconds 4-4.5
-wav[0,6e3:] *= Reverb(...) # add effect to L channel starting from second 6
+wav[0,6e3:] *= Vibrato(frequency=4, width=0.5) # add vibrato effect to L channel starting from second 6
 ```
 
 ...and to increase the number of channels implicitly:

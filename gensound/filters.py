@@ -23,7 +23,7 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
 
 class Filter:
     # https://stackoverflow.com/a/37841802
-    def plot_frequency_response(self, sample_rate):
+    def plot_frequency_response(self, sample_rate=44100):
         def H(z):
             b,a = self.coefficients(sample_rate)
             num = sum([z**(len(b) - i - 1)*b[i] for i in range(len(b))])
