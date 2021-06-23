@@ -130,7 +130,7 @@ class Combine(Transform):
     def __init__(self, channel_slice, time_slice, signal):
         self.channel_slice = channel_slice # slices of container Signal
         self.time_slice = time_slice
-        self.signal = signal # inserted Signal
+        self.signal = signal.copy() # inserted Signal
     
     def realise(self, audio):
         # prepare new audio and ensure shift can only be negative
