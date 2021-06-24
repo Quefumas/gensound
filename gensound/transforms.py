@@ -229,19 +229,15 @@ class FadeOut(Fade):
 
 
 class CrossFade(BiTransform): # TODO rename to XFade?
-    def __init__(self, *args, **kwargs):
+    def __init__(self, duration=1e3, **kwargs):
         # different default values for crossfade, to ensure equal power
         if "curve" not in kwargs:
             kwargs["curve"] = "polynomial"
         if "degree" not in kwargs:
             kwargs["degree"] = 0.5
         
-        if "duration" in kwargs:
-            args = (kwargs["duration"],) + args # hackish, maybe there's a better way
-            del kwargs["duration"]
-        
-        L = FadeOut(*args, **kwargs)
-        R = FadeIn(*args, **kwargs)*Shift(-args[0]) # args[0] is duration
+        L = FadeOut(duration, **kwargs)
+        R = FadeIn(duration, **kwargs)*Shift(-duration)
         super().__init__(L, R)
 
 
