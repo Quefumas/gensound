@@ -379,10 +379,10 @@ class Audio:
         
         
     def play(self, byte_width=2, max_amplitude=None, is_wait=True):
-        from gensound.io import play_Audio
+        from gensound.io import IO
         
         self._prepare_buffer(byte_width, max_amplitude) # TODO max amplitude
-        play_Audio(self, is_wait)
+        IO.play(self, is_wait=is_wait)
     
     @staticmethod
     def from_WAV(filename):
@@ -391,21 +391,26 @@ class Audio:
     
     @staticmethod
     def from_file(filename, file_format=None): # 2nd argument to force format regardless of file name
+        from gensound.io import IO
+        
         ext = file_format or filename.split(".")[-1].lower()
         
         if ext in ("wav", "wave"):
-            from gensound.io import WAV_to_Audio
-            return WAV_to_Audio(filename)
+            return IO.WAV_to_Audio(filename)
         
         if ext in ("aiff", "aifc", "aif"):
-            from gensound.io import AIFF_to_Audio
-            return AIFF_to_Audio(filename)
+            return IO.AIFF_to_Audio(filename)
+        
+        # TODO testing
+        return IO.file_to_Audio(filename) # catch-all
     
     def to_WAV(self, filename, byte_width=2, max_amplitude=1):
         warnings.warn("Audio.to_WAV to be deprecated; use Audio.export instead.")
         self.export(filename, byte_width, max_amplitude, file_format="wav")
     
     def export(self, filename, byte_width=2, max_amplitude=None, file_format=None):
+        from gensound.io import IO
+        
         ext = file_format or filename.split(".")[-1].lower()
         
         self._prepare_buffer(byte_width, max_amplitude)
@@ -415,12 +420,10 @@ class Audio:
         # since the latter is not supposed to hold a buffer nor byte width
         
         if ext in ("wav", "wave"):
-            from gensound.io import export_WAV
-            export_WAV(filename, self)
+            IO.export_WAV(filename, self)
         
         if ext in ("aiff", "aifc", "aif"):
-            from gensound.io import export_AIFF
-            export_AIFF(filename, self)
+            IO.export_AIFF(filename, self)
 
 
 

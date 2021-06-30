@@ -205,15 +205,8 @@ Don't hesitate to [drop me a line](https://github.com/Quefumas/gensound/discussi
 The [Wiki](https://github.com/Quefumas/gensound/wiki) is planned to become the definitive user guide,
 and will also provide many fun examples to learn and play with.
 In the meanwhile you are also welcome to look at the [Reference](REFERENCE.md) for a growing list of useful signals and transforms.
-To get a better understanding of the underlying code, you are invited to the [Technical Guide](TECHNICAL.md).
 If you are interested in contributing, check out [Contribution](CONTRIBUTING.md).
 
-
-## Topics not yet covered
-* How to extend Signal and Transform to implement new effects
-* Crossfades and BiTransforms
-* Curves and parametrization
-* Custom Panning Schemes
 
 
 
