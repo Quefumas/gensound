@@ -202,7 +202,28 @@ class _IO_ffmpeg:
         
         print(f"Converted to WAV using FFMPEG: {os.getcwd()}\{new_name}.")
         
-        return _IO_wave.WAV_to_Audio(new_name) # don't use SA in particular
+        return _IO_wave.WAV_to_Audio(new_name)
+    
+    @staticmethod
+    def export_file(filename, audio):
+        # TODO get format from filename or from caller?
+        import subprocess
+        
+        fmt = ["u8", "s16le", "s24le", "s32le"][audio.byte_width-1]
+        
+        
+        args = ['ffmpeg', '-f', fmt, '-ac', str(audio.num_channels), '-i', 'pipe:', filename, '-y']
+        
+        process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        process.stdin.write(audio.buffer)
+        process.stdin.close()
+        
+        #out = process.stdout.read() # use stdout=subprocess.PIPE above for this
+        #err = process.stderr.read()
+        
+        #print(out)
+        #print(err)
+        
         
 class _IO_ffmpeg_python:
     name = "ffmpeg-python"
@@ -221,7 +242,23 @@ class _IO_ffmpeg_python:
         ffmpeg.input(filename).output(new_name).run(quiet=True)
         
         return _IO_wave.WAV_to_Audio(new_name)
-
+    
+    @staticmethod
+    def export_file(filename, audio):
+        # TODO get format from filename or from caller?
+        import ffmpeg
+        
+        # combine this with similar code in ffmpeg class
+        fmt = ["u8", "s16le", "s24le", "s32le"][audio.byte_width-1]
+        
+        process = (ffmpeg.input("pipe:", format=fmt, ac=audio.num_channels)
+                    .output(filename)
+                    .overwrite_output()
+                    .run_async(pipe_stdin=True, quiet=True))
+        process.stdin.write(audio.buffer)
+        process.stdin.close()
+        process.wait()
+        ...
 
 
 class _IO_playsound: # https://github.com/TaylorSMarks/playsound
@@ -273,12 +310,12 @@ class IO:
         play_cls = _choose_first_supported([_IO_SA, _IO_playsound])
         
         load_cls = {"wav": _IO_wave,
-                       "aiff": _IO_aifc,
-                       "*": _choose_first_supported([_IO_ffmpeg_python, _IO_ffmpeg])}
+                    "aiff": _IO_aifc,
+                    "*": _choose_first_supported([_IO_ffmpeg_python, _IO_ffmpeg])}
         
         export_cls = {"wav": _IO_wave,
-                         "aiff": _IO_aifc,
-                         }
+                      "aiff": _IO_aifc,
+                      "*": _choose_first_supported([_IO_ffmpeg_python, _IO_ffmpeg])}
         
         return play_cls, load_cls, export_cls
     
@@ -323,6 +360,8 @@ class IO:
     def export_AIFF(*args, **kwargs):
         IO.export_cls["aiff"].export_AIFF(*args, **kwargs)
     
+    def export_file(*args, **kwargs):
+        IO.export_cls["*"].export_file(*args, **kwargs)
     
     # TODO find the correct place to ensure file exists in the first place
     def WAV_to_Audio(*args, **kwargs):

@@ -421,9 +421,10 @@ class Audio:
         
         if ext in ("wav", "wave"):
             IO.export_WAV(filename, self)
-        
-        if ext in ("aiff", "aifc", "aif"):
+        elif ext in ("aiff", "aifc", "aif"):
             IO.export_AIFF(filename, self)
+        else:
+            IO.export_file(filename, self)
 
 
 
