@@ -57,7 +57,7 @@ class Signal:
     
     def play(self, sample_rate=44100, **kwargs):
         audio = self.realise(sample_rate)
-        audio.play(**kwargs)
+        return audio.play(**kwargs)
     
     def export(self, filename, sample_rate=44100, **kwargs):
         audio = self.realise(sample_rate)

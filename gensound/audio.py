@@ -378,11 +378,11 @@ class Audio:
         self.buffer = audio_to_bytes(self.audio, ["uint8","int16","int24","int32"][byte_width-1])
         
         
-    def play(self, byte_width=2, max_amplitude=None, is_wait=True):
+    def play(self, byte_width=2, max_amplitude=None, **kwargs):
         from gensound.io import IO
         
         self._prepare_buffer(byte_width, max_amplitude) # TODO max amplitude
-        IO.play(self, is_wait=is_wait)
+        return IO.play(self, **kwargs)
     
     @staticmethod
     def from_WAV(filename):

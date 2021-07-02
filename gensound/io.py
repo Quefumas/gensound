@@ -138,7 +138,7 @@ class _IO_SA:
     is_supported = "simpleaudio" in _supported
     
     @staticmethod
-    def playback(audio, is_wait=True): # plays Audio instance
+    def playback(audio, wait=True): # plays Audio instance
         import simpleaudio as sa
         #audio.buffer = audio.buffer.copy(order='C')
         play_obj = sa.play_buffer(audio.buffer,
@@ -146,33 +146,12 @@ class _IO_SA:
                                   bytes_per_sample=audio.byte_width, # TODO should Audio store this?
                                   sample_rate=audio.sample_rate)
         
-        if not is_wait or audio.audio.shape[1] > 3*10**5:
+        if not wait or audio.audio.shape[1] > 3*10**5: # TODO this number is too arbitrary (also doesn't reflect actual duration due to sample rate)
             input("Type something to quit.")
             play_obj.stop()
         else:
             play_obj.wait_done()
-    
-    @staticmethod
-    def WAV_to_Audio(filename=""):
-        import simpleaudio as sa
-        print("Deprecated SA Wav_to_Audio")
-        wav = sa.WaveObject.from_wave_file(filename)
-        # TODO support int24
-        buffer = np.frombuffer(wav.audio_data, [np.uint8,np.int16,None,np.int32][wav.bytes_per_sample-1]).astype(np.float64)
-        
-        buffer = np.reshape(buffer,
-                            newshape=(wav.num_channels,
-                                      int(len(buffer)/wav.num_channels))[::-1]).T.copy(order='C')
-        buffer /= 2**(8*wav.bytes_per_sample-1)
-        # TODO the above needs some consideration
-        # should we convert to float immediately, or wait till the last minute?
-        # is this the right place to convert?
-        # and should this be normalized in some way in relation to the synthesized signals?
-        from gensound.audio import Audio
-        audio = Audio(wav.sample_rate)
-        audio.from_array(buffer)
-        
-        return audio
+
 
 class _IO_ffmpeg:
     name = "ffmpeg"
@@ -260,7 +239,7 @@ class _IO_playsound: # https://github.com/TaylorSMarks/playsound
     is_supported = "playsound" in _supported
     
     @staticmethod
-    def playback(audio, *args, **kwargs): # TODO also has "block" arg which may be nice
+    def playback(audio, **kwargs): # TODO also has "block" arg which may be nice
         import os
         filename = temp_file_naming_scheme()
         
@@ -279,6 +258,58 @@ class _IO_playsound: # https://github.com/TaylorSMarks/playsound
             print(f"Could not delete temporary file.") #" at: {os.getcwd()}\{filename}")
 
 
+class _IO_pygame:
+    name = "pygame"
+    is_supported = "pygame" in _supported
+    
+    @staticmethod
+    def playback(audio, **kwargs):
+        import pygame as pg
+        
+        # TODO bytewidth can also be over ooptions, also 24 bits not entirely supported yet
+        pg.mixer.quit()
+        pg.mixer.init(frequency=audio.sample_rate,
+                      channels=audio.num_channels,
+                      size=[8,-16,-24,-32][audio.byte_width-1]
+                      )
+        
+        snd = pg.mixer.Sound(buffer=audio.buffer)
+        snd.play(**kwargs)
+        
+        return snd # currently goes nowhere
+
+
+# fallback class, exporting to wave and opening with OS default player
+class _IO_os: # TODO test on all platforms
+    name = "os"
+    is_supported = True
+    
+    @staticmethod
+    def playback(audio, **kwargs):
+        print("Note: falling back to playback by exporting to temporary file then using system default player. "
+              "It is recommended to install one of the supported I/O libraries for more direct playback, "
+              "for example simpleaudio, pygame and playsound (see docs for more). ")
+        import os
+        filename = temp_file_naming_scheme()
+        
+        os.makedirs(_temporary_folder, exist_ok=True)
+        
+        _IO_wave.export_WAV(filename, audio)
+        print(f"Temp file created at: {os.getcwd()}\{filename}")
+        
+        from platform import system
+        system = system()
+        
+        if system == 'Windows':
+            cmd = f'start "" "{filename}"'
+        elif system == 'Darwin': # Mac OS
+            cmd = f'open "{filename}"'
+        else: # Linux
+            cmd = f'xdg-open "{filename}"'
+        
+        os.system(cmd)
+        
+
 #### EXPORTED NAMES ##########
 '''
 Here are the exported functionalities.
@@ -287,8 +318,17 @@ and direct traffic to the correct classes.
 also figure out how to navigate different formats
 '''
 
-_io_alternatives = [_IO_wave, _IO_aifc, _IO_SA, _IO_ffmpeg, _IO_playsound, _IO_ffmpeg_python] 
+_io_alternatives = [_IO_wave, _IO_aifc, _IO_SA, _IO_ffmpeg, _IO_playsound, _IO_ffmpeg_python, _IO_pygame, _IO_os] 
 _io_alternatives = {c.name:c for c in _io_alternatives} # as a dictionary for user interaction later
+
+play_options = (_IO_pygame, _IO_SA, _IO_playsound, _IO_os)
+load_options = {"wav": (_IO_wave,),
+                "aiff": (_IO_aifc,),
+                "*": (_IO_ffmpeg_python, _IO_ffmpeg)}
+export_options = {"wav": (_IO_wave,),
+                  "aiff": (_IO_aifc,),
+                  "*": (_IO_ffmpeg_python, _IO_ffmpeg)}
+
 
 # this will be the eventual interface from Audio,
 # and will take care of the logic to decide which libraries to use
@@ -300,39 +340,30 @@ def _choose_first_supported(options):
     return None
 
 class IO:
-    def _choose_defaults():
-        play_cls = _choose_first_supported([_IO_SA, _IO_playsound])
-        
-        load_cls = {"wav": _IO_wave,
-                    "aiff": _IO_aifc,
-                    "*": _choose_first_supported([_IO_ffmpeg_python, _IO_ffmpeg])}
-        
-        export_cls = {"wav": _IO_wave,
-                      "aiff": _IO_aifc,
-                      "*": _choose_first_supported([_IO_ffmpeg_python, _IO_ffmpeg])}
-        
-        return play_cls, load_cls, export_cls
+    play_cls = _choose_first_supported(play_options)
+    load_cls = {fmt: _choose_first_supported(load_options[fmt]) for fmt in load_options}
+    export_cls = {fmt: _choose_first_supported(export_options[fmt]) for fmt in export_options}
     
-    play_cls, load_cls, export_cls = _choose_defaults()
-    
-    
-    def status(): # print_status? since we may want to receive it programmatically as well
+    @staticmethod
+    def status(show_options=False): # print_status? since we may want to receive it programmatically as well
         # prints to user status of default and supported I/O capabilities
-        print(" --- Gensound I/O support status ---")
-        print(f" playback: {IO.play_cls.name if IO.play_cls else '-'}\n")
-        print(" load:")
+        print("\n --- Gensound I/O support status ---")
+        print(f" playback: {IO.play_cls.name if IO.play_cls else '-'}{'' if not show_options else ' (' + ', '.join([cls.name for cls in play_options if cls.is_supported and cls != IO.play_cls]) + ')'}")
+        
+        print("\n load:")
         
         for fmt in IO.load_cls:
-            print(f"    {fmt}: {IO.load_cls[fmt].name if IO.load_cls[fmt] else '-'}")
+            print(f"    {fmt}: {IO.load_cls[fmt].name if IO.load_cls[fmt] else '-'}{'' if not show_options else ' (' + ', '.join([cls.name for cls in load_options[fmt] if cls.is_supported and cls != IO.load_cls[fmt]]) + ')'}")
         
         print("\n export:")
         
         for fmt in IO.export_cls:
-            print(f"    {fmt}: {IO.export_cls[fmt].name if IO.export_cls[fmt] else '-'}")
-        
+            print(f"    {fmt}: {IO.export_cls[fmt].name if IO.export_cls[fmt] else '-'}{'' if not show_options else ' (' + ', '.join([cls.name for cls in export_options[fmt] if cls.is_supported and cls != IO.export_cls[fmt]]) + ')'}")
+            
+        print()
     
     # TODO let user know what other options are available
-    
+    @staticmethod
     def set_io(action, class_name, fmt=None):
         # allows user to switch I/O instruments
         if action == "play":
@@ -343,8 +374,8 @@ class IO:
             IO.export_cls[fmt if fmt else "*"] = _io_alternatives[class_name]
     
     
-    def play(*args, **kwargs):
-        IO.play_cls.playback(*args, **kwargs)
+    def play(audio, **kwargs):
+        return IO.play_cls.playback(audio, **kwargs)
     
     
     

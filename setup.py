@@ -14,6 +14,6 @@ setup(name='gensound',
       long_description=long_description,
       long_description_content_type='text/markdown',
       url='https://github.com/Quefumas/gensound',
-      install_requires=['numpy','simpleaudio'],
+      install_requires=['numpy'],
       package_data={'gensound': ['data/Kushaura_sketch.wav']},
       )

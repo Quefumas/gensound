@@ -18,7 +18,11 @@ Core features:
 ## Setup
 
 1. Install using `pip install gensound`.
-This will install NumPy and [SimpleAudio](https://github.com/hamiltron/py-simple-audio), if needed.
+This will also ensure NumPy is installed.
+For smoother playback, it is also recommended to have any one of
+[simpleaudio](https://github.com/hamiltron/py-simple-audio),
+[playsound](https://github.com/TaylorSMarks/playsound),
+[PyGame](https://www.pygame.org) installed.
 
 2. Run the examples below (or some of the example files in the repository).
 
