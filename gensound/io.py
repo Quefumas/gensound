@@ -76,7 +76,7 @@ class _IO_wave:
         file.writeframes(audio.buffer)
     
     @staticmethod
-    def WAV_to_Audio(filename):
+    def WAV_to_Audio(filename): # filename can also be file-like object (used in _IO_ffmpeg)
         import wave
         
         with wave.open(filename, "rb") as file:
@@ -179,30 +179,25 @@ class _IO_ffmpeg:
     is_supported = "ffmpeg" in _supported_bin
     
     @staticmethod
-    def file_to_Audio(filename, *args, **kwargs):
-        import os
-        
-        new_name = converted_file_naming_scheme(filename)
-        
-        if file_exists(new_name):
-            print(f"File {os.getcwd()}\{new_name} already exists and will be used instead of converting.")
-            return _IO_wave.WAV_to_Audio(new_name)
-
+    def convert(filename, new_name):
+        # currently not available for user, but may be useful in the future
         import subprocess
         
         args = ['ffmpeg', '-i', filename, new_name]
         
         process = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) 
         out, err = process.communicate(None)
-        retcode = process.poll()
+        #retcode = process.poll()
+    
+    @staticmethod
+    def file_to_Audio(filename, *args, **kwargs):
+        import subprocess, io
         
-        if retcode:
-            print(f"FFMPEG error when converting file {os.getcwd()}\{filename}.")
-            return None
+        args = ['ffmpeg', '-i', filename, '-f', 'wav', 'pipe:']
         
-        print(f"Converted to WAV using FFMPEG: {os.getcwd()}\{new_name}.")
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         
-        return _IO_wave.WAV_to_Audio(new_name)
+        return _IO_wave.WAV_to_Audio(io.BytesIO(process.stdout.read()))
     
     @staticmethod
     def export_file(filename, audio):
@@ -230,18 +225,18 @@ class _IO_ffmpeg_python:
     is_supported = "ffmpeg-python" in _supported
     
     @staticmethod
-    def file_to_Audio(filename):
-        import ffmpeg, os
-        
-        new_name = converted_file_naming_scheme(filename)
-        
-        if file_exists(new_name):
-            print(f"File {os.getcwd()}\{new_name} already exists and will be used instead of converting.")
-            return _IO_wave.WAV_to_Audio(new_name)
-        
+    def convert(filename, new_name):
+        import ffmpeg
+        # currently not available for user, but may be useful in the future
         ffmpeg.input(filename).output(new_name).run(quiet=True)
+    
+    @staticmethod
+    def file_to_Audio(filename):
+        import ffmpeg, io
         
-        return _IO_wave.WAV_to_Audio(new_name)
+        process = ffmpeg.input(filename).output("pipe:", format="wav").run_async(pipe_stdout=True, quiet=True)
+        
+        return _IO_wave.WAV_to_Audio(io.BytesIO(process.stdout.read()))
     
     @staticmethod
     def export_file(filename, audio):
@@ -258,7 +253,6 @@ class _IO_ffmpeg_python:
         process.stdin.write(audio.buffer)
         process.stdin.close()
         process.wait()
-        ...
 
 
 class _IO_playsound: # https://github.com/TaylorSMarks/playsound
@@ -326,15 +320,15 @@ class IO:
         # prints to user status of default and supported I/O capabilities
         print(" --- Gensound I/O support status ---")
         print(f" playback: {IO.play_cls.name if IO.play_cls else '-'}\n")
-        print(" read:")
+        print(" load:")
         
         for fmt in IO.load_cls:
-            print(f"\t{fmt}: {IO.load_cls[fmt].name if IO.load_cls[fmt] else '-'}")
+            print(f"    {fmt}: {IO.load_cls[fmt].name if IO.load_cls[fmt] else '-'}")
         
         print("\n export:")
         
         for fmt in IO.export_cls:
-            print(f"\t{fmt}: {IO.export_cls[fmt].name if IO.export_cls[fmt] else '-'}")
+            print(f"    {fmt}: {IO.export_cls[fmt].name if IO.export_cls[fmt] else '-'}")
         
     
     # TODO let user know what other options are available
