@@ -114,20 +114,36 @@ class IIR(Transform, Filter):
     def coefficients(self, sample_rate): # override this if sample rate is needed
         return (self.b, self.a)
     
-    def realise(self, audio): # naive implementation
-        # TODO at least the feed-forward coefficients can be computed en masse
+    def _realise_scipy(self, audio):
         b, a = self.coefficients(audio.sample_rate)
-        x = np.pad(audio.audio, ((0,0),(len(a)-1,0))) # max(len(a),len(b))-1
-        y = np.zeros_like(x)
+        assert len(b) == len(a), "Please supply to IIR same number of feedforward and feedback coefficients"
         
-        for i in range(len(a), x.shape[1]):
-            for n in range(len(b)):
-                y[:,i] += b[n]*x[:,i-n]
-                
+        from scipy.signal import lfilter
+        audio.audio[:,:] = lfilter(b, a, audio.audio)
+    
+    def _realise_native(self, audio):
+        b, a = self.coefficients(audio.sample_rate)
+        assert len(b) == len(a), "Please supply to IIR same number of feedforward and feedback coefficients"
+        
+        y = np.zeros((audio.num_channels, audio.length + len(a) + len(b)))
+        parallel = np.zeros((len(b), audio.num_channels, audio.length+len(b)-1))
+        
+        for i in range(len(b)):
+            parallel[i, :, i:audio.length+i] = b[i]*audio.audio
+        
+        y[:,:parallel.shape[2]] = np.sum(parallel, axis=0)[:,:] # feedforward
+        
+        for i in range(0, y.shape[1]-len(a)+1): # feedback
             for m in range(1, len(a)):
                 y[:,i] -= a[m]*y[:,i-m]
         
         audio.audio[:,:] = y[:,:audio.length]
+    
+    if "scipy" in _supported:
+        realise = _realise_scipy
+    else:
+        realise = _realise_native
+        
 
 class SimpleLPF(IIR):
     """
