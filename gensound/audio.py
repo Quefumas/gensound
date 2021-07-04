@@ -385,11 +385,6 @@ class Audio:
         return IO.play(self, **kwargs)
     
     @staticmethod
-    def from_WAV(filename):
-        warnings.warn("Audio.from_WAV to be deprecated; use Audio.from_file instead.")
-        return Audio.from_file(filename, file_format="wav")
-    
-    @staticmethod
     def from_file(filename, file_format=None): # 2nd argument to force format regardless of file name
         from gensound.io import IO
         

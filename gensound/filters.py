@@ -220,6 +220,135 @@ class SimpleHighShelf(IIR):
 
 
 
+class SimpleBandPass(IIR):
+    def __init__(self, lower, upper):
+        self.lower = lower
+        self.upper = upper
+    
+    def coefficients(self, sample_rate):
+        B = 2*np.pi*(self.upper - self.lower) / sample_rate
+        Fc = 2*np.pi*(self.lower + self.upper) /2 / sample_rate
+        
+        b = (np.tan(B/2), 0, -np.tan(B/2))
+        a = (1 + np.tan(B/2), -2*np.cos(Fc), 1-np.tan(B/2))
+        
+        b = [c/a[0] for c in b]
+        a = [c/a[0] for c in a]
+        
+        return (b, a)
+
+
+
+
+class SimpleBandStop(IIR):
+    def __init__(self, lower, upper):
+        self.lower = lower
+        self.upper = upper
+    
+    def coefficients(self, sample_rate):
+        B = 2*np.pi*(self.upper - self.lower) / sample_rate
+        Fc = 2*np.pi*(self.lower + self.upper) /2 / sample_rate
+        
+        b = (1, -2*np.cos(Fc), 1)
+        a = (1 + np.tan(B/2), -2*np.cos(Fc), 1-np.tan(B/2))
+        
+        b = [c/a[0] for c in b]
+        a = [c/a[0] for c in a]
+        
+        return (b, a)
+
+
+
+class SimpleNotch(IIR):
+    def __init__(self, lower, upper, dB):
+        self.lower = lower
+        self.upper = upper
+        self.gain = DB_to_Linear(dB)
+    
+    def coefficients(self, sample_rate):
+        B = 2*np.pi*(self.upper - self.lower) / sample_rate
+        Fc = 2*np.pi*(self.lower + self.upper) /2 / sample_rate
+        
+        b = (1 + self.gain*np.tan(B/2), -2*np.cos(Fc), 1 - self.gain*np.tan(B/2))
+        a = (1 + np.tan(B/2), -2*np.cos(Fc), 1-np.tan(B/2))
+        
+        b = [c/a[0] for c in b]
+        a = [c/a[0] for c in a]
+        
+        return (b, a)
+
+
+
+
+
+
+
+#### SciPy.Signal ####
+
+class ButterworthLowPass(IIR):
+    def __init__(self, cutoff, order):
+        """ cutoff - the cutoff frequency (Hz)
+        order - the order of the filter (1 or more)
+        The higher the order, the stronger the filtering.
+        """
+        assert "scipy" in _supported, "SciPy required for Butterworth"
+        self.cutoff = cutoff
+        self.order = order
+    
+    def coefficients(self, sample_rate):
+        from scipy.signal import butter
+        return butter(self.order, [self.cutoff/sample_rate*2], btype='lowpass', output='ba')
+
+
+class ButterworthHighPass(IIR):
+    def __init__(self, cutoff, order):
+        """ cutoff - the cutoff frequency (Hz)
+        order - the order of the filter (2 or more)
+        The higher the order, the stronger the filtering.
+        """
+        assert "scipy" in _supported, "SciPy required for Butterworth"
+        self.cutoff = cutoff
+        self.order = order
+    
+    def coefficients(self, sample_rate):
+        from scipy.signal import butter
+        return butter(self.order, [self.cutoff/sample_rate*2], btype='highpass', output='ba')
+    
+class ButterworthBandPass(IIR):
+    def __init__(self, lower, upper, order):
+        """ lower, upper - the range of frequencies that will remain.
+        order - the order of the filter (2 or more)
+        The higher the order, the stronger the filtering.
+        """
+        assert "scipy" in _supported, "SciPy required for Butterworth"
+        self.lower = lower
+        self.upper = upper
+        self.order = order
+    
+    def coefficients(self, sample_rate):
+        from scipy.signal import butter
+        return butter(self.order, [self.lower/sample_rate*2, self.upper/sample_rate*2], btype='bandpass', output='ba')
+
+
+class ButterworthBandStop(IIR):
+    def __init__(self, lower, upper, order):
+        """ lower, upper - the range of frequencies that will be blocked.
+        order - the order of the filter (2 or more)
+        The higher the order, the stronger the filtering.
+        """
+        assert "scipy" in _supported, "SciPy required for Butterworth"
+        self.lower = lower
+        self.upper = upper
+        self.order = order
+    
+    def coefficients(self, sample_rate):
+        from scipy.signal import butter
+        return butter(self.order, [self.lower/sample_rate*2, self.upper/sample_rate*2], btype='bandstop', output='ba')
+
+
+
+
+
 
 
 
