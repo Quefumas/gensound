@@ -115,6 +115,7 @@ def is_upwards_motion(step1, step2):
 
 
 def parse_melody_to_signal(melody_str):
+    # TODO clean this up and generalise
     """
     Returns list of frequency/beats pairs
     later beats will be multiplied by the given base duration
@@ -128,23 +129,56 @@ def parse_melody_to_signal(melody_str):
     sigs = []
     
     
+    is_cents = True
+    transpose_semitones = 0
+    mute = False
+    
+    beat_index = -1
+    
     for note in melody_str.split():
-        if len(note) == 0:
+        if note == "|": # barline, does nothing
+            continue
+        
+        if note[0] == "@": # modifier
+            if note == "@cents_on":
+                is_cents = True
+            elif note == "@cents_off":
+                is_cents = False
+            elif note == "@mute":
+                mute = True
+            elif note == "@unmute":
+                mute = False
+            elif "@transpose" in note:
+                transpose_semitones = float(note.split(":")[1])
+            elif "@beat_pattern" in note:
+                beats = [float(b) for b in note.split(":")[1].split(",")]
+                beat_index = -1
+            
             continue
         
         note = parse_note_params(note)
         
         # TODO deal with repeat or rest
         
+        cur_beat = None
+        
         if note["beats"] is not None:
             beats = float(note["beats"])
+            cur_beat = beats
+            beat_index = -1
+        else:
+            if isinstance(beats, list):
+                beat_index = (beat_index + 1) % len(beats)
+                cur_beat = beats[beat_index]
+            else:
+                cur_beat = beats
         
         if note["rest"] is not None:
-            sigs.append({"frequency": "r", "beats": beats})
+            sigs.append({"frequency": "r", "beats": cur_beat})
             continue
         
-        if note["repeat"] is not None:
-            sigs.append({"frequency": last_pitch, "beats": beats})
+        #if note["repeat"] is not None:
+        #    sigs.append({"frequency": last_pitch, "beats": beats})
         
         if note["octave"] is not None and note["octave"] in "0123456789":
             octave = int(note["octave"])
@@ -171,10 +205,16 @@ def parse_melody_to_signal(melody_str):
         
         last_step = note["step"]
         
-        semitones = step_semitones[note["name"]] + 12*(octave-4) + note["accidentals_semitones"] + int(note["cents"])/100
+        semitones = 12*(octave-4) + step_semitones[note["name"]] + note["accidentals_semitones"]
+        
+        if is_cents:
+            semitones += int(note["cents"])/100
+        
+        semitones += transpose_semitones
+        
         last_pitch = midC(semitones)
         
-        sigs.append({"frequency": last_pitch, "beats":beats})
+        sigs.append({"frequency": last_pitch if not mute else "r", "beats":cur_beat})
         
         
     return sigs

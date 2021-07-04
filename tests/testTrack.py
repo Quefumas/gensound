@@ -14,12 +14,12 @@ import numpy as np
 
 from gensound.signals import Signal, Sine, Square, Triangle, Sawtooth, WhiteNoise, WAV, Step
 from gensound.transforms import Fade, SineAM, Shift, Pan, Extend, \
-                       Downsample, Amplitude, \
+                       Amplitude, \
                        Reverse, Repan, Gain, Limiter, Convolution, Slice, \
                        Mono, ADSR, CrossFade
 # from gensound.filters import MovingAverage, LowPassBasic, Butterworth, IIR_basic, \
 #                     IIR_general, IIR_OnePole, IIR_OnePole_LowPass, IIR_OnePole_HighPass
-from gensound.amplifiers import GuitarAmp_Test
+#from gensound.amplifiers import GuitarAmp_Test
 from gensound.curve import Curve, Constant, Line, Logistic, SineCurve, MultiCurve
 from gensound.io import export_test # better than export_WAV for debugging
 
@@ -199,6 +199,18 @@ def next_gen_parse_osc_melody_test():
     export_test(s.mixdown(44100), next_gen_parse_osc_melody_test)
     
 
+def test_beat_pattern():
+    sig = Triangle
+    beat = 1e3
+    
+    s = sig("@beat_pattern:0.5,0.5,0.33,0.33,0.34,0.5,0.5,0.2,0.2,0.2,0.2,0.2 " + \
+            " D C# F#, B E G# B A# F# D# E# "*4,
+            beat)
+    b = sig("@beat_pattern:0.41,0.41 " + \
+            " B2 D "*18,
+            beat)
+    (s+b).play()
+
 def chorale_example():
     sig = Triangle # Square?
     
@@ -230,6 +242,7 @@ if __name__ == "__main__":
     #one_impulse_reverb_test()
     #next_gen_parse_osc_melody_test()
     #chorale_example()
+    test_beat_pattern()
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
     ...
