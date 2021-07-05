@@ -22,25 +22,12 @@ from gensound.utils import lambda_to_range, DB_to_Linear, \
 
 
 class Filter:
-    # https://stackoverflow.com/a/37841802
     def plot_frequency_response(self, sample_rate=44100):
-        def H(z):
-            b,a = self.coefficients(sample_rate)
-            num = sum([z**(len(b) - i - 1)*b[i] for i in range(len(b))])
-            denom = sum([z**(len(a) - i - 1)*a[i] for i in range(len(a))])
-            return num/denom
-    
-        #import numpy as np
-        import matplotlib.pyplot as plt
-    
-        w_range = np.linspace(0, np.pi, 1000)
-        vals = np.abs(H(np.exp(1j*w_range)))
-        #plt.xticks(w_range[::50]*sample_rate/2/np.pi)
-        plt.xscale('log')
-        plt.ylim(0, max(vals)*1.05)
-        plt.plot(w_range*sample_rate/2/np.pi, vals)
+        assert "matplotlib" in _supported, "matplotlib missing, plot_frequency_response not available."
+        from gensound.visualise import _plot_frequency_response
+        _plot_frequency_response(self, sample_rate)
         
-        #plt.show()
+        
 
 
 class FIR(Transform):

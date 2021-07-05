@@ -14,6 +14,7 @@ import copy
 
 import numpy as np
 
+from gensound.settings import _supported
 from gensound.utils import sec, sample_rates
 
 
@@ -420,7 +421,18 @@ class Audio:
             IO.export_AIFF(filename, self)
         else:
             IO.export_file(filename, self)
-
+    
+    
+    
+    
+    ###### visualisations ########
+    
+    def plot(self):
+        assert "matplotlib" in _supported, "matplotlib missing, Audio.plot() not available."
+        import gensound.visualise
+        gensound.visualise._plot_audio(self)
+    
+    
 
 
 

@@ -211,6 +211,16 @@ def test_beat_pattern():
             beat)
     (s+b).play()
 
+def test_plot_audio():
+    from gensound import test_wav
+    #w = WAV(test_wav)[20e3:20.5e3]
+    
+    #w = Sine(220, 0.05e3) + 0.2*Sine(370, 0.05e3)
+    w = Square(220, 0.1e3) + 0.3*Triangle(370, 0.1e3) # alien script
+    #w = Square(220, 0.05e3) | Triangle(370, 0.05e3)
+    a = w.realise(44100)
+    a.plot()
+
 def chorale_example():
     sig = Triangle # Square?
     
@@ -242,7 +252,9 @@ if __name__ == "__main__":
     #one_impulse_reverb_test()
     #next_gen_parse_osc_melody_test()
     #chorale_example()
-    test_beat_pattern()
+    #test_beat_pattern()
+    test_plot_audio()
+    
     # custom_pan_scheme_test() # come back to this?
     #%%%%%
     ...
