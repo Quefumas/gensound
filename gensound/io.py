@@ -42,6 +42,8 @@ def converted_file_naming_scheme(filename): return ".".join(filename.split(".")[
 
 
 _temporary_folder = "gensound_temp"
+_temp_files = []
+
 
 def temp_file_naming_scheme():
     # ugly filenames for temp file to prevent accidental overwriting
@@ -246,16 +248,17 @@ class _IO_playsound: # https://github.com/TaylorSMarks/playsound
         os.makedirs(_temporary_folder, exist_ok=True)
         
         _IO_wave.export_WAV(filename, audio)
+        _temp_files.append(filename)
         print(f"Temp file created at: {os.getcwd()}\{filename}")
         # TODO clear up temp file
         from playsound import playsound
         playsound(filename)
         
-        try:
-            os.remove(filename)
-            print("Temp file deleted")
-        except:
-            print(f"Could not delete temporary file.") #" at: {os.getcwd()}\{filename}")
+        #try:
+        #    os.remove(filename)
+        #    print("Temp file deleted")
+        #except:
+        #    print(f"Could not delete temporary file.") #" at: {os.getcwd()}\{filename}")
 
 
 class _IO_pygame:
@@ -270,9 +273,10 @@ class _IO_pygame:
         pg.mixer.quit()
         pg.mixer.init(frequency=audio.sample_rate,
                       channels=audio.num_channels,
-                      size=[8,-16,-24,-32][audio.byte_width-1]
+                      size=[8,-16,-24,-32][audio.byte_width-1],
+                      allowedchanges=0 #pg.AUDIO_ALLOW_FREQUENCY_CHANGE
                       )
-        
+        # print(pg.mixer.get_init())
         snd = pg.mixer.Sound(buffer=audio.buffer)
         snd.play(**kwargs)
         
@@ -295,6 +299,7 @@ class _IO_os: # TODO test on all platforms
         os.makedirs(_temporary_folder, exist_ok=True)
         
         _IO_wave.export_WAV(filename, audio)
+        _temp_files.append(filename)
         print(f"Temp file created at: {os.getcwd()}\{filename}")
         
         from platform import system
@@ -374,33 +379,62 @@ class IO:
             IO.export_cls[fmt if fmt else "*"] = _io_alternatives[class_name]
     
     
+    @staticmethod
     def play(audio, **kwargs):
         return IO.play_cls.playback(audio, **kwargs)
     
     
     
+    @staticmethod
     def export_WAV(*args, **kwargs):
         IO.export_cls["wav"].export_WAV(*args, **kwargs)
     
+    @staticmethod
     def export_AIFF(*args, **kwargs):
         IO.export_cls["aiff"].export_AIFF(*args, **kwargs)
     
+    @staticmethod
     def export_file(*args, **kwargs):
         IO.export_cls["*"].export_file(*args, **kwargs)
     
     # TODO find the correct place to ensure file exists in the first place
+    @staticmethod
     def WAV_to_Audio(*args, **kwargs):
         return IO.load_cls["wav"].WAV_to_Audio(*args, **kwargs)
     
+    @staticmethod
     def AIFF_to_Audio(*args, **kwargs):
         return IO.load_cls["aiff"].AIFF_to_Audio(*args, **kwargs)
     
+    @staticmethod
     def file_to_Audio(*args, **kwargs):
         return IO.load_cls["*"].file_to_Audio(*args, **kwargs)
     
     
     
-    
+    ###
+    @staticmethod
+    def cleanup():
+        """
+        In some cases Gensound can't immediately perform cleanup on converted files
+        (for example, since they are being played at the moment!)
+        This allows the user to manually instruct Gensound to delete them.
+        However, nothing is guaranteed, as some hardwares seem decide to keep locking
+        the files until the program returns.
+        """
+        import os
+        
+        deleted = 0
+        
+        for filename in _temp_files:
+            try:
+                os.remove(filename)
+                deleted += 0
+            except:
+                ...
+        
+        print(f"Deleted {deleted} files out of {len(_temp_files)}.")
+                    
 
 
 

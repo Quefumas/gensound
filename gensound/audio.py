@@ -187,7 +187,7 @@ class Audio:
         [TODO does this have to be a supported sample rate?]
         """
         if sample_rate not in sample_rates:
-            warnings.warn("Resampling audio to sample rate which is not supported in playback. "
+            warnings.warn("Resampling audio to non-standard sample rate. "
                           "This is totally fine if you know what you're doing.")
         
         if self.sample_rate == sample_rate:
