@@ -23,6 +23,8 @@ For smoother playback, it is also recommended to have any one of
 [simpleaudio](https://github.com/hamiltron/py-simple-audio),
 [playsound](https://github.com/TaylorSMarks/playsound),
 [PyGame](https://www.pygame.org) installed.
+It is also recommended to have [FFMPEG](https://ffmpeg.org/) installed,
+which enables read/export of file formats other than Wave and AIFF.
 
 2. Run the examples below (or some of the example files in the repository).
 
@@ -66,7 +68,7 @@ wav[0] *= 0.5 # amplitude halved; wav[1] amplitude remains the same
 wav.play()
 ```
 
-* Same thing, but using dBs:
+* Same thing, but using [dBs](https://en.wikipedia.org/wiki/Decibel):
 ```python
 from gensound import Gain
 wav[0] *= Gain(-3) # apply Gain transform to attenuate by 3 dB
@@ -206,9 +208,8 @@ Gensound resolves the Signal tree recursively, combining the various Signals and
 I would love to hear about your experience using Gensound - what worked well, what didn't, what do you think is missing.
 Don't hesitate to [drop me a line](https://github.com/Quefumas/gensound/discussions).
 
-The [Wiki](https://github.com/Quefumas/gensound/wiki) is planned to become the definitive user guide,
+The gradually evolving [Wiki](https://github.com/Quefumas/gensound/wiki) is both a tutorial and a reference,
 and will also provide many fun examples to learn and play with.
-In the meanwhile you are also welcome to look at the [Reference](REFERENCE.md) for a growing list of useful signals and transforms.
 If you are interested in contributing, check out [Contribution](CONTRIBUTING.md).
 
 

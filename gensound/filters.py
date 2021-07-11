@@ -172,9 +172,10 @@ class SimpleLowShelf(IIR):
     """
     McPherson
     """
-    def __init__(self, cutoff, gain):
+    def __init__(self, cutoff, gain=None, dB=None):
+        assert (gain is None) + (dB is None) == 1, "SimpleLowShelf requires specifying exactly one of 'gain' and 'dB'."
         self.cutoff = cutoff
-        self.gain = gain
+        self.gain = DB_to_Linear(dB) if gain is None else gain
     
     def coefficients(self, sample_rate):
         Fc = 2*np.pi * self.cutoff / sample_rate
@@ -191,9 +192,10 @@ class SimpleHighShelf(IIR):
     """
     McPherson
     """
-    def __init__(self, cutoff, gain):
+    def __init__(self, cutoff, gain=None, dB=None):
+        assert (gain is None) + (dB is None) == 1, "SimpleHighShelf requires specifying exactly one of 'gain' and 'dB'."
         self.cutoff = cutoff
-        self.gain = gain
+        self.gain = DB_to_Linear(dB) if gain is None else gain
     
     def coefficients(self, sample_rate):
         Fc = 2*np.pi * self.cutoff / sample_rate
@@ -247,10 +249,11 @@ class SimpleBandStop(IIR):
 
 
 class SimpleNotch(IIR):
-    def __init__(self, lower, upper, dB):
+    def __init__(self, lower, upper, gain=None, dB=None):
+        assert (gain is None) + (dB is None) == 1, "SimpleNotch requires specifying exactly one of 'gain' and 'dB'."
         self.lower = lower
         self.upper = upper
-        self.gain = DB_to_Linear(dB)
+        self.gain = DB_to_Linear(dB) if gain is None else gain
     
     def coefficients(self, sample_rate):
         B = 2*np.pi*(self.upper - self.lower) / sample_rate
@@ -290,7 +293,7 @@ class ButterworthLowPass(IIR):
 class ButterworthHighPass(IIR):
     def __init__(self, cutoff, order):
         """ cutoff - the cutoff frequency (Hz)
-        order - the order of the filter (2 or more)
+        order - the order of the filter (1 or more)
         The higher the order, the stronger the filtering.
         """
         assert "scipy" in _supported, "SciPy required for Butterworth"
