@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Aug 17 23:28:31 2019
-
-@author: Dror
-
-
 
 This is for internal purposes; many errors due to changing code!
 

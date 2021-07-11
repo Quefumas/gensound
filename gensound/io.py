@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Aug 23 19:03:28 2019
-
-@author: Dror
-
 This file contains the entire interface of the library with the OS.
 This includes reading and writing files, and real-time playback.
 
@@ -33,6 +29,7 @@ import string
 import datetime
 
 import numpy as np
+
 from gensound.settings import _supported, _supported_bin
 
 

@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Aug 10 09:24:24 2019
-
-@author: Dror
-"""
 
 import numpy as np
+
 from gensound.utils import isnumber
 
 midA = 440

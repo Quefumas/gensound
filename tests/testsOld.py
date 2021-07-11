@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Sep 12 15:04:25 2019
-
-@author: Dror
-
-
 
 This file is to store old test functions, for reference and to document
 them later as examples.

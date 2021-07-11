@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 22 20:53:05 2019
-
-@author: Dror
-
 TODO
 do we need all these functions as static?
 some may be instance functions, some may belong in utils.

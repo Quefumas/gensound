@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Aug 17 21:41:28 2019
-
-@author: Dror
-"""
 
 import copy
 

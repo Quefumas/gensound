@@ -1,15 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Sep 23 18:33:04 2019
-
-@author: Dror
-
-utility functions
-
-"""
 
 from numbers import Number
 from collections import Callable
+
 import numpy as np
 
 

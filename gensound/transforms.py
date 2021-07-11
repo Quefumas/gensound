@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Aug 18 21:01:16 2019
-
-@author: Dror
-"""
 
 import numpy as np
+
 from gensound.settings import _supported
 from gensound.curve import Curve, Line, Logistic, Constant
 from gensound.audio import Audio

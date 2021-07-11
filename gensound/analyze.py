@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Sep  5 19:04:56 2019
-
-@author: Dror
+Deprecated
 """
 
 import numpy as np

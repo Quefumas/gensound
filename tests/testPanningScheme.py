@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Apr  6 12:34:45 2020
-
-@author: Dror
+Outdated but detailed example of custom panning schemes for multiple speakers.
 """
 
 import numpy as np
