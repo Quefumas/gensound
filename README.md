@@ -132,7 +132,7 @@ wav[0] *= Shift(80) # try changing the number of samples
 
 * Stretch effect - slowing down or speeding up the signal by stretching or shrinking it. This affects pitch as well:
 ```python
-from gensound.transforms import Stretch
+from gensound.effects import Stretch
 
 wav *= Stretch(rate=1.5) # plays the Signal 1.5 times as fast
 wav *= Stretch(duration=30e3) # alternative syntax: fit the Signal into 30 seconds
