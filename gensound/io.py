@@ -27,6 +27,7 @@ import time
 import random
 import string
 import datetime
+import platform
 
 import numpy as np
 
@@ -42,6 +43,9 @@ _temporary_folder = "gensound_temp"
 _temp_files = []
 
 
+_os = platform.system()
+
+
 def temp_file_naming_scheme():
     # ugly filenames for temp file to prevent accidental overwriting
     nonce = ''.join(random.choice(string.ascii_lowercase) for i in range(8))
@@ -52,6 +56,16 @@ def file_exists(filename):
     import pathlib
     return pathlib.Path(filename).is_file()
 
+def export_to_temp_wav(audio):
+    import os
+    filename = temp_file_naming_scheme()
+    
+    os.makedirs(_temporary_folder, exist_ok=True)
+    
+    _IO_wave.export_WAV(filename, audio)
+    _temp_files.append(filename)
+    print(f"Temp file created at: {os.getcwd()}\{filename}")
+    return filename
 
 
 
@@ -239,23 +253,13 @@ class _IO_playsound: # https://github.com/TaylorSMarks/playsound
     
     @staticmethod
     def playback(audio, **kwargs): # TODO also has "block" arg which may be nice
-        import os
-        filename = temp_file_naming_scheme()
         
-        os.makedirs(_temporary_folder, exist_ok=True)
+        filename = export_to_temp_wav(audio)
         
-        _IO_wave.export_WAV(filename, audio)
-        _temp_files.append(filename)
-        print(f"Temp file created at: {os.getcwd()}\{filename}")
         # TODO clear up temp file
         from playsound import playsound
         playsound(filename)
         
-        #try:
-        #    os.remove(filename)
-        #    print("Temp file deleted")
-        #except:
-        #    print(f"Could not delete temporary file.") #" at: {os.getcwd()}\{filename}")
 
 
 class _IO_pygame:
@@ -280,6 +284,27 @@ class _IO_pygame:
         return snd # currently goes nowhere
 
 
+class _IO_winsound: # fallback for windows
+    name = "winsound"
+    is_supported = _os == "Windows" # this doesn't appear in _supported for some reason
+    
+    @staticmethod
+    def playback(audio, **kwargs):
+        try:
+            import winsound
+            print("Note: falling back to winsound module via export to temporary file. "
+              "It is recommended to install one of the supported I/O libraries for more flexible playback, "
+              "for example simpleaudio, pygame or playsound (see docs). ")
+            
+            filename = export_to_temp_wav(audio)
+            
+            # TODO it seems it's possible to directly feed bytes to winsound, without temporary file
+            # need to consider how to feed num. channels etc.
+            winsound.PlaySound(filename, winsound.SND_FILENAME | winsound.SND_ASYNC)
+        except:
+            _IO_os.playback(audio, **kwargs) # fallback on OS
+
+
 # fallback class, exporting to wave and opening with OS default player
 class _IO_os: # TODO test on all platforms
     name = "os"
@@ -288,27 +313,19 @@ class _IO_os: # TODO test on all platforms
     @staticmethod
     def playback(audio, **kwargs):
         print("Note: falling back to playback by exporting to temporary file then using system default player. "
-              "It is recommended to install one of the supported I/O libraries for more direct playback, "
-              "for example simpleaudio, pygame and playsound (see docs for more). ")
-        import os
-        filename = temp_file_naming_scheme()
+              "It is recommended to install one of the supported I/O libraries for more flexible playback, "
+              "for example simpleaudio, pygame or playsound (see docs for more). ")
         
-        os.makedirs(_temporary_folder, exist_ok=True)
+        filename = export_to_temp_wav(audio)
         
-        _IO_wave.export_WAV(filename, audio)
-        _temp_files.append(filename)
-        print(f"Temp file created at: {os.getcwd()}\{filename}")
-        
-        from platform import system
-        system = system()
-        
-        if system == 'Windows':
+        if _os == 'Windows':
             cmd = f'start "" "{filename}"'
-        elif system == 'Darwin': # Mac OS
+        elif _os == 'Darwin': # Mac OS
             cmd = f'open "{filename}"'
         else: # Linux
             cmd = f'xdg-open "{filename}"'
         
+        import os
         os.system(cmd)
         
 
@@ -320,10 +337,10 @@ and direct traffic to the correct classes.
 also figure out how to navigate different formats
 '''
 
-_io_alternatives = [_IO_wave, _IO_aifc, _IO_SA, _IO_ffmpeg, _IO_playsound, _IO_ffmpeg_python, _IO_pygame, _IO_os] 
+_io_alternatives = [_IO_wave, _IO_aifc, _IO_SA, _IO_ffmpeg, _IO_playsound, _IO_ffmpeg_python, _IO_pygame, _IO_winsound, _IO_os] 
 _io_alternatives = {c.name:c for c in _io_alternatives} # as a dictionary for user interaction later
 
-play_options = (_IO_pygame, _IO_SA, _IO_playsound, _IO_os)
+play_options = (_IO_pygame, _IO_SA, _IO_playsound, _IO_winsound, _IO_os)
 load_options = {"wav": (_IO_wave,),
                 "aiff": (_IO_aifc,),
                 "*": (_IO_ffmpeg_python, _IO_ffmpeg)}
