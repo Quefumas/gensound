@@ -27,16 +27,25 @@ class Vibrato(Transform):
     """
     def __init__(self, frequency, width):
         # width in semitones (will go that same amount both up and down, total width is twice that)
-        self.frequency = frequency
+        self.frequency = frequency # can receive Curve
         self.width = width
     
     def realise(self, audio):
-        width_samples = (2**(self.width/12) - 1)/(2*np.pi*self.frequency)*audio.sample_rate
-        
-        indices = np.arange(0, audio.length, 1, dtype=np.float64)
-        indices += width_samples*np.sin(2*np.pi/audio.sample_rate*self.frequency * indices)
-        indices[indices > audio.length-1] = audio.length - 1
-        audio.audio[:,:] = audio[:, indices[:]]
+        if not isinstance(self.frequency, Curve):
+            width_samples = (2**(self.width/12) - 1)/(2*np.pi*self.frequency)*audio.sample_rate
+            
+            indices = np.arange(0, audio.length, 1, dtype=np.float64)
+            indices += width_samples*np.sin(2*np.pi/audio.sample_rate*self.frequency * indices)
+            indices[indices > audio.length-1] = audio.length - 1
+            audio.audio[:,:] = audio[:, indices[:]]
+        else: # suppose width constant
+            width_samples = (2**(self.width/12) - 1)/(2*np.pi*self.frequency.flatten(audio.sample_rate))*audio.sample_rate
+            
+            indices = np.arange(0, audio.length, 1, dtype=np.float64)
+            indices += width_samples * np.sin(2*np.pi * self.frequency.integral(audio.sample_rate)[:-1])
+            indices[indices > audio.length-1] = audio.length - 1
+            audio.audio[:,:] = audio[:, indices[:]]
+            
 
 
 

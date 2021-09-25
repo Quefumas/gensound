@@ -4,7 +4,6 @@ import numpy as np
 
 from gensound.settings import _supported
 from gensound.curve import Curve, Line, Logistic, Constant
-from gensound.audio import Audio
 from gensound.transforms import Transform
 from gensound.utils import lambda_to_range, DB_to_Linear, \
                   isnumber, iscallable, \
