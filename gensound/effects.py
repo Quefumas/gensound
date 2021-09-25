@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from gensound.utils import isnumber
+from gensound.curve import Curve
 from gensound.transforms import Transform, Convolution
 
 class OneImpulseReverb(Convolution):
@@ -58,12 +60,24 @@ class Stretch(Transform):
         from gensound.utils import get_interpolation
         interpolate = get_interpolation(self.method)
         
-        if self.rate is None:
+        if self.rate is None: # compute from duration
             factor = audio.length / self.num_samples(audio.sample_rate)
-        else:
+            audio.audio = interpolate(audio.audio, np.arange(0, audio.length-1, factor))
+        elif isnumber(self.rate):
             factor = self.rate
+            audio.audio = interpolate(audio.audio, np.arange(0, audio.length-1, factor))
+        elif isinstance(self.rate, Curve):
+            indices = self.rate.integral(audio.sample_rate)*audio.sample_rate
+            
+            if max(indices) < audio.length-1: # if curve is shorter, keep using the final value till the audio runs out
+                indices = np.concatenate((indices, np.arange(max(indices), audio.length-1, self.rate.endpoint())))
+            else:
+                indices = indices[indices < audio.length-1] # if curve lasts longer than the resulting stretched audio
+                
+            audio.audio = interpolate(audio.audio, indices)
+        else:
+            raise Exception("Invalid arguments for Stretch.")
         
-        audio.audio = interpolate(audio.audio, np.arange(0, audio.length-1, factor))
         
 
 
