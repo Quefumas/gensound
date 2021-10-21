@@ -420,8 +420,35 @@ class WhiteNoise(Signal):
         # TODO this may have non-zero DC!
         return 2*np.random.rand(self.num_samples(sample_rate)) - 1
 
-# TODO add grey, pink noise.
+class PinkNoise(Signal):
+    def __init__(self, duration=5e3):
+        super().__init__()
+        self.duration = duration
+    
+    def generate(self, sample_rate):
+        # Adapted from Larry Trammell (https://www.ridgerat-tech.us/pink/pinkalg.htm)
+        av = [ 4.6306e-003,  5.9961e-003,  8.3586e-003 ]
+        pv = [ 3.1878e-001,  7.7686e-001,  9.7785e-001  ]
+    
+        # Initialize the randomized sources state
+        randreg = np.zeros_like(av)
+      
+        for i in range(len(av)):
+            randreg[i] = av[i]*2*(np.random.rand() - 0.5)
+        
+        sig = np.zeros(self.num_samples(sample_rate))
+        
+        for i in range(len(sig)):
+            rv = np.random.rand()
+            
+            for ii in range(len(av)):
+                if rv > pv[ii]:
+                    randreg[ii] = av[ii]*2*(np.random.rand() - 0.5)
+            sig[i] = sum(randreg)
+        
+        return sig
 
+# TODO add other colors of noise
 
 #### simple oscillators
 
