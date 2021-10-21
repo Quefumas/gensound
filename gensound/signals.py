@@ -446,7 +446,7 @@ class PinkNoise(Signal):
                     randreg[ii] = av[ii]*2*(np.random.rand() - 0.5)
             sig[i] = sum(randreg)
         
-        return sig
+        return sig / np.max(np.abs(sig))
 
 # TODO add other colors of noise
 
