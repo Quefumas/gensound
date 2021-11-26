@@ -401,8 +401,10 @@ class Audio:
         self.export(filename, byte_width, max_amplitude, file_format="wav")
     
     def export(self, filename, byte_width=2, max_amplitude=None, file_format=None):
+        import os
         from gensound.io import IO
         
+        filename = os.fspath(filename)
         ext = file_format or filename.split(".")[-1].lower()
         
         self._prepare_buffer(byte_width, max_amplitude)
