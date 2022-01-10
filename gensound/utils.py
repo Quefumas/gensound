@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from numbers import Number
-from collections import Callable
+from collections.abc import Callable
 
 import numpy as np
 
