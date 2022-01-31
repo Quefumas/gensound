@@ -26,7 +26,7 @@ def freq_to_pitch(freq):
     octave = (closest_pitch + 9) // 12
     named_pitch = ["A","A#","B","C","C#","D","D#","E","F","F#","G","G#"][closest_pitch % 12]
     
-    return named_pitch + str(octave) + (" " + ("+" if divergence > 0 else "") + str(int(round(divergence*100))) if round(divergence,2) != 0 else "")
+    return named_pitch + str(octave) + ( ("+" if divergence > 0 else "") + str(int(round(divergence*100))) if round(divergence,2) != 0 else "")
 
 def str_to_freq(f): # this is a hack, better use regex or something else
     """ 'C##4+35' middle C## plus 35 cents
@@ -54,10 +54,14 @@ def str_to_freq(f): # this is a hack, better use regex or something else
         semi += 12*(int(f)-4) # octave
     
     return midC(semi+cents/100)
-        
+
+
 import re
-PITCH_REGEX = re.compile(r"^(?:(?:(?P<name>[A-G])(?P<accidentals>b*|#*)(?P<octave>[0-9]|,+|'+)?(?P<cents>(?:\+|-)(?:[0-9]+))?)|(?P<rest>[r])|(?P<repeat>\.))"
-                         r"(?:\=(?P<beats>[0-9]+(?:\.[0-9]+)?))?$")
+INTEGER = r"[0-9]+"
+NUMERIC = r"[0-9]+(?:\.[0-9]+)?)"
+PITCH = fr"(?P<name>[A-G])(?P<accidentals>b*|#*)(?P<octave>[0-9]|,+|'+)?(?P<cents>(?:\+|-)(?:{INTEGER}))?"
+TOKEN_REGEX = re.compile(fr"^(?:(?:{PITCH}|(?P<frequency>{NUMERIC})|(?P<rest>[r])|(?P<repeat>\.))"
+                         fr"(?:\=(?P<beats>{NUMERIC})?$")
 step_semitones = {"C":0, "D":2, "E":4, "F":5, "G":7, "A":9, "B":11}
 """
 
@@ -70,18 +74,18 @@ Pitch is expressed as <name><accidentals?><octave?><cents?>
 
 
 A note in the sequence is expressed as:
-(<pitch> OR <rest> OR <repeat>)<duration?>
+(<pitch> OR <frequency> OR <rest> OR <repeat>)<duration?>
 
-Instead of <pitch> we can use <rest> ('r') to indicate rest, or <repeat> ('.') to repeat previous pitch
+Instead of <pitch> we can use <frequency> (any int/float), <rest> ('r') to indicate rest, or <repeat> ('.') to repeat previous pitch (not yet implemented)
 
-optional duration is "=<int or decimal>", and will multiply the duration of the internal beat provided elsewhere
+optional duration is "=<int/float>", and will multiply the duration of the internal beat provided elsewhere
 
 
 """
 
 
 def parse_note_params(note_str):
-    params = PITCH_REGEX.match(note_str).groupdict()
+    params = TOKEN_REGEX.match(note_str).groupdict()
     
     # belongs here?
     if params["name"] is not None:
@@ -119,7 +123,7 @@ def parse_melody_to_signal(melody_str):
     # sigCls should be of type Oscillator
     beats = 1
     octave = 4
-    last_pitch = None # for repeats
+    previous_frequency = None # for repeats
     last_step = None # for ', octave indications
     
     sigs = []
@@ -152,10 +156,10 @@ def parse_melody_to_signal(melody_str):
             
             continue
         
+        # parse note token
         note = parse_note_params(note)
         
-        # TODO deal with repeat or rest
-        
+        # infer beat
         cur_beat = None
         
         if note["beats"] is not None:
@@ -169,13 +173,22 @@ def parse_melody_to_signal(melody_str):
             else:
                 cur_beat = beats
         
+        # deal with rests
         if note["rest"] is not None:
             sigs.append({"frequency": "r", "beats": cur_beat})
             continue
         
+        # deal with repeat TODO
         #if note["repeat"] is not None:
-        #    sigs.append({"frequency": last_pitch, "beats": beats})
+        #    sigs.append({"frequency": previous_frequency, "beats": beats})
         
+        # note given as frequency
+        if note["frequency"] is not None:
+            previous_frequency = float(note["frequency"])
+            sigs.append({"frequency": previous_frequency, "beats": cur_beat})
+            continue
+        
+        # note given as pitch class
         if note["octave"] is not None and note["octave"] in "0123456789":
             octave = int(note["octave"])
         else: # None or ',
@@ -208,9 +221,9 @@ def parse_melody_to_signal(melody_str):
         
         semitones += transpose_semitones
         
-        last_pitch = midC(semitones)
+        previous_frequency = midC(semitones)
         
-        sigs.append({"frequency": last_pitch if not mute else "r", "beats":cur_beat})
+        sigs.append({"frequency": previous_frequency if not mute else "r", "beats":cur_beat})
         
         
     return sigs
