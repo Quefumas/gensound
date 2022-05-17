@@ -83,7 +83,7 @@ class CompoundCurve(Curve):
     def flatten(self, sample_rate):
         return np.concatenate([c.flatten(sample_rate) for c in self.curves])
     
-    def integral(self, sample_rate):
+    def integral(self, sample_rate): # TODO do we need inclusive arg?
         result = self.curves[0].integral(sample_rate)
         # TODO faster implementation?
         for curve in self.curves[1:]:
@@ -95,9 +95,13 @@ class CompoundCurve(Curve):
     
     def endpoint(self):
         return self.curves[-1].endpoint()
+    
+    def num_samples(self, sample_rate):
+        return sum([num_samples(c.duration, sample_rate) for c in self.curves])
 
     def __getattr__(self, name):
         if name == "duration":
+            print("Critical warning: accessing CompoundCurve.duration. Please report this!")
             return sum([c.duration for c in self.curves])
         raise AttributeError
 
