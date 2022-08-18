@@ -22,7 +22,7 @@ class Curve():
     def flatten(self, sample_rate, inclusive=False):
         """ return a ndarray with the values of self for all sample points
         """
-        # implemented for generic f passed into __init__, but in general this is overriden
+        # implemented for generic f passed into __init__, but in general this is overridden
         return np.asarray(self.f(self.sample_times(sample_rate, inclusive)), dtype=np.float64)
     
     def integral(self, sample_rate):

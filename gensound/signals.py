@@ -148,7 +148,7 @@ class Signal:
         else:
             s.sequence += [self]
         
-        if isinstance(other, BiTransform): # if concatting BiTransform
+        if isinstance(other, BiTransform): # if concatenating BiTransform
             s.sequence[-1] = s.sequence[-1]._apply(other.L)
             s.sequence += [other.R]
             return s
@@ -384,7 +384,7 @@ class Sequence(Signal):
                 phase = 0
             
             audio.concat(signal.realise(sample_rate))
-            # TODO assymetric with Mix since we don't overload audio.concat
+            # TODO asymmetric with Mix since we don't overload audio.concat
         
         return audio
 

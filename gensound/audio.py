@@ -410,7 +410,7 @@ class Audio:
         self._prepare_buffer(byte_width, max_amplitude)
         
         # TODO disentangle export_WAV arguments so that they will be given
-        # seperately (or in a config dict) rather than in an Audio object,
+        # separately (or in a config dict) rather than in an Audio object,
         # since the latter is not supposed to hold a buffer nor byte width
         
         if ext in ("wav", "wave"):

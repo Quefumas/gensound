@@ -19,7 +19,7 @@ class Transform:
     and realise for the implementation on the WAV.
     
     realise should directly change the audio of the signal element,
-    and thus each transform can be bound to several signals without intereference.
+    and thus each transform can be bound to several signals without interference.
     
     """
     
@@ -306,7 +306,7 @@ class SineAM(Transform):
     """
     have the amplitude change according to a sine function over time continuously,
     with given width (size) and frequency
-    TODO again the factors should be perhaps logarithimic
+    TODO again the factors should be perhaps logarithmic
     """
     def __init__(self, frequency, size, phase=0):
         self.frequency = frequency
@@ -427,7 +427,7 @@ class Pan(Transform):
         for (i, dB) in enumerate(dBs):
             if isnumber(dB):
                 audio.audio[i,:] *= DB_to_Linear(dB)
-            else: # paramterization
+            else: # parameterization
                 audio.audio[i,:len(dB)] *= DB_to_Linear(dB)
                 audio.audio[i,len(dB):] *= DB_to_Linear(self.scheme(self.pan.endpoint())[i])
 

@@ -23,7 +23,7 @@ def Linear_to_DB(x): return 20*np.log(x)/np.log(10)
 
 # converts seconds to samples
 # later aliased as a Signal class function
-# interprets self.duration as either samples or miliseconds
+# interprets self.duration as either samples or milliseconds
 # i.e. using ints will be affected by sample rate
 def num_samples(duration, sample_rate): return duration \
                                             if isinstance(duration, int) \

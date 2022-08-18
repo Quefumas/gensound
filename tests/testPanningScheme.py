@@ -37,7 +37,7 @@ def custom_pan_scheme_test():
       on the following:
     
     Any point within the triangle will be represented as a tuple (r, alpha),
-      where 0 <= r <= 100 representes the distance from C,
+      where 0 <= r <= 100 represents the distance from C,
       and -100 <= alpha <= 100 represents the angle (clockwise) from CX
       to the position of the signal.
     
@@ -51,7 +51,7 @@ def custom_pan_scheme_test():
     a vector and outputting the appropriate Gain level for that speaker.
     
     For simplicity, we will imagine the L-X-R line in our topography to be
-      curved in a certain manner, so that the gain in C will only be dependant
+      curved in a certain manner, so that the gain in C will only be dependent
       on the r coordinate.
     
     So for C, we wish the gain to range from 0 at r=0 to -infty at r=100.
